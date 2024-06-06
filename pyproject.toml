@@ -1,0 +1,22 @@
+[project]
+name = "HyperXAI"
+version = "0.0.2"
+authors = [
+  { name="Tymoteusz Kwiecinski", email="tymoteuszkwiecinski@gmail.com" },
+]
+description = "Explanations of models for Hyperspectral data"
+readme = "README.md"
+requires-python = ">=3.8"
+
+classifiers = [
+  "Development Status :: 0 - prealpha",
+]
+
+
+
+dynamic = ["dependencies"]
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project.urls]
+Homepage = "https://github.com/MI2DataLab/pineapple/"
