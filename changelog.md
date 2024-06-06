@@ -6,3 +6,5 @@
 * Refined package structure - simple modules for models and visualisation, installation using toml file
 * Spectral attributions using LIME
 * CUDA compatibility of LIME 
+## HyperXAI -> meteors 0.0.1
+* Renamed package to meteors

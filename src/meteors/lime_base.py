@@ -42,7 +42,7 @@ from torch.nn import CosineSimilarity
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import r2_score
 
-from HyperXAI.utils.models import InterpretableModel, SkLearnLasso
+from meteors.utils.models import InterpretableModel, SkLearnLasso
 
 
 class LimeBase(PerturbationAttribution):

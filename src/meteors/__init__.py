@@ -1,15 +1,15 @@
-from .hyper_image import HyperImage
+from .hyper_image import Image
 
-from .hyper_lime import HyperLime, HyperImageAttributes, HyperImageSpatialAttributes, HyperImageSpectralAttributes
+from .hyper_lime import Lime, ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
 
 
 
 __all__ = [
-    "HyperImage",
-    "HyperLime",
-    "HyperImageAttributes",
-    "HyperImageSpatialAttributes",
-    "HyperImageSpectralAttributes",
+    "Image",
+    "Lime",
+    "ImageAttributes",
+    "ImageSpatialAttributes",
+    "ImageSpectralAttributes",
     "models",
     "visualise",
 ]

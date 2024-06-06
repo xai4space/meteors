@@ -1,5 +1,5 @@
 [project]
-name = "HyperXAI"
+name = "meteors"
 version = "0.0.2"
 authors = [
   { name="Tymoteusz Kwiecinski", email="tymoteuszkwiecinski@gmail.com" },

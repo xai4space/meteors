@@ -5,7 +5,7 @@ import numpy as np
 
 import torch
 
-import HyperXAI as hx
+import meteors as mt
 
 # temporary solution
 wavelengths = [462.08, 465.27, 468.47, 471.67, 474.86, 478.06, 481.26, 484.45,
@@ -34,12 +34,12 @@ class TestLimeMethods(unittest.TestCase):
         shape = (150, 240, 240)
         sample = torch.ones(shape)
         
-        image = hx.HyperImage(sample, wavelengths, orientation=("C", "H", "W"))     
+        image = mt.Image(sample, wavelengths, orientation=("C", "H", "W"))     
         
         
         band_names_list = ["R", "G", "B"]   
         
-        band_mask, band_names = hx.HyperLime.get_band_mask(image, band_names_list)
+        band_mask, band_names = mt.Lime.get_band_mask(image, band_names_list)
         
         self.assertEqual(band_names, {"R": 1, "G": 2, "B": 3})
         self.assertEqual(torch.unique(band_mask), torch.tensor([0,1,2,3]))

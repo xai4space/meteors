@@ -1,10 +1,10 @@
 from typing import Literal, List, Callable, Dict, Tuple, Iterable, Sequence
 from abc import ABC, abstractmethod
 
-from HyperXAI.utils.models import ExplainableModel, InterpretableModel
-from HyperXAI import HyperImage
+from meteors.utils.models import ExplainableModel, InterpretableModel
+from meteors import Image
 
-from HyperXAI.lime_base import Lime
+from meteors.lime_base import Lime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from typing_extensions import Annotated, Union, Self
@@ -31,9 +31,9 @@ class Explanation(BaseModel):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
     
         
-class HyperImageAttributes(Explanation):
+class ImageAttributes(Explanation):
     
-    image: Annotated[HyperImage, Field(kw_only=False, validate_default=True, description='Hyperspectral image object on which the attribution is performed.')]
+    image: Annotated[Image, Field(kw_only=False, validate_default=True, description='Hyperspectral image object on which the attribution is performed.')]
     attributes: Annotated[np.ndarray | torch.Tensor, Field(kw_only=False, validate_default=True, description='Attributions saved as a numpy array or torch tensor.')]
     score: Annotated[float, Field(kw_only=False, validate_default=True, description='R^2 score of interpretable model used for the explanation.')]
     
@@ -73,7 +73,7 @@ class HyperImageAttributes(Explanation):
         
 
         
-class HyperImageSpatialAttributes(HyperImageAttributes):
+class ImageSpatialAttributes(ImageAttributes):
     segmentation_mask: Annotated[np.ndarray | torch.Tensor, Field(kw_only=False, validate_default=True, description='Segmentation mask used for the explanation.')]
     
     _flattened_segmentation_mask: torch.Tensor = None
@@ -108,7 +108,7 @@ class HyperImageSpatialAttributes(HyperImageAttributes):
         return self._flattened_attributes
         
         
-class HyperImageSpectralAttributes(HyperImageAttributes):
+class ImageSpectralAttributes(ImageAttributes):
     
     band_mask: Annotated[np.ndarray | torch.Tensor, Field(kw_only=False, validate_default=True, description='Band mask used for the explanation.')]
     band_names: Annotated[Dict[str, int], Field(kw_only=False, validate_default=True, description='Dictionary that translates the band names into the segment values.')]
@@ -175,7 +175,7 @@ class Explainer(BaseModel, ABC):
         return self
 
 
-class HyperLime(Explainer):
+class Lime(Explainer):
     # should it be any different than base lime?
     explainable_model: ExplainableModel
     interpretable_model: InterpretableModel
@@ -203,18 +203,18 @@ class HyperLime(Explainer):
         
 
     @staticmethod
-    def get_segmentation_mask(image: HyperImage, segmentation_method: Literal["patch", "slic"] | None = None, segmentation_method_params = {}) -> torch.Tensor:
+    def get_segmentation_mask(image: Image, segmentation_method: Literal["patch", "slic"] | None = None, segmentation_method_params = {}) -> torch.Tensor:
         if segmentation_method == "slic":
-            return HyperLime.__get_slick_segmentation_mask(image, **segmentation_method_params)
+            return Lime.__get_slick_segmentation_mask(image, **segmentation_method_params)
         if segmentation_method == "patch":
-            return HyperLime.__get_patch_segmentation_mask(image, **segmentation_method_params)
+            return Lime.__get_patch_segmentation_mask(image, **segmentation_method_params)
         raise NotImplementedError("Only slic method is supported for now")
 
     @staticmethod
-    def get_band_mask(image: HyperImage, band_names: Sequence[str | Sequence[str]] | Dict[str | Tuple[str], Iterable[int]]) -> Tuple[torch.Tensor, Dict[str | Tuple[str], int]]:
+    def get_band_mask(image: Image, band_names: Sequence[str | Sequence[str]] | Dict[str | Tuple[str], Iterable[int]]) -> Tuple[torch.Tensor, Dict[str | Tuple[str], int]]:
         """function generates band mask - an array that corresponds to the image, which values are different segments. 
         Args:
-            image (HyperImage): A Hyperspectral image
+            image (Image): A Hyperspectral image
             band_names ((List[str | List[str]]) | (Dict[str | List[str], Iterable[int]])): list of band names that should be treated as one segment or dictionary containing
 
         Returns:
@@ -222,11 +222,11 @@ class HyperLime(Explainer):
         """
         
         if isinstance(band_names, Sequence):
-            band_names = HyperLime.__get_band_dict_from_list(band_names)
+            band_names = Lime.__get_band_dict_from_list(band_names)
         
         band_names_simplified = {segment[0] if len(segment) == 1 else str(segment): band_names[segment]  for segment in band_names}
         
-        return (HyperLime.__get_band_mask_from_names_dict(image, band_names), band_names_simplified)
+        return (Lime.__get_band_mask_from_names_dict(image, band_names), band_names_simplified)
     
     
     @staticmethod
@@ -242,11 +242,11 @@ class HyperLime(Explainer):
     
     
     @staticmethod
-    def __get_band_mask_from_names_dict(image: HyperImage, band_names: Dict[str | Tuple[str], int] = None) ->  Tuple[torch.Tensor, Dict[Tuple[str], int]]:
-        grouped_band_names = HyperLime.__get_grouped_band_names(band_names)
+    def __get_band_mask_from_names_dict(image: Image, band_names: Dict[str | Tuple[str], int] = None) ->  Tuple[torch.Tensor, Dict[Tuple[str], int]]:
+        grouped_band_names = Lime.__get_grouped_band_names(band_names)
         
         device = image.image.device
-        resolution_segments = HyperLime.__get_resolution_segments(image.wavelengths, grouped_band_names, device=image.image.device)
+        resolution_segments = Lime.__get_resolution_segments(image.wavelengths, grouped_band_names, device=image.image.device)
         
         
         axis = [0,1,2]
@@ -313,7 +313,7 @@ class HyperLime(Explainer):
         return resolution_segments
     
 
-    def get_spatial_attributes(self, image: HyperImage, segmentation_mask: np.ndarray | torch.Tensor | None = None, target = None, segmentation_method: Literal["slic", "patch"] | None = "slic", segmentation_method_params: dict| None = {}) -> HyperImageSpatialAttributes:
+    def get_spatial_attributes(self, image: Image, segmentation_mask: np.ndarray | torch.Tensor | None = None, target = None, segmentation_method: Literal["slic", "patch"] | None = "slic", segmentation_method_params: dict| None = {}) -> ImageSpatialAttributes:
         assert self.explainable_model.problem_type == "regression", "For now only the regression problem is supported" 
         if segmentation_mask is None:
             segmentation_mask = self.get_segmentation_mask(image, segmentation_method, segmentation_method_params)
@@ -342,12 +342,12 @@ class HyperLime(Explainer):
             return_input_shape=True,
         )
         
-        spatial_attribution = HyperImageSpatialAttributes(image=image, attributes=lime_attributes[0], segmentation_mask=segmentation_mask, score=score)
+        spatial_attribution = ImageSpatialAttributes(image=image, attributes=lime_attributes[0], segmentation_mask=segmentation_mask, score=score)
         
         return spatial_attribution
         
 
-    def get_spectral_attributes(self, image: HyperImage, band_mask: np.ndarray | torch.Tensor | None = None, target = None, band_names: List["str"] | Dict[str | Tuple[str], int] = None, verbose = False) -> HyperImageSpectralAttributes:
+    def get_spectral_attributes(self, image: Image, band_mask: np.ndarray | torch.Tensor | None = None, target = None, band_names: List["str"] | Dict[str | Tuple[str], int] = None, verbose = False) -> ImageSpectralAttributes:
         assert self.explainable_model.problem_type == "regression", "For now only the regression problem is supported" 
         
         if isinstance(image.image, np.ndarray):
@@ -390,12 +390,12 @@ class HyperLime(Explainer):
         
         lime_attributes = lime_attributes[0]
         
-        spectral_attribution = HyperImageSpectralAttributes(image=image, attributes=lime_attributes, band_mask=band_mask, band_names=band_names, score=score)
+        spectral_attribution = ImageSpectralAttributes(image=image, attributes=lime_attributes, band_mask=band_mask, band_names=band_names, score=score)
         
         return spectral_attribution        
 
     @staticmethod
-    def __get_slick_segmentation_mask(image: HyperImage, num_interpret_features: int, *args, **kwargs) -> torch.tensor:
+    def __get_slick_segmentation_mask(image: Image, num_interpret_features: int, *args, **kwargs) -> torch.tensor:
         device = image.image.device
         numpy_image = np.array(image.image.to("cpu"))
         segmentation_mask = slic(numpy_image, n_segments=num_interpret_features, mask = np.array(image.get_flattened_binary_mask().to("cpu")), channel_axis = image.band_axis, *args, **kwargs)
@@ -410,7 +410,7 @@ class HyperLime(Explainer):
         return segmentation_mask
     
     @staticmethod
-    def __get_patch_segmentation_mask(image: HyperImage, patch_size = 10, *args, **kwargs) -> torch.tensor:
+    def __get_patch_segmentation_mask(image: Image, patch_size = 10, *args, **kwargs) -> torch.tensor:
         print("Patch segmentation only works for band_index = 0 now")
         
         device = image.image.device

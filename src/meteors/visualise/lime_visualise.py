@@ -2,7 +2,7 @@ from typing import List
 
 import matplotlib.figure
 
-from HyperXAI import HyperImage, HyperImageAttributes, HyperImageSpectralAttributes, HyperImageSpatialAttributes
+from meteors import Image, ImageAttributes, ImageSpectralAttributes, ImageSpatialAttributes
 import torch
 from captum.attr import visualization as viz
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ import seaborn as sns
 
 
 
-def visualise_image(image: HyperImage | HyperImageAttributes, ax: matplotlib.axes.Axes | None) -> None | matplotlib.axes.Axes:
+def visualise_image(image: Image | ImageAttributes, ax: matplotlib.axes.Axes | None) -> None | matplotlib.axes.Axes:
     rgb = image.get_rgb_image(output_band_index=2)
     
     if ax is None:
@@ -22,7 +22,7 @@ def visualise_image(image: HyperImage | HyperImageAttributes, ax: matplotlib.axe
     return ax
         
 
-def visualise_spatial_attributes(spatial_attributes: HyperImageSpatialAttributes, use_pyplot=False):
+def visualise_spatial_attributes(spatial_attributes: ImageSpatialAttributes, use_pyplot=False):
     
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
     fig.suptitle("Lime attribution")
@@ -52,9 +52,9 @@ def visualise_spatial_attributes(spatial_attributes: HyperImageSpatialAttributes
     else:
         return fig, ax
 
-def visualise_spectral_attributes(spectral_attributes: HyperImageSpectralAttributes | List[HyperImageSpectralAttributes], use_pyplot=False, color_palette = None, show_not_included = False):
+def visualise_spectral_attributes(spectral_attributes: ImageSpectralAttributes | List[ImageSpectralAttributes], use_pyplot=False, color_palette = None, show_not_included = False):
     
-    if isinstance(spectral_attributes, HyperImageSpectralAttributes):
+    if isinstance(spectral_attributes, ImageSpectralAttributes):
         band_names = spectral_attributes.band_names
     else:
         band_names = spectral_attributes[0].band_names
@@ -75,9 +75,9 @@ def visualise_spectral_attributes(spectral_attributes: HyperImageSpectralAttribu
         return fig, ax
 
 
-def visualise_spectral_attributes_by_waveband(spectral_attributes: HyperImageSpectralAttributes | List[HyperImageSpectralAttributes], ax: matplotlib.axes.Axes | None, color_palette = None, show_not_included = True) ->  matplotlib.axes.Axes:
+def visualise_spectral_attributes_by_waveband(spectral_attributes: ImageSpectralAttributes | List[ImageSpectralAttributes], ax: matplotlib.axes.Axes | None, color_palette = None, show_not_included = True) ->  matplotlib.axes.Axes:
     aggregate_results = False
-    if not isinstance(spectral_attributes, HyperImageSpectralAttributes):
+    if not isinstance(spectral_attributes, ImageSpectralAttributes):
         aggregate_results = True
 
         band_names = dict(spectral_attributes[0].band_names)
@@ -139,9 +139,9 @@ def visualise_spectral_attributes_by_waveband(spectral_attributes: HyperImageSpe
     ax.legend(fontsize=10)
     return ax
 
-def visualise_spectral_attributes_by_magnitude(spectral_attributes: HyperImageSpectralAttributes | List[HyperImageSpectralAttributes], ax: matplotlib.axes.Axes | None, color_palette = None, annotate_bars = True, show_not_included = True) ->  matplotlib.axes.Axes:
+def visualise_spectral_attributes_by_magnitude(spectral_attributes: ImageSpectralAttributes | List[ImageSpectralAttributes], ax: matplotlib.axes.Axes | None, color_palette = None, annotate_bars = True, show_not_included = True) ->  matplotlib.axes.Axes:
     aggregate_results = False
-    if not isinstance(spectral_attributes, HyperImageSpectralAttributes):
+    if not isinstance(spectral_attributes, ImageSpectralAttributes):
         aggregate_results = True
         band_names = dict(spectral_attributes[0].band_names)
         wavelengths = spectral_attributes[0].image.wavelengths

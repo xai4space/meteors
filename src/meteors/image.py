@@ -14,7 +14,7 @@ import spyndex
 # TODO width and height in orientation
 
 
-class HyperImage(BaseModel):
+class Image(BaseModel):
     image: Annotated[Union[np.ndarray, torch.Tensor], Field(kw_only=False, validate_default=True, description='hyperspectral imaage. Converted to torch tensor.')]
     wavelengths: Annotated[np.ndarray | Sequence, Field(kw_only=False, validate_default=True, description='wave lengths present in the image. Defaults to None.')]
     binary_mask: Annotated[Union[np.ndarray, torch.Tensor,  Literal["artificial"]], Field(kw_only=False, validate_default=True, description='binary mask used to cover not important parts of the base image, masked parts have values equals to 0. Converted to torch tensor. Defaults to None.')] = None
@@ -87,7 +87,7 @@ class HyperImage(BaseModel):
 
         Args:
             mask (bool, optional): whether to apply the mask of the image to the output, only used if the Hyper Image object actually contains the `binary_mask` field. Defaults to True.
-            cutoff_min (bool, optional): In case the binary mask is pre-applied to the image stored in the HyperImage memory, i.e. image has zero-valued fields, the image is scaled using the second smallest value in the image. By default the scaling uses the smalles value which in this case is artificial. Defaults to True.
+            cutoff_min (bool, optional): In case the binary mask is pre-applied to the image stored in the Image memory, i.e. image has zero-valued fields, the image is scaled using the second smallest value in the image. By default the scaling uses the smalles value which in this case is artificial. Defaults to True.
             output_band_index (int, optional): index of the band axis to be used in the output image. Defaults to self.band_index.
             
         Returns:
