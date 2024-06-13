@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, cast, List, Optional, Dict, Union
+from typing import Callable, cast, List, Optional
 
 import torch.nn as nn
 from torch import Tensor
@@ -9,26 +9,30 @@ from pydantic import BaseModel, Field, field_validator
 from typing_extensions import Annotated
 
 
-
 class ExplainableModel(BaseModel):
     forward_func: Callable
-    problem_type: Annotated[str, Field(validate_default=True, description="Problem type of the model. Must be either 'classification', 'regression' or 'segmentation'")]
-    
-    
+    problem_type: Annotated[
+        str,
+        Field(
+            validate_default=True,
+            description="Problem type of the model. Must be either 'classification', 'regression' or 'segmentation'",
+        ),
+    ]
+
     @field_validator("problem_type")
     @classmethod
     def validate_problem_type(cls, value):
-        assert value in ["classification", "regression", "segmentation"], "Problem type must be either 'classification', 'regression' or 'segmentation'"
+        assert (
+            value in ["classification", "regression", "segmentation"]
+        ), "Problem type must be either 'classification', 'regression' or 'segmentation'"
         return value
-    
+
     def __call__(self, x):
         return self.forward_func(x)
-    
+
     def to(self, device):
         self.forward_func.to(device)
         return self
-    
-    
 
 
 class InterpretableModel(ABC):
@@ -36,25 +40,20 @@ class InterpretableModel(ABC):
         pass
 
     @abstractmethod
-    def fit(
-        self, train_data: DataLoader, **kwargs
-    ):
+    def fit(self, train_data: DataLoader, **kwargs):
         pass
 
     @abstractmethod
-    def get_representation(
-        self
-    ):
+    def get_representation(self):
         pass
 
     @abstractmethod
-    def __call__(
-        self, x
-    ):
+    def __call__(self, x):
         pass
 
 
 ### Code below is copied from captum library. It has slight modifications made jointly by me or Vladimir
+
 
 class LinearModel(nn.Module, InterpretableModel):
     SUPPORTED_NORMS: List[Optional[str]] = [None, "batch_norm", "layer_norm"]
@@ -249,7 +248,6 @@ class SkLearnLinearModel(LinearModel):
         )
 
 
-    
 class SkLearnLasso(SkLearnLinearModel):
     def __init__(self, **kwargs) -> None:
         r"""
@@ -261,4 +259,3 @@ class SkLearnLasso(SkLearnLinearModel):
 
     def fit(self, train_data: DataLoader, **kwargs):
         return super().fit(train_data=train_data, **kwargs)
-

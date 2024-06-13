@@ -145,7 +145,7 @@ class LimeBase(PerturbationAttribution):
                     model. Function can return samples in either
                     the original input space (matching type and tensor shapes
                     of original input) or in the interpretable input space,
-                    which is a vector containing the intepretable features.
+                    which is a vector containing the interpretable features.
                     Alternatively, this function can return a generator
                     yielding samples to train the interpretable surrogate
                     model, and n_samples perturbations will be sampled
@@ -494,7 +494,7 @@ class LimeBase(PerturbationAttribution):
                         expanded_additional_args,
                         device,
                     )
-                    
+
                     if show_progress:
                         attr_progress.update()
 
@@ -537,8 +537,11 @@ class LimeBase(PerturbationAttribution):
             self.interpretable_model.to(device)
 
             with torch.no_grad():
-                r2 = r2_score(combined_outputs.cpu().numpy(), self.interpretable_model(combined_interp_inps).cpu().numpy())
-            
+                r2 = r2_score(
+                    combined_outputs.cpu().numpy(),
+                    self.interpretable_model(combined_interp_inps).cpu().numpy(),
+                )
+
             return self.interpretable_model.get_representation(), torch.tensor(r2)
 
     def _evaluate_batch(
@@ -1169,7 +1172,7 @@ class Lime(LimeBase):
                                 )
                             )
                         else:
-                            output_list.append(coefs.reshape(1, -1)) # type: ignore
+                            output_list.append(coefs.reshape(1, -1))  # type: ignore
                         output_r2s.append(r2s)
 
                     return _reduce_list(output_list), sum(output_r2s) / len(output_r2s)
@@ -1216,8 +1219,7 @@ class Lime(LimeBase):
         coefs: Tensor,
         num_interp_features: int,
         is_inputs_tuple: Literal[True],
-    ) -> Tuple[Tensor, ...]:
-        ...
+    ) -> Tuple[Tensor, ...]: ...
 
     @typing.overload
     def _convert_output_shape(
@@ -1227,8 +1229,7 @@ class Lime(LimeBase):
         coefs: Tensor,
         num_interp_features: int,
         is_inputs_tuple: Literal[False],
-    ) -> Tensor:
-        ...
+    ) -> Tensor: ...
 
     def _convert_output_shape(
         self,

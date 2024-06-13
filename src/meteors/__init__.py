@@ -1,7 +1,6 @@
-from .hyper_image import Image
+from .image import Image
 
-from .hyper_lime import Lime, ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
-
+from .lime import Lime, ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
 
 
 __all__ = [
@@ -13,7 +12,6 @@ __all__ = [
     "models",
     "visualise",
 ]
-
 
 
 def __dir__():
