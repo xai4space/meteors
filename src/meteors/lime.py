@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Literal, List, Callable, Dict, Tuple, Iterable, Sequence
 from abc import ABC
 
