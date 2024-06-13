@@ -8,3 +8,4 @@ pydantic
 spyndex
 scikit-learn
 scikit-image
+eval_type_backport
