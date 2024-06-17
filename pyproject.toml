@@ -18,5 +18,12 @@ dynamic = ["dependencies"]
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
+[tool.mypy]
+ignore_missing_imports = true
+files = ["src"]
+plugins = [
+  "pydantic.mypy"
+]
+
 [project.urls]
 Homepage = "https://github.com/MI2DataLab/pineapple/"

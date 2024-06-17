@@ -166,18 +166,35 @@ class TestLimeMethods(unittest.TestCase):
         sample = torch.ones(shape)
 
         image = mt.Image(
-            image=sample, wavelengths=wavelengths, orientation=("C", "H", "W"), binary_mask="artificial"
+            image=sample,
+            wavelengths=wavelengths,
+            orientation=("C", "H", "W"),
+            binary_mask="artificial",
         )
 
         band_names_list = ["R", "G", "B"]
 
         band_mask, band_names = mt.Lime.get_band_mask(image, band_names_list)
 
-        self.assertEqual(band_names, {"R": 1, "G": 2, "B": 3}, "There should be only 4 values in the band mask corresponding to R, G, B and background")
-        self.assertEqual(len(torch.unique(band_mask)), 4, "There should be only 4 values in the band mask corresponding to R, G, B and background")
-        self.assertTrue(all(torch.unique(band_mask) == torch.tensor([0, 1, 2, 3])), "There should be only 4 values in the band mask corresponding to R, G, B and background")
+        self.assertEqual(
+            band_names,
+            {"R": 1, "G": 2, "B": 3},
+            "There should be only 4 values in the band mask corresponding to R, G, B and background",
+        )
+        self.assertEqual(
+            len(torch.unique(band_mask)),
+            4,
+            "There should be only 4 values in the band mask corresponding to R, G, B and background",
+        )
+        self.assertTrue(
+            all(torch.unique(band_mask) == torch.tensor([0, 1, 2, 3])),
+            "There should be only 4 values in the band mask corresponding to R, G, B and background",
+        )
         for c in range(shape[0]):
-            self.assertTrue(len(torch.unique(band_mask[c, :, :])) == 1, "on each channel there should be only one unique number") 
+            self.assertTrue(
+                len(torch.unique(band_mask[c, :, :])) == 1,
+                "on each channel there should be only one unique number",
+            )
 
 
 if __name__ == "__main__":

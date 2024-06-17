@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Literal, List, Callable, Dict, Tuple, Iterable, Sequence
+from typing import Literal, Callable, Sequence
 from abc import ABC
+from functools import cached_property
 
 from meteors.utils.models import ExplainableModel, InterpretableModel
 from meteors import Image
@@ -150,7 +151,7 @@ class ImageSpectralAttributes(ImageAttributes):
         ),
     ]
     band_names: Annotated[
-        Dict[str, int],
+        dict[str, int],
         Field(
             kw_only=False,
             validate_default=True,
@@ -206,12 +207,13 @@ class Explainer(BaseModel, ABC):
     explainable_model: ExplainableModel
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
-    _device: torch.device = None
-
-    @model_validator(mode="after")
-    def validate_device(self) -> Self:
-        self._device = next(self.explainable_model.forward_func.parameters()).device
-        return self
+    @cached_property
+    def _device(self) -> torch.device:
+        try:
+            device = next(self.explainable_model.forward_func.parameters()).device  # type: ignore
+        except Exception as e:
+            raise ValueError("Device could not be determined from the model") from e
+        return device
 
     def to(self, device: torch.device) -> Self:
         self.explainable_model.to(device)
@@ -262,9 +264,8 @@ class Lime(Explainer):
     @staticmethod
     def get_band_mask(
         image: Image,
-        band_names: Sequence[str | Sequence[str]]
-        | Dict[str | Tuple[str], Iterable[int]],
-    ) -> Tuple[torch.Tensor, Dict[str | Tuple[str], int]]:
+        band_names: list[str | Sequence[str]] | dict[tuple[str, ...] | str, int],
+    ) -> tuple[torch.Tensor, dict[tuple[str, ...] | str, int]]:
         """function generates band mask - an array that corresponds to the image, which values are different segments.
         Args:
             image (Image): A Hyperspectral image
@@ -274,23 +275,30 @@ class Lime(Explainer):
             Tuple[torch.Tensor, Dict[str, int]]: a tuple which consists of an actual band mask and a dictionary that translates the band names into the segment values
         """
 
-        if isinstance(band_names, Sequence):
-            band_names = Lime.__get_band_dict_from_list(band_names)
+        if isinstance(band_names, dict):
+            band_names_dict = {
+                tuple(k) if not isinstance(k, str) else k: v
+                for k, v in band_names.items()
+            }
+        else:
+            band_names_dict = Lime.__get_band_dict_from_list(band_names)  # type: ignore
 
         band_names_simplified = {
-            segment[0] if len(segment) == 1 else str(segment): band_names[segment]
-            for segment in band_names
+            str(segment[0])
+            if isinstance(segment, tuple) and len(segment) == 1
+            else segment: value
+            for segment, value in band_names_dict.items()
         }
 
         return (
-            Lime.__get_band_mask_from_names_dict(image, band_names),
-            band_names_simplified,
+            Lime.__get_band_mask_from_names_dict(image, band_names),  # type: ignore
+            band_names_simplified,  # type: ignore
         )
 
     @staticmethod
     def __get_band_dict_from_list(
-        band_names_list: List[str | Sequence[str]],
-    ) -> Dict[Tuple[str], int]:
+        band_names_list: list[str | Sequence[str]],
+    ) -> dict[tuple[str, ...], int]:
         band_names_dict = {}
         for idx, segment in enumerate(band_names_list):
             if isinstance(segment, str):
@@ -302,8 +310,8 @@ class Lime(Explainer):
 
     @staticmethod
     def __get_band_mask_from_names_dict(
-        image: Image, band_names: Dict[str | Tuple[str], int] | None = None
-    ) -> Tuple[torch.Tensor, Dict[Tuple[str], int]]:
+        image: Image, band_names: dict[tuple[str, ...] | str, int]
+    ) -> torch.Tensor:
         grouped_band_names = Lime.__get_grouped_band_names(band_names)
 
         device = image.image.device
@@ -325,19 +333,17 @@ class Lime(Explainer):
 
     @staticmethod
     def __get_grouped_band_names(
-        band_names: Dict[str | Tuple[str], int],
-    ) -> Dict[Tuple[str], int]:
+        band_names: dict[tuple[str, ...] | str, int],
+    ) -> dict[tuple[str, ...], int]:
         # function extracts band names or indices based on the spyndex library
         # also checks if the given names are valid
 
         grouped_band_names = {}
 
         for segment in band_names.keys():
-            band_names_segment = []
-            if not isinstance(segment, Sequence) or isinstance(segment, str):
-                segment = [segment]
-
-            segment = tuple(segment)
+            band_names_segment: list[str] = []
+            if isinstance(segment, str):
+                segment = tuple([segment])
 
             for band_name in segment:
                 if band_name in spyndex.indices:
@@ -351,15 +357,16 @@ class Lime(Explainer):
                         f"Invalid band name {band_name}, band name must be either in `spyndex.indices` or `spyndex.bands`"
                     )
 
-            band_names_segment = tuple(band_names_segment)
-            grouped_band_names[band_names_segment] = band_names[segment]
+            grouped_band_names[tuple(band_names_segment)] = band_names[segment]
 
         return grouped_band_names
 
     @staticmethod
     def __get_resolution_segments(
-        wavelengths: Iterable, band_names: Dict[Iterable[str], int], device="cpu"
-    ) -> Iterable[int]:
+        wavelengths: np.ndarray,
+        band_names: dict[tuple[str, ...], int],
+        device="cpu",
+    ) -> torch.Tensor:
         resolution_segments = torch.zeros(
             len(wavelengths), dtype=torch.int64, device=device
         )
@@ -378,8 +385,6 @@ class Lime(Explainer):
         for segment in band_names.keys():
             if band_names[segment] not in unique_segments:
                 display_name = segment
-                if len(segment) == 1:
-                    display_name = segment[0]
                 print(
                     f"bands {display_name} not found in the wavelengths or bands are overlapping"
                 )
@@ -390,12 +395,15 @@ class Lime(Explainer):
         image: Image,
         segmentation_mask: np.ndarray | torch.Tensor | None = None,
         target=None,
-        segmentation_method: Literal["slic", "patch"] | None = "slic",
+        segmentation_method: Literal["slic", "patch"] = "slic",
         segmentation_method_params: dict | None = {},
     ) -> ImageSpatialAttributes:
+        assert self._lime is not None, "Lime object not initialized"
+
         assert (
             self.explainable_model.problem_type == "regression"
         ), "For now only the regression problem is supported"
+
         if segmentation_mask is None:
             segmentation_mask = self.get_segmentation_mask(
                 image, segmentation_method, segmentation_method_params
@@ -403,19 +411,22 @@ class Lime(Explainer):
 
         if isinstance(image.image, np.ndarray):
             image.image = torch.tensor(image.image, device=self._device)
+        elif isinstance(image.image, torch.Tensor):
+            image.image = image.image.to(self._device)
 
         if isinstance(image.binary_mask, np.ndarray):
             image.binary_mask = torch.tensor(image.image, device=self._device)
+        elif isinstance(image.binary_mask, torch.Tensor):
+            image.binary_mask = image.binary_mask.to(self._device)
 
         if isinstance(segmentation_mask, np.ndarray):
             segmentation_mask = torch.tensor(segmentation_mask, device=self._device)
+        elif isinstance(segmentation_mask, torch.Tensor):
+            segmentation_mask = segmentation_mask.to(self._device)
 
         assert (
             segmentation_mask.device == self._device
         ), f"Segmentation mask should be on the same device as explainable model {self._device}"
-        assert (
-            image.binary_mask.device == self._device
-        ), f"Image binary mask should be on the same device as explainable model {self._device}"
         assert (
             image.image.device == self._device
         ), f"Image data should be on the same device as explainable model {self._device}"
@@ -446,28 +457,31 @@ class Lime(Explainer):
         image: Image,
         band_mask: np.ndarray | torch.Tensor | None = None,
         target=None,
-        band_names: List["str"] | Dict[str | Tuple[str], int] | None = None,
+        band_names: list[str] | dict[str | tuple[str, ...], int] | None = None,
         verbose=False,
     ) -> ImageSpectralAttributes:
+        assert self._lime is not None, "Lime object not initialized"
+
         assert (
             self.explainable_model.problem_type == "regression"
         ), "For now only the regression problem is supported"
 
         if isinstance(image.image, np.ndarray):
             image.image = torch.tensor(image.image, device=self._device)
+        elif isinstance(image.image, torch.Tensor):
+            image.image = image.image.to(self._device)
 
         if isinstance(image.binary_mask, np.ndarray):
             image.binary_mask = torch.tensor(image.image, device=self._device)
+        elif isinstance(image.binary_mask, torch.Tensor):
+            image.binary_mask = image.binary_mask.to(self._device)
 
         assert (
             image.image.device == self._device
         ), f"Image data should be on the same device as explainable model {self._device}"
-        assert (
-            image.binary_mask.device == self._device
-        ), f"Image binary mask should be on the same device as explainable model {self._device}"
 
         if band_mask is None:
-            band_mask, band_names = self.get_band_mask(image, band_names)
+            band_mask, band_names = self.get_band_mask(image, band_names)  # type: ignore
         elif band_names is None:
             unique_segments = torch.unique(band_mask)
             band_names = {segment: idx for idx, segment in enumerate(unique_segments)}
@@ -480,6 +494,8 @@ class Lime(Explainer):
 
         if isinstance(band_mask, np.ndarray):
             band_mask = torch.tensor(band_mask, device=self._device)
+        else:
+            band_mask = band_mask.to(self._device)
 
         assert (
             band_mask.device == self._device

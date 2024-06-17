@@ -534,7 +534,8 @@ class LimeBase(PerturbationAttribution):
                 combined_interp_inps, combined_outputs, combined_sim
             )
             self.interpretable_model.fit(DataLoader(dataset, batch_size=batch_count))
-            self.interpretable_model.to(device)
+            if hasattr(self.interpretable_model, "to"):
+                self.interpretable_model.to(device)
 
             with torch.no_grad():
                 r2 = r2_score(
@@ -613,7 +614,7 @@ def get_exp_kernel_similarity_function(
     and the distance is passed through an exponential kernel with given
     kernel width to convert to a range between 0 and 1.
 
-    The callable returned can be provided as the similarity_fn for
+    The callable returned can be provided as the `similarity_fn` for
     Lime or LimeBase.
 
     Args:
@@ -1212,7 +1213,7 @@ class Lime(LimeBase):
             return coefs, r2s
 
     @typing.overload
-    def _convert_output_shape(
+    def _convert_output_shape(  # type: ignore
         self,
         formatted_inp: Tuple[Tensor, ...],
         feature_mask: Tuple[Tensor, ...],
@@ -1222,7 +1223,7 @@ class Lime(LimeBase):
     ) -> Tuple[Tensor, ...]: ...
 
     @typing.overload
-    def _convert_output_shape(
+    def _convert_output_shape(  # type: ignore
         self,
         formatted_inp: Tuple[Tensor, ...],
         feature_mask: Tuple[Tensor, ...],
