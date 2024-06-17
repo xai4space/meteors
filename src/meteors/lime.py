@@ -291,7 +291,7 @@ class Lime(Explainer):
         }
 
         return (
-            Lime.__get_band_mask_from_names_dict(image, band_names),  # type: ignore
+            Lime.__get_band_mask_from_names_dict(image, band_names_dict),  # type: ignore
             band_names_simplified,  # type: ignore
         )
 

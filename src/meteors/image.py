@@ -3,18 +3,8 @@ from typing import Sequence
 
 import torch
 import numpy as np
-
-
-from pydantic import (
-    BaseModel,
-    Field,
-    BeforeValidator,
-    AfterValidator,
-    model_validator,
-    ConfigDict,
-    PrivateAttr,
-    ValidationInfo,
-)
+from pydantic import BaseModel, ConfigDict, ValidationInfo, Field, model_validator
+from pydantic.functional_validators import BeforeValidator, AfterValidator
 
 
 import spyndex
@@ -78,7 +68,7 @@ class Image(BaseModel):
         ),
     ]
     binary_mask: Annotated[
-        np.ndarray | torch.Tensor | None,
+        np.ndarray | torch.Tensor | None | str,
         Field(
             kw_only=False,
             validate_default=True,
@@ -95,21 +85,24 @@ class Image(BaseModel):
         ),
     ] = ("C", "H", "W")
 
-    _device: Annotated[torch.device, BeforeValidator(validate_device)] = PrivateAttr(
-        default_factory=None,
-    )
+    _device: Annotated[torch.device, BeforeValidator(validate_device)] = None
 
     @property
     def band_axis(self) -> int:
         band_axis = self.orientation.index("C")
-        assert (
-            len(self.wavelengths) == self.image.shape[self.band_axis]
-        ), "Number of wavelengths should be equal to the number of bands in the image"
         return band_axis
 
-    _rgb_img: torch.tensor | None = PrivateAttr(default_factory=None)
+    _rgb_img: torch.Tensor | None = None
 
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+    @model_validator(mode="after")
+    def validate_wavelengths_shape(self) -> Self:
+        if self.wavelengths.shape[0] != self.image.shape[self.band_axis]:
+            raise ValueError(
+                "Improper length of wavelengths - it should correspond to the number of channels"
+            )
+        return self
 
     @model_validator(mode="after")
     def validate_binary_mask(self) -> Self:
@@ -129,6 +122,10 @@ class Image(BaseModel):
                 repeats=self.image.shape[self.band_axis],
                 dim=self.band_axis,
             )
+        elif isinstance(self.binary_mask, str):
+            raise ValueError(
+                "Mask should be a tensor, numpy ndarray or a string 'artificial' which will create an automatic mask"
+            )
 
         if self.binary_mask is not None and self.binary_mask.shape != self.image.shape:
             raise ValueError("Binary mask should have the same shape as the image")
@@ -139,7 +136,7 @@ class Image(BaseModel):
         self._device = device
         self.image = self.image.to(device)
         if self.binary_mask is not None:
-            if not isinstance(self.binary_mask, np.ndarray):
+            if not isinstance(self.binary_mask, (np.ndarray, str)):
                 self.binary_mask = self.binary_mask.to(device)
         return self
 
