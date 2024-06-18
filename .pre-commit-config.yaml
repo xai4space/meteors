@@ -13,14 +13,6 @@ repos:
       - id: check-json
       - id: check-merge-conflict
       - id: detect-private-key
-  - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.35.1
-    hooks:
-      - id: yamllint
-        args:
-          - --no-warnings
-          - -d
-          - "{extends: relaxed, rules: {line-length: {max: 90}}}"
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.9
     hooks:
@@ -33,6 +25,7 @@ repos:
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
+        args: [--write]
         types_or: [yaml, markdown, html, css, scss, javascript, json]
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
