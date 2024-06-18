@@ -22,7 +22,7 @@ repos:
           - -d
           - "{extends: relaxed, rules: {line-length: {max: 90}}}"
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4
+    rev: v0.4.9
     hooks:
       - id: ruff
         types_or: [python, pyi, jupyter]
@@ -35,17 +35,17 @@ repos:
       - id: prettier
         types_or: [yaml, markdown, html, css, scss, javascript, json]
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
       - id: codespell
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.2
+    rev: v3.16.0
     hooks:
       - id: pyupgrade
         args: [--py38-plus]
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.10.0
-  #   hooks:
-  #     - id: mypy
-  #       #args: [--strict, --ignore-missing-imports]
-  #       additional_dependencies: [pydantic==2.7.1]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        args: [--config-file=pyproject.toml]
+        additional_dependencies: [pydantic==2.7.1]

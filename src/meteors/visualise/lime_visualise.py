@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import List
 
 import matplotlib.figure
 
@@ -67,7 +66,7 @@ def visualise_spatial_attributes(
 
 
 def visualise_spectral_attributes(
-    spectral_attributes: ImageSpectralAttributes | List[ImageSpectralAttributes],
+    spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
     use_pyplot=False,
     color_palette=None,
     show_not_included=False,
@@ -103,7 +102,7 @@ def visualise_spectral_attributes(
 
 
 def visualise_spectral_attributes_by_waveband(
-    spectral_attributes: ImageSpectralAttributes | List[ImageSpectralAttributes],
+    spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
     ax: matplotlib.axes.Axes | None,
     color_palette=None,
     show_not_included=True,
@@ -182,7 +181,7 @@ def visualise_spectral_attributes_by_waveband(
 
 
 def visualise_spectral_attributes_by_magnitude(
-    spectral_attributes: ImageSpectralAttributes | List[ImageSpectralAttributes],
+    spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
     ax: matplotlib.axes.Axes | None,
     color_palette=None,
     annotate_bars=True,

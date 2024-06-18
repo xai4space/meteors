@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from typing_extensions import Annotated, Self
+from typing import Sequence
+
 import torch
 import numpy as np
-from typing import Sequence, Literal, Union
+from pydantic import BaseModel, ConfigDict, ValidationInfo, Field, model_validator
+from pydantic.functional_validators import BeforeValidator, AfterValidator
 
-
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
-from typing_extensions import Annotated, Self
 
 import spyndex
 
@@ -15,17 +16,53 @@ import spyndex
 # TODO width and height in orientation
 
 
+def validate_orientation(value: tuple[str, str, str]) -> tuple[str, str, str]:
+    if "H" not in value or "W" not in value or "C" not in value:
+        raise ValueError("Orientation should contain 'W', 'H' and 'C' in any order")
+    return value
+
+
+def validate_image(image: np.ndarray | torch.Tensor) -> torch.Tensor:
+    if not isinstance(image, (torch.Tensor, np.ndarray)):
+        raise ValueError("Image should be a numpy array or torch tensor")
+
+    if not isinstance(image, torch.Tensor):
+        image = torch.from_numpy(image)
+    return image
+
+
+def validate_device(
+    device: str | torch.device | None, info: ValidationInfo
+) -> torch.device:
+    if device is None:
+        image: torch.Tensor = info.data["image"]
+        device = image.device
+    elif isinstance(device, str):
+        device = torch.device(device)
+    if not isinstance(device, torch.device):
+        raise ValueError("Device should be a string or torch device")
+    return device
+
+
+def validate_wavelengths(wavelengths: np.ndarray | Sequence[int | float]) -> np.ndarray:
+    if not isinstance(wavelengths, np.ndarray):
+        wavelengths = np.array(wavelengths)
+    return wavelengths
+
+
 class Image(BaseModel):
-    image: Annotated[
-        Union[np.ndarray, torch.Tensor],
+    image: Annotated[  # Should always be a first field
+        torch.Tensor,
+        BeforeValidator(validate_image),
         Field(
-            kw_only=False,
-            validate_default=True,
+            kw_only=False,  # Why
+            validate_default=True,  # There is no default value
             description="hyperspectral imaage. Converted to torch tensor.",
         ),
     ]
     wavelengths: Annotated[
-        np.ndarray | Sequence,
+        np.ndarray,
+        BeforeValidator(validate_wavelengths),
         Field(
             kw_only=False,
             validate_default=True,
@@ -33,7 +70,7 @@ class Image(BaseModel):
         ),
     ]
     binary_mask: Annotated[
-        Union[np.ndarray, torch.Tensor, Literal["artificial"]],
+        np.ndarray | torch.Tensor | None | str,
         Field(
             kw_only=False,
             validate_default=True,
@@ -41,57 +78,32 @@ class Image(BaseModel):
         ),
     ] = None
     orientation: Annotated[
-        Sequence[str],
+        tuple[str, str, str],
+        AfterValidator(validate_orientation),
         Field(
             kw_only=False,
             validate_default=True,
             description='orientation of the image - sequence of three one-letter strings in any order: "C", "H", "W" meaning respectively channels, height and width of the image. Defaults to ("C", "H", "W")',
         ),
     ] = ("C", "H", "W")
-    _device: torch.device = None
 
-    band_axis: int | None = None
+    _device: Annotated[torch.device, BeforeValidator(validate_device)] = None
 
-    _rgb_img: torch.tensor = None
+    @property
+    def band_axis(self) -> int:
+        band_axis = self.orientation.index("C")
+        return band_axis
+
+    _rgb_img: torch.Tensor | None = None
 
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
-    @field_validator("orientation", mode="before")
-    @classmethod
-    def validate_orientation(cls, value):
-        assert (
-            len(value) == 3
-        ), "Orientation should be a sequence of 3 elements: 'W', 'H' and 'C' in order of the image dimensions"
-        assert (
-            "H" in value and "W" in value and "C" in value
-        ), "Orientation should contain 'W', 'H' and 'C' in any order"
-        return value
-
-    @field_validator("image", mode="before")
-    @classmethod
-    def validate_image(cls, image):
-        assert (
-            len(image.shape) == 3
-        ), "Image should have 3 dimensions: channels, height and width"
-        if not isinstance(image, torch.Tensor):
-            assert isinstance(
-                image, np.ndarray
-            ), "Image should be a numpy array or torch tensor"
-            image = torch.tensor(image)
-        return image
-
     @model_validator(mode="after")
-    def validate_device(self) -> Self:
-        # if device is not set, then use the image device, if device is passed - moves the image to the device
-        self._device = self.image.device
-        return self
-
-    @model_validator(mode="after")
-    def validate_band_axis(self) -> Self:
-        self.band_axis = self.orientation.index("C")
-        assert (
-            len(self.wavelengths) == self.image.shape[self.band_axis]
-        ), "Number of wavelengths should be equal to the number of bands in the image"
+    def validate_wavelengths_shape(self) -> Self:
+        if self.wavelengths.shape[0] != self.image.shape[self.band_axis]:
+            raise ValueError(
+                "Improper length of wavelengths - it should correspond to the number of channels"
+            )
         return self
 
     @model_validator(mode="after")
@@ -112,22 +124,26 @@ class Image(BaseModel):
                 repeats=self.image.shape[self.band_axis],
                 dim=self.band_axis,
             )
+        elif isinstance(self.binary_mask, str):
+            raise ValueError(
+                "Mask should be a tensor, numpy ndarray or a string 'artificial' which will create an automatic mask"
+            )
 
-        assert (
-            self.binary_mask is None or self.binary_mask.shape == self.image.shape
-        ), "Binary mask should have the same shape as the image"
+        if self.binary_mask is not None and self.binary_mask.shape != self.image.shape:
+            raise ValueError("Binary mask should have the same shape as the image")
         return self
 
-    def to(self, device: torch.device) -> Self:
+    def to(self, device: str | torch.device) -> Self:
         """Move the image to the device"""
         self._device = device
         self.image = self.image.to(device)
         if self.binary_mask is not None:
-            self.binary_mask = self.binary_mask.to(device)
+            if not isinstance(self.binary_mask, (np.ndarray, str)):
+                self.binary_mask = self.binary_mask.to(device)
         return self
 
     def get_rgb_image(
-        self, mask=True, cutoff_min=False, output_band_index: int = None
+        self, mask=True, cutoff_min=False, output_band_index: int | None = None
     ) -> torch.tensor:
         """get an RGB image from hyperspectral image. Useful for plotting
 
@@ -158,6 +174,7 @@ class Image(BaseModel):
             return self._rgb_img
         return torch.moveaxis(self._rgb_img, self.band_axis, output_band_index)
 
+    @property
     def get_flattened_binary_mask(self) -> torch.tensor:
         # here we assume that mask is the same in each channel
         if self.binary_mask is None:

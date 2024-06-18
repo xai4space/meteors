@@ -1,11 +1,13 @@
-import unittest
-
-
+import os
+import sys
 import torch
 
+# TODO: This is a workaround to import the module from the src directory - should be fixed
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 import meteors as mt
 
-# temporary solution
+
+# Temporary solution for wavelengths
 wavelengths = [
     462.08,
     465.27,
@@ -160,25 +162,31 @@ wavelengths = [
 ]
 
 
-class TestLimeMethods(unittest.TestCase):
-    def test_band_mask(self):
-        shape = (150, 240, 240)
-        sample = torch.ones(shape)
+def test_band_mask():
+    shape = (150, 240, 240)
+    sample = torch.ones(shape)
 
-        image = mt.Image(
-            image=sample, wavelengths=wavelengths, orientation=("C", "H", "W"), binary_mask="artificial"
-        )
+    image = mt.Image(
+        image=sample,
+        wavelengths=wavelengths,
+        orientation=("C", "H", "W"),
+        binary_mask="artificial",
+    )
 
-        band_names_list = ["R", "G", "B"]
+    band_names_list = ["R", "G", "B"]
 
-        band_mask, band_names = mt.Lime.get_band_mask(image, band_names_list)
+    band_mask, band_names = mt.Lime.get_band_mask(image, band_names_list)
 
-        self.assertEqual(band_names, {"R": 1, "G": 2, "B": 3}, "There should be only 4 values in the band mask corresponding to R, G, B and background")
-        self.assertEqual(len(torch.unique(band_mask)), 4, "There should be only 4 values in the band mask corresponding to R, G, B and background")
-        self.assertTrue(all(torch.unique(band_mask) == torch.tensor([0, 1, 2, 3])), "There should be only 4 values in the band mask corresponding to R, G, B and background")
-        for c in range(shape[0]):
-            self.assertTrue(len(torch.unique(band_mask[c, :, :])) == 1, "on each channel there should be only one unique number") 
-
-
-if __name__ == "__main__":
-    unittest.main()
+    assert (
+        band_names == {"R": 1, "G": 2, "B": 3}
+    ), "There should be only 4 values in the band mask corresponding to R, G, B, and background"
+    assert (
+        len(torch.unique(band_mask)) == 4
+    ), "There should be only 4 values in the band mask corresponding to R, G, B, and background"
+    assert torch.equal(
+        torch.unique(band_mask), torch.tensor([0, 1, 2, 3])
+    ), "There should be only 4 values in the band mask corresponding to R, G, B, and background"
+    for c in range(shape[0]):
+        assert (
+            len(torch.unique(band_mask[c, :, :])) == 1
+        ), "On each channel there should be only one unique number"

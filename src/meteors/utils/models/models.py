@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Callable, cast, List, Optional
+from typing import Callable, cast
 
 import torch.nn as nn
 from torch import Tensor
@@ -58,7 +58,7 @@ class InterpretableModel(ABC):
 
 
 class LinearModel(nn.Module, InterpretableModel):
-    SUPPORTED_NORMS: List[Optional[str]] = [None, "batch_norm", "layer_norm"]
+    SUPPORTED_NORMS: list[str | None] = [None, "batch_norm", "layer_norm"]
 
     def __init__(self, train_fn: Callable, **kwargs) -> None:
         r"""
@@ -83,21 +83,21 @@ class LinearModel(nn.Module, InterpretableModel):
         """
         super().__init__()
 
-        self.norm: Optional[nn.Module] = None
-        self.linear: Optional[nn.Linear] = None
+        self.norm: nn.Module | None = None
+        self.linear: nn.Linear | None = None
         self.train_fn = train_fn
         self.construct_kwargs = kwargs
 
     def _construct_model_params(
         self,
-        in_features: Optional[int] = None,
-        out_features: Optional[int] = None,
-        norm_type: Optional[str] = None,
+        in_features: int | None = None,
+        out_features: int | None = None,
+        norm_type: str | None = None,
         affine_norm: bool = False,
         bias: bool = True,
-        weight_values: Optional[Tensor] = None,
-        bias_value: Optional[Tensor] = None,
-        classes: Optional[Tensor] = None,
+        weight_values: Tensor | None = None,
+        bias_value: Tensor | None = None,
+        classes: Tensor | None = None,
     ):
         r"""
         Lazily initializes a linear model. This will be called for you in a
@@ -192,7 +192,7 @@ class LinearModel(nn.Module, InterpretableModel):
         assert self.linear is not None
         return self.linear.weight.detach()
 
-    def bias(self) -> Optional[Tensor]:
+    def bias(self) -> Tensor | None:
         r"""
         Returns the bias of the linear model
         """
@@ -200,7 +200,7 @@ class LinearModel(nn.Module, InterpretableModel):
             return None
         return self.linear.bias.detach()
 
-    def classes(self) -> Optional[Tensor]:
+    def classes(self) -> Tensor | None:
         if self.linear is None or self.linear.classes is None:
             return None
         return cast(Tensor, self.linear.classes).detach()
