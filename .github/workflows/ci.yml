@@ -45,9 +45,9 @@ jobs:
         run: |
           python -m pytest --cov=src --cov-report=xml
 
-      # - name: Upload coverage report to Codecov 📈
-      #   uses: codecov/codecov-action@v3
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
-      #     file: ./coverage.xml
-      #     flags: unittests
+      - name: Upload coverage report to Codecov 📈
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          flags: unittests
