@@ -6,10 +6,10 @@ on:
   push:
     branches:
       - main
+      - 3-test-coverage
   pull_request:
     branches:
       - main
-  workflow_dispatch:
   
 jobs:
   test:
