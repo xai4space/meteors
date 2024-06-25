@@ -26,3 +26,4 @@ extra:
 
 watch:
   - src # reload docs for any file changes
+  - examples # reload docs for any file changes
