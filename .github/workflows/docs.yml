@@ -45,9 +45,11 @@ jobs:
           VERSION=$(grep -m 1 'version = ' pyproject.toml | sed -E 's/.*version = "(.*)"/\1/')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Convert Jupyter notebooks to Markdown 📓➡️📄
+      - name: Convert Jupyter examples to Markdown 📓➡️📄
         run: |
-          jupyter nbconvert --to markdown --output-dir=docs/tutorials notebooks/*.ipynb
+          for notebook in examples/*.ipynb; do
+            jupyter nbconvert --to markdown "$notebook" --output-dir docs/tutorial
+          done
 
       - name: Deploy Documentation 🚀
         run: |
