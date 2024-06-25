@@ -39,9 +39,13 @@ jobs:
 
       - name: Convert Jupyter examples to Markdown 📓➡️📄
         run: |
-          for notebook in examples/*.ipynb; do
-            jupyter nbconvert --to markdown "$notebook" --output-dir docs/tutorial
-          done
+          if ls examples/*.ipynb 1> /dev/null 2>&1; then
+            for notebook in examples/*.ipynb; do
+              jupyter nbconvert --to markdown "$notebook" --output-dir docs/tutorial
+            done
+          else
+            echo "No notebooks to convert."
+          fi
 
       - name: Deploy Documentation 🚀
         run: |
