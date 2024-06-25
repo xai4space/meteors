@@ -52,12 +52,14 @@ jobs:
             echo "Directory 'examples' does not exist."
           fi
 
-      - name: Deploy Documentation 🚀
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ env.VERSION }}
+      - name: Setup Docs Deployment 🚀
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Build Docs Website 🌐
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: |
           mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
           mike set-default --push --branch gh-pages latest
