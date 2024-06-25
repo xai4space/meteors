@@ -11,21 +11,23 @@ jobs:
     steps:
       - name: Checkout code 📂
         uses: actions/checkout@v4
-
+      
       - name: Setup Rye 🌾
         id: setup-rye
         uses: eifinger/setup-rye@v3
         with:
           version: "0.35.0"
-          enable-cache: true
-          cache-prefix: "3.10"
 
       - name: Pin python-version 3.10 📌
-        if: steps.setup-rye.outputs.cache-hit != 'true'
         run: rye pin 3.10
+      - name: Cache dependencies 📦
+        uses: actions/cache@v4
+        with:
+          path: ./venv
+          key: venv-3.10-${{ hashFiles('requirements.lock') }}-${{ hashFiles('requirements-dev.lock') }}
 
       - name: Install dependencies 🛠️
-        if: steps.setup-rye.outputs.cache-hit != 'true'
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: |
           rye sync --no-lock
 
