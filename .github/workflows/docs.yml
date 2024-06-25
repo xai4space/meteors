@@ -23,6 +23,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-docs.txt
 
+      - name: Get the README 📝
+        run: |
+          cp README.md docs/index.md
+
       - name: Get the ChangeLog 📝
         run: |
           cp changelog.md docs/changelog.md
