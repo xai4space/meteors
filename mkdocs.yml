@@ -1,0 +1,28 @@
+site_name: Meteors
+
+nav:
+  - Home 🏠: index.md
+  - Quickstart 🚀: quickstart.md
+  # - Tutorials 📚:
+  - API Reference 📖: reference.md
+  - Changelog 📝: changelog.md
+  - How-To Guides 📚: how-to-guides.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_root_heading: true
+            show_source: true
+  - mike:
+
+theme: material
+extra:
+  version:
+    provider: mike
+
+watch:
+  - src # reload docs for any file changes

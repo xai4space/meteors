@@ -1,0 +1,60 @@
+name: Docs
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code 📂
+        uses: actions/checkout@v3
+
+      - name: Set up Python 🐍
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+          cache: pip # Cache the pip dependencies
+
+      - name: Install dependencies 🛠️
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-docs.txt
+
+      - name: Get the README 📝
+        run: |
+          cp README.md docs/index.md
+
+      - name: Get the ChangeLog 📝
+        run: |
+          cp changelog.md docs/changelog.md
+
+      - name: Get Version from VERSION file 🏷️
+        id: get_version
+        run: |
+          VERSION=$(grep -m 1 'version = ' pyproject.toml | sed -E 's/.*version = "(.*)"/\1/')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Convert Jupyter notebooks to Markdown 📓➡️📄
+        run: |
+          jupyter nbconvert --to markdown --output-dir=docs/tutorials notebooks/*.ipynb
+
+      - name: Deploy Documentation 🚀
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
+          mike set-default --push --branch gh-pages latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ env.VERSION }}
+
+      # - name: Push changes to gh-pages 📤
+      #   run: |
+      #     git config --global user.name "github-actions[bot]"
+      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     VERSION: ${{ env.VERSION }}
