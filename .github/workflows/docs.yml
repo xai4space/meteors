@@ -47,24 +47,27 @@ jobs:
 
       - name: Convert Jupyter examples to Markdown 📓➡️📄
         run: |
-          for notebook in examples/*.ipynb; do
-            jupyter nbconvert --to markdown "$notebook" --output-dir docs/tutorial
-          done
+          mkdir -p docs/tutorials
+          if [ -d "examples" ]; then
+            if ls examples/*.ipynb 1> /dev/null 2>&1; then
+              for notebook in examples/*.ipynb; do
+                jupyter nbconvert --to markdown "$notebook" --output-dir docs/tutorials
+              done
+            else
+              echo "No notebooks to convert."
+            fi
+          else
+            echo "Directory 'examples' does not exist."
+          fi
 
-      - name: Deploy Documentation 🚀
+      - name: Setup Docs Deployment 🚀
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Build Docs Website 🌐
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: |
           mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
           mike set-default --push --branch gh-pages latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ env.VERSION }}
-
-      # - name: Push changes to gh-pages 📤
-      #   run: |
-      #     git config --global user.name "github-actions[bot]"
-      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     VERSION: ${{ env.VERSION }}
