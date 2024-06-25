@@ -37,20 +37,24 @@ jobs:
           VERSION=$(grep -m 1 'version = ' pyproject.toml | sed -E 's/.*version = "(.*)"/\1/')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: EConvert Jupyter notebooks to Markdown 📓➡️📄
+      - name: Convert Jupyter notebooks to Markdown 📓➡️📄
         run: |
           jupyter nbconvert --to markdown --output-dir=docs/tutorials notebooks/*.ipynb
 
-      - name: Build documentation 📄
-        run: |
-          mkdocs build
-
-      - name: Deploy with Mike
+      - name: Deploy Documentation 🚀
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          mike deploy --push --update-alias ${VERSION} --remote origin --branch gh-pages --force
-          mike set-default --push ${VERSION} --remote origin --branch gh-pages --force
-        env: # latest alias
+          mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
+          mike set-default --push --branch gh-pages latest
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ env.VERSION }}
+
+      # - name: Push changes to gh-pages 📤
+      #   run: |
+      #     git config --global user.name "github-actions[bot]"
+      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     VERSION: ${{ env.VERSION }}
