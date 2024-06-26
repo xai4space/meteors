@@ -8,8 +8,8 @@ on:
 jobs:
   docs:
     runs-on: ubuntu-latest
-    # permissions:
-    #   contents: write
+    permissions:
+      contents: write
     #   packages: write
     #   pages: write
 
