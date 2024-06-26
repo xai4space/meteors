@@ -5,12 +5,10 @@ on:
     types: [published]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-
 jobs:
   docs:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code 📂
