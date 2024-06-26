@@ -8,10 +8,14 @@ on:
 jobs:
   docs:
     runs-on: macos-latest
+    permissions:
+      contents: write # This is required to push the changes to the repository
     steps:
       - name: Checkout code 📂
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Setup Rye 🌾
         id: setup-rye
         uses: eifinger/setup-rye@v3
@@ -60,14 +64,9 @@ jobs:
             echo "Directory 'examples' does not exist."
           fi
 
-      - name: Setup Docs Deployment 🚀
+      - name: Build Docs Website 🌐
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Build Docs Website 🌐
-        env:
-          VERSION: ${{ env.VERSION }}
-        run: |
           mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
           mike set-default --push --branch gh-pages latest
