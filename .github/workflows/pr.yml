@@ -7,6 +7,8 @@ jobs:
   validate_title:
     name: Validate PR title
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: amannn/action-semantic-pull-request@v5
         env:
@@ -26,6 +28,8 @@ jobs:
 
   add_labels:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -74,5 +78,3 @@ jobs:
         uses: actions-ecosystem/action-add-labels@v1
         with:
           labels: "enhancement :hammer:"
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
