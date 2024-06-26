@@ -7,12 +7,14 @@ on:
 
 jobs:
   docs:
-    permissions:
-      contents: write
+    # permissions:
+    #   contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code 📂
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 🐍
         uses: actions/setup-python@v4
@@ -54,14 +56,14 @@ jobs:
             echo "Directory 'examples' does not exist."
           fi
 
-      - name: Setup Docs Deployment 🚀
+      # - name: Setup Docs Deployment 🚀
+      #   run: |
+      #     git config --global user.name "github-actions[bot]"
+      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Build Docs Website 🌐
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Build Docs Website 🌐
-        env:
-          VERSION: ${{ env.VERSION }}
-        run: |
           mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
           mike set-default --push --branch gh-pages latest
