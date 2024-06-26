@@ -7,9 +7,12 @@ on:
 
 jobs:
   docs:
+    runs-on: ubuntu-latest
     # permissions:
     #   contents: write
-    runs-on: ubuntu-latest
+    #   packages: write
+    #   pages: write
+
     steps:
       - name: Checkout code 📂
         uses: actions/checkout@v3
