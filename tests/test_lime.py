@@ -299,8 +299,6 @@ def test_dummy_explainer():
 
     lime.get_spatial_attributes(image=image, segmentation_mask=segmentation_mask)
 
-    spatial_attributes = lime.get_spatial_attributes(
-        image=image, segmentation_method="slic"
-    )
+    lime.get_spatial_attributes(image=image, segmentation_method="slic", num_interpret_features = 3)
+    lime.get_spatial_attributes(image=image, segmentation_method="patch")
 
-    mt.visualise.visualise_spatial_attributes(spatial_attributes)

@@ -2,6 +2,8 @@ from .image import Image
 
 from .lime import Lime, ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
 
+from . import utils
+from . import visualise
 
 __all__ = [
     "Image",
