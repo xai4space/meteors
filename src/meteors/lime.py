@@ -448,7 +448,7 @@ class Lime(Explainer):
                 and isinstance(segment_range[1], (int, float))
             ):
                 # cast into Sequence[Tuple[float, float]] in case type is Tuple[float, float]
-                segment_range = [segment_range] # type: ignore
+                segment_range = [segment_range]  # type: ignore
                 band_ranges_wavelengths[segment_label] = segment_range  # type: ignore
 
             for segment_part in segment_range:
@@ -503,9 +503,8 @@ class Lime(Explainer):
                 and isinstance(segment_range[1], int)
             ):
                 # cast into Sequence[Tuple[int, int]] in case type is Tuple[int, int]
-                segment_range = [segment_range] # type: ignore
+                segment_range = [segment_range]  # type: ignore
                 band_ranges_indices[segment_label] = segment_range  # type: ignore
-
 
             for segment_part in segment_range:
                 if not isinstance(segment_part, Sequence) or len(segment_part) != 2:
