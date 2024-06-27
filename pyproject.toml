@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Explanations of models for Hyperspectral data"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 classifiers = [
   "Development Status :: 0 - prealpha",
@@ -16,7 +16,6 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
-
 
 
 dynamic = ["dependencies"]
@@ -31,4 +30,4 @@ plugins = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/MI2DataLab/pineapple/"
+Homepage = "https://github.com/xai4space/meteors/"
