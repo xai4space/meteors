@@ -713,7 +713,7 @@ class Lime(Explainer):
             show_progress=True,
             return_input_shape=True,
         )
-        
+
         if score < 0 or score > 1:
             loguru.logger.warning(
                 "Score is out of range [0, 1]. Clamping the score value to the range"
@@ -721,7 +721,6 @@ class Lime(Explainer):
             score = torch.clamp(
                 score, 0, 1
             )  # it seems that scikit learn sometimes returns negative values
-
 
         spatial_attribution = ImageSpatialAttributes(
             image=image,
