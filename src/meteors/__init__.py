@@ -9,7 +9,7 @@ __all__ = [
     "ImageAttributes",
     "ImageSpatialAttributes",
     "ImageSpectralAttributes",
-    "models",
+    "utils",
     "visualise",
 ]
 
