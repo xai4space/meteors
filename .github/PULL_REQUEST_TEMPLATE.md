@@ -7,16 +7,17 @@ Thank you for contributing to meteors! Please follow the guidelines below to ens
 - [ ] **PR Title**: `"semantic tag: description"`
 
   **Package**: Use the appropriate semantic tag for your PR:
-    - `feat`: Implementation of a new feature.
-    - `fix`: A bug fix.
-    - `docs`: Only the documentation is being changed, the code is left intact.
-    - `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc).
-    - `refactor`: A code change that neither fixes a bug nor adds a feature.
-    - `perf`: A code change that improves performance.
-    - `test`: Adding missing tests or correcting existing tests.
-    - `chore`: Changes to the build process or auxiliary tools and libraries such as documentation generation.
-    - `build`: Changes that affect the build system or external dependencies.
-  
+
+  - `feat`: Implementation of a new feature.
+  - `fix`: A bug fix.
+  - `docs`: Only the documentation is being changed, the code is left intact.
+  - `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc).
+  - `refactor`: A code change that neither fixes a bug nor adds a feature.
+  - `perf`: A code change that improves performance.
+  - `test`: Adding missing tests or correcting existing tests.
+  - `chore`: Changes to the build process or auxiliary tools and libraries such as documentation generation.
+  - `build`: Changes that affect the build system or external dependencies.
+
   **Example**: `"fix: typo in README.md"`
 
 - [ ] **Related Issue(s)**: If your PR fixes an issue, please link it in the PR description.
