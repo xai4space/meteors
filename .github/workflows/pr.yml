@@ -1,0 +1,80 @@
+name: PR Labeler
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+
+jobs:
+  validate_title:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            fix
+            feat
+            docs
+            style
+            refactor
+            perf
+            test
+            chore
+            build
+          requireScope: false
+
+  add_labels:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Add fix label
+        if: startsWith(github.event.pull_request.title, 'fix:')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: "fix :medical_symbol:"
+      - name: Add feature label
+        if: startsWith(github.event.pull_request.title, 'feat:')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: "enhancement :hammer:"
+      - name: Add docs label
+        if: startsWith(github.event.pull_request.title, 'docs:')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: "documentation :books:"
+      - name: Add style label
+        if: startsWith(github.event.pull_request.title, 'style:')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: "chore :bellhop_bell:"
+      - name: Add refactor label
+        if: startsWith(github.event.pull_request.title, 'refactor:')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: "chore :bellhop_bell:"
+      - name: Add perf label
+        if: startsWith(github.event.pull_request.title, 'perf:')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: "chore :bellhop_bell:"
+      - name: Add test label
+        if: startsWith(github.event.pull_request.title, 'test:')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: "chore :bellhop_bell:"
+      - name: Add chore label
+        if: startsWith(github.event.pull_request.title, 'chore:')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: "chore :bellhop_bell:"
+      - name: Add build label
+        if: startsWith(github.event.pull_request.title, 'build:')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: "enhancement :hammer:"
