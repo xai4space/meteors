@@ -31,9 +31,7 @@ def validate_image(image: np.ndarray | torch.Tensor) -> torch.Tensor:
     return image
 
 
-def validate_device(
-    device: str | torch.device | None, info: ValidationInfo
-) -> torch.device:
+def validate_device(device: str | torch.device | None, info: ValidationInfo) -> torch.device:
     if device is None:
         image: torch.Tensor = info.data["image"]
         device = image.device
@@ -101,9 +99,7 @@ class Image(BaseModel):
     @model_validator(mode="after")
     def validate_wavelengths_shape(self) -> Self:
         if self.wavelengths.shape[0] != self.image.shape[self.band_axis]:
-            raise ValueError(
-                "Improper length of wavelengths - it should correspond to the number of channels"
-            )
+            raise ValueError("Improper length of wavelengths - it should correspond to the number of channels")
         return self
 
     @model_validator(mode="after")
@@ -116,9 +112,9 @@ class Image(BaseModel):
             self.binary_mask = torch.tensor(self.binary_mask, device=self._device).int()
 
         if isinstance(self.binary_mask, str) and self.binary_mask == "artificial":
-            self.binary_mask = torch.index_select(
-                self.image, 0, torch.tensor([0], device=self._device)
-            ).bool()[0]  # get the first channel and encode it to bools
+            self.binary_mask = torch.index_select(self.image, 0, torch.tensor([0], device=self._device)).bool()[
+                0
+            ]  # get the first channel and encode it to bools
             self.binary_mask = torch.repeat_interleave(
                 torch.unsqueeze(self.binary_mask, dim=self.band_axis),
                 repeats=self.image.shape[self.band_axis],
@@ -142,9 +138,7 @@ class Image(BaseModel):
                 self.binary_mask = self.binary_mask.to(device)
         return self
 
-    def get_rgb_image(
-        self, mask=True, cutoff_min=False, output_band_index: int | None = None
-    ) -> torch.tensor:
+    def get_rgb_image(self, mask=True, cutoff_min=False, output_band_index: int | None = None) -> torch.tensor:
         """get an RGB image from hyperspectral image. Useful for plotting
 
         Args:
@@ -163,10 +157,7 @@ class Image(BaseModel):
             self._rgb_img = self._get_rgb_img(mask=mask, cutoff_min=cutoff_min)
 
         # recalculate the image
-        if (
-            self._rgb_img_params["mask"] != mask
-            or self._rgb_img_params["cutoff_min"] != cutoff_min
-        ):
+        if self._rgb_img_params["mask"] != mask or self._rgb_img_params["cutoff_min"] != cutoff_min:
             self._rgb_img_params = {"mask": mask, "cutoff_min": cutoff_min}
             self._rgb_img = self._get_rgb_img(mask=mask, cutoff_min=cutoff_min)
 
@@ -181,37 +172,27 @@ class Image(BaseModel):
             return None
 
         transposed_binary_mask = (
-            self.binary_mask
-            if self.band_axis == 2
-            else torch.moveaxis(self.binary_mask, self.band_axis, 2)
+            self.binary_mask if self.band_axis == 2 else torch.moveaxis(self.binary_mask, self.band_axis, 2)
         )  # move channel axis to the back
         return transposed_binary_mask[:, :, 0]
 
-    def select_single_band_from_name(
-        self, band_name, method="center", mask=True, cutoff_min=False, normalize=True
-    ):
+    def select_single_band_from_name(self, band_name, method="center", mask=True, cutoff_min=False, normalize=True):
         band = spyndex.bands.get(band_name)
         assert band is not None, f"Band {band_name} not found"
 
         min_wave = band.min_wavelength
         max_wave = band.max_wavelength
 
-        selected_wavelengths = self.wavelengths[
-            (self.wavelengths >= min_wave) & (self.wavelengths <= max_wave)
-        ]
+        selected_wavelengths = self.wavelengths[(self.wavelengths >= min_wave) & (self.wavelengths <= max_wave)]
         if method == "center":
             start_index = np.where(self.wavelengths == selected_wavelengths[0])[0][0]
 
             if self.binary_mask is not None and mask:
                 transposed_binary_mask = (
-                    self.binary_mask
-                    if self.band_axis == 2
-                    else torch.moveaxis(self.binary_mask, self.band_axis, 2)
+                    self.binary_mask if self.band_axis == 2 else torch.moveaxis(self.binary_mask, self.band_axis, 2)
                 )  # move channel axis to the back
             transposed_image = (
-                self.image
-                if self.band_axis == 2
-                else torch.moveaxis(self.image, self.band_axis, 2)
+                self.image if self.band_axis == 2 else torch.moveaxis(self.image, self.band_axis, 2)
             )  # move channel axis to the back
 
             center_band = len(selected_wavelengths) // 2
@@ -227,9 +208,7 @@ class Image(BaseModel):
                 wave = (wave - wave_min) / (wave.max() - wave_min)
 
                 if cutoff_min:
-                    wave[wave == wave.min] = (
-                        0  # the values that equaled to 0 previously
-                    )
+                    wave[wave == wave.min] = 0  # the values that equaled to 0 previously
 
             if self.binary_mask is not None and mask:
                 wave = wave * (transposed_binary_mask[:, :, band_index])
@@ -241,9 +220,7 @@ class Image(BaseModel):
     def _get_rgb_img(self, mask=True, cutoff_min=False) -> torch.tensor:
         return torch.stack(
             [
-                self.select_single_band_from_name(
-                    band, normalize=True, mask=mask, cutoff_min=cutoff_min
-                )
+                self.select_single_band_from_name(band, normalize=True, mask=mask, cutoff_min=cutoff_min)
                 for band in ["R", "G", "B"]
             ],
             axis=self.band_axis,

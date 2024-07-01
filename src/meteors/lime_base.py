@@ -422,9 +422,7 @@ class LimeBase(PerturbationAttribution):
             >>> attr_coefs = lime_attr.attribute(input, target=1, kernel_width=1.1)
         """
         with torch.no_grad():
-            inp_tensor = (
-                cast(Tensor, inputs) if isinstance(inputs, Tensor) else inputs[0]
-            )
+            inp_tensor = cast(Tensor, inputs) if isinstance(inputs, Tensor) else inputs[0]
             device = inp_tensor.device
 
             interpretable_inps = []
@@ -451,9 +449,7 @@ class LimeBase(PerturbationAttribution):
                     try:
                         curr_sample = next(perturb_generator)
                     except StopIteration:
-                        warnings.warn(
-                            "Generator completed prior to given n_samples iterations!"
-                        )
+                        warnings.warn("Generator completed prior to given n_samples iterations!")
                         break
                 else:
                     curr_sample = self.perturb_func(inputs, **kwargs)
@@ -472,13 +468,9 @@ class LimeBase(PerturbationAttribution):
                             curr_sample, inputs, **kwargs
                         )
                     )
-                curr_sim = self.similarity_func(
-                    inputs, curr_model_inputs[-1], interpretable_inps[-1], **kwargs
-                )
+                curr_sim = self.similarity_func(inputs, curr_model_inputs[-1], interpretable_inps[-1], **kwargs)
                 similarities.append(
-                    curr_sim.flatten()
-                    if isinstance(curr_sim, Tensor)
-                    else torch.tensor([curr_sim], device=device)
+                    curr_sim.flatten() if isinstance(curr_sim, Tensor) else torch.tensor([curr_sim], device=device)
                 )
                 if len(curr_model_inputs) == perturbations_per_eval:
                     if expanded_additional_args is None:
@@ -520,19 +512,11 @@ class LimeBase(PerturbationAttribution):
                 attr_progress.close()
 
             combined_interp_inps = torch.cat(interpretable_inps).float()
-            combined_outputs = (
-                torch.cat(outputs)
-                if len(outputs[0].shape) > 0
-                else torch.stack(outputs)
-            ).float()
+            combined_outputs = (torch.cat(outputs) if len(outputs[0].shape) > 0 else torch.stack(outputs)).float()
             combined_sim = (
-                torch.cat(similarities)
-                if len(similarities[0].shape) > 0
-                else torch.stack(similarities)
+                torch.cat(similarities) if len(similarities[0].shape) > 0 else torch.stack(similarities)
             ).float()
-            dataset = TensorDataset(
-                combined_interp_inps, combined_outputs, combined_sim
-            )
+            dataset = TensorDataset(combined_interp_inps, combined_outputs, combined_sim)
             self.interpretable_model.fit(DataLoader(dataset, batch_size=batch_count))
             if hasattr(self.interpretable_model, "to"):
                 self.interpretable_model.to(device)
@@ -560,8 +544,7 @@ class LimeBase(PerturbationAttribution):
         )
         if isinstance(model_out, Tensor):
             assert model_out.numel() == len(curr_model_inputs), (
-                "Number of outputs is not appropriate, must return "
-                "one output per perturbed input"
+                "Number of outputs is not appropriate, must return " "one output per perturbed input"
             )
         if isinstance(model_out, Tensor):
             return model_out.flatten()
@@ -580,12 +563,8 @@ class LimeBase(PerturbationAttribution):
 
 
 def default_from_interp_rep_transform(curr_sample, original_inputs, **kwargs):
-    assert (
-        "feature_mask" in kwargs
-    ), "Must provide feature_mask to use default interpretable representation transform"
-    assert (
-        "baselines" in kwargs
-    ), "Must provide baselines to use default interpretable representation transform"
+    assert "feature_mask" in kwargs, "Must provide feature_mask to use default interpretable representation transform"
+    assert "baselines" in kwargs, "Must provide baselines to use default interpretable representation transform"
     feature_mask = kwargs["feature_mask"]
     if isinstance(feature_mask, Tensor):
         binary_mask = curr_sample[0][feature_mask].bool()
@@ -594,9 +573,7 @@ def default_from_interp_rep_transform(curr_sample, original_inputs, **kwargs):
             + (~binary_mask).to(original_inputs.dtype) * kwargs["baselines"]
         )
     else:
-        binary_mask = tuple(
-            curr_sample[0][feature_mask[j]].bool() for j in range(len(feature_mask))
-        )
+        binary_mask = tuple(curr_sample[0][feature_mask[j]].bool() for j in range(len(feature_mask)))
         return tuple(
             binary_mask[j].to(original_inputs[j].dtype) * original_inputs[j]
             + (~binary_mask[j]).to(original_inputs[j].dtype) * kwargs["baselines"][j]
@@ -604,9 +581,7 @@ def default_from_interp_rep_transform(curr_sample, original_inputs, **kwargs):
         )
 
 
-def get_exp_kernel_similarity_function(
-    distance_mode: str = "cosine", kernel_width: float = 1.0
-) -> Callable:
+def get_exp_kernel_similarity_function(distance_mode: str = "cosine", kernel_width: float = 1.0) -> Callable:
     r"""
     This method constructs an appropriate similarity function to compute
     weights for perturbed sample in LIME. Distance between the original
@@ -668,26 +643,15 @@ def default_perturb_func(original_inp, **kwargs):
 
 def construct_feature_mask(feature_mask, formatted_inputs):
     if feature_mask is None:
-        feature_mask, num_interp_features = _construct_default_feature_mask(
-            formatted_inputs
-        )
+        feature_mask, num_interp_features = _construct_default_feature_mask(formatted_inputs)
     else:
         feature_mask = _format_tensor_into_tuples(feature_mask)
         min_interp_features = int(
-            min(
-                torch.min(single_mask).item()
-                for single_mask in feature_mask
-                if single_mask.numel()
-            )
+            min(torch.min(single_mask).item() for single_mask in feature_mask if single_mask.numel())
         )
         if min_interp_features != 0:
-            warnings.warn(
-                "Minimum element in feature mask is not 0, shifting indices to"
-                " start at 0."
-            )
-            feature_mask = tuple(
-                single_mask - min_interp_features for single_mask in feature_mask
-            )
+            warnings.warn("Minimum element in feature mask is not 0, shifting indices to" " start at 0.")
+            feature_mask = tuple(single_mask - min_interp_features for single_mask in feature_mask)
 
         num_interp_features = _get_max_feature_index(feature_mask) + 1
     return feature_mask, num_interp_features
@@ -1103,9 +1067,7 @@ class Lime(LimeBase):
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
         bsz = formatted_inputs[0].shape[0]
 
-        feature_mask, num_interp_features = construct_feature_mask(
-            feature_mask, formatted_inputs
-        )
+        feature_mask, num_interp_features = construct_feature_mask(feature_mask, formatted_inputs)
 
         if num_interp_features > 10000:
             warnings.warn(
@@ -1118,9 +1080,7 @@ class Lime(LimeBase):
         coefs: Tensor
         r2s: Tensor
         if bsz > 1:
-            test_output = _run_forward(
-                self.forward_func, inputs, target, additional_forward_args
-            )
+            test_output = _run_forward(self.forward_func, inputs, target, additional_forward_args)
             if isinstance(test_output, Tensor) and torch.numel(test_output) > 1:
                 if torch.numel(test_output) == bsz:
                     warnings.warn(
@@ -1152,12 +1112,8 @@ class Lime(LimeBase):
                             additional_forward_args=curr_additional_args,
                             n_samples=n_samples,
                             perturbations_per_eval=perturbations_per_eval,
-                            baselines=curr_baselines
-                            if is_inputs_tuple
-                            else curr_baselines[0],
-                            feature_mask=curr_feature_mask
-                            if is_inputs_tuple
-                            else curr_feature_mask[0],
+                            baselines=curr_baselines if is_inputs_tuple else curr_baselines[0],
+                            feature_mask=curr_feature_mask if is_inputs_tuple else curr_feature_mask[0],
                             num_interp_features=num_interp_features,
                             show_progress=show_progress,
                             **kwargs,
@@ -1184,8 +1140,7 @@ class Lime(LimeBase):
                     )
             else:
                 assert perturbations_per_eval == 1, (
-                    "Perturbations per eval must be 1 when forward function"
-                    "returns single value per batch!"
+                    "Perturbations per eval must be 1 when forward function" "returns single value per batch!"
                 )
 
         coefs, r2s = super().attribute.__wrapped__(
@@ -1241,14 +1196,8 @@ class Lime(LimeBase):
         is_inputs_tuple: bool,
     ) -> Union[Tensor, Tuple[Tensor, ...]]:
         coefs = coefs.flatten()
-        attr = [
-            torch.zeros_like(single_inp, dtype=torch.float)
-            for single_inp in formatted_inp
-        ]
+        attr = [torch.zeros_like(single_inp, dtype=torch.float) for single_inp in formatted_inp]
         for tensor_ind in range(len(formatted_inp)):
             for single_feature in range(num_interp_features):
-                attr[tensor_ind] += (
-                    coefs[single_feature].item()
-                    * (feature_mask[tensor_ind] == single_feature).float()
-                )
+                attr[tensor_ind] += coefs[single_feature].item() * (feature_mask[tensor_ind] == single_feature).float()
         return _format_output(is_inputs_tuple, tuple(attr))

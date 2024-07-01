@@ -108,14 +108,10 @@ class ImageSpatialAttributes(ImageAttributes):
     @model_validator(mode="after")
     def validate_segmentation_mask(self) -> Self:
         if isinstance(self.segmentation_mask, np.ndarray):
-            self.segmentation_mask = torch.tensor(
-                self.segmentation_mask, device=self._device
-            )
+            self.segmentation_mask = torch.tensor(self.segmentation_mask, device=self._device)
 
         if self.segmentation_mask.device != self._device:
-            self.segmentation_mask = self.segmentation_mask.to(
-                self._device
-            )  # move to the device
+            self.segmentation_mask = self.segmentation_mask.to(self._device)  # move to the device
 
         return self
 
@@ -127,17 +123,13 @@ class ImageSpatialAttributes(ImageAttributes):
     def get_flattened_segmentation_mask(self) -> torch.tensor:
         """segmentation mask is after all only two dimensional tensor with some repeated values, this function returns only two-dimensional tensor"""
         if self._flattened_segmentation_mask is None:
-            self._flattened_segmentation_mask = self.segmentation_mask.select(
-                dim=self.image.band_axis, index=0
-            )
+            self._flattened_segmentation_mask = self.segmentation_mask.select(dim=self.image.band_axis, index=0)
         return self._flattened_segmentation_mask
 
     def get_flattened_attributes(self) -> torch.tensor:
         """attributions for spatial case are after all only two dimensional tensor with some repeated values, this function returns only two-dimensional tensor"""
         if self._flattened_attributes is None:
-            self._flattened_attributes = self.attributes.select(
-                dim=self.image.band_axis, index=0
-            )
+            self._flattened_attributes = self.attributes.select(dim=self.image.band_axis, index=0)
         return self._flattened_attributes
 
 
@@ -184,9 +176,9 @@ class ImageSpectralAttributes(ImageAttributes):
         if self._flattened_band_mask is None:
             dims_to_select = [2, 1, 0]
             dims_to_select.remove(self.image.band_axis)
-            self._flattened_band_mask = self.band_mask.select(
-                dim=dims_to_select[0], index=0
-            ).select(dim=dims_to_select[1], index=0)
+            self._flattened_band_mask = self.band_mask.select(dim=dims_to_select[0], index=0).select(
+                dim=dims_to_select[1], index=0
+            )
         return self._flattened_band_mask
 
     def get_flattened_attributes(self) -> torch.tensor:
@@ -194,9 +186,9 @@ class ImageSpectralAttributes(ImageAttributes):
         if self._flattened_attributes is None:
             dims_to_select = [2, 1, 0]
             dims_to_select.remove(self.image.band_axis)
-            self._flattened_attributes = self.attributes.select(
-                dim=dims_to_select[0], index=0
-            ).select(dim=dims_to_select[1], index=0)
+            self._flattened_attributes = self.attributes.select(dim=dims_to_select[0], index=0).select(
+                dim=dims_to_select[1], index=0
+            )
         return self._flattened_attributes
 
 
@@ -252,13 +244,9 @@ class Lime(Explainer):
         segmentation_method_params={},
     ) -> torch.Tensor:
         if segmentation_method == "slic":
-            return Lime.__get_slick_segmentation_mask(
-                image, **segmentation_method_params
-            )
+            return Lime.__get_slick_segmentation_mask(image, **segmentation_method_params)
         if segmentation_method == "patch":
-            return Lime.__get_patch_segmentation_mask(
-                image, **segmentation_method_params
-            )
+            return Lime.__get_patch_segmentation_mask(image, **segmentation_method_params)
         raise NotImplementedError("Only slic and patch methods are supported for now")
 
     @staticmethod
@@ -276,17 +264,12 @@ class Lime(Explainer):
         """
 
         if isinstance(band_names, dict):
-            band_names_dict = {
-                tuple(k) if not isinstance(k, str) else k: v
-                for k, v in band_names.items()
-            }
+            band_names_dict = {tuple(k) if not isinstance(k, str) else k: v for k, v in band_names.items()}
         else:
             band_names_dict = Lime.__get_band_dict_from_list(band_names)  # type: ignore
 
         band_names_simplified = {
-            str(segment[0])
-            if isinstance(segment, tuple) and len(segment) == 1
-            else segment: value
+            str(segment[0]) if isinstance(segment, tuple) and len(segment) == 1 else segment: value
             for segment, value in band_names_dict.items()
         }
 
@@ -309,15 +292,11 @@ class Lime(Explainer):
         return band_names_dict
 
     @staticmethod
-    def __get_band_mask_from_names_dict(
-        image: Image, band_names: dict[tuple[str, ...] | str, int]
-    ) -> torch.Tensor:
+    def __get_band_mask_from_names_dict(image: Image, band_names: dict[tuple[str, ...] | str, int]) -> torch.Tensor:
         grouped_band_names = Lime.__get_grouped_band_names(band_names)
 
         device = image.image.device
-        resolution_segments = Lime.__get_resolution_segments(
-            image.wavelengths, grouped_band_names, device=device
-        )
+        resolution_segments = Lime.__get_resolution_segments(image.wavelengths, grouped_band_names, device=device)
 
         axis = [0, 1, 2]
         axis.remove(image.band_axis)
@@ -347,9 +326,7 @@ class Lime(Explainer):
 
             for band_name in segment:
                 if band_name in spyndex.indices:
-                    band_names_segment = band_names_segment + (
-                        spyndex.indices[band_name].bands
-                    )
+                    band_names_segment = band_names_segment + (spyndex.indices[band_name].bands)
                 elif band_name in spyndex.bands:
                     band_names_segment.append(band_name)
                 else:
@@ -367,9 +344,7 @@ class Lime(Explainer):
         band_names: dict[tuple[str, ...], int],
         device="cpu",
     ) -> torch.Tensor:
-        resolution_segments = torch.zeros(
-            len(wavelengths), dtype=torch.int64, device=device
-        )
+        resolution_segments = torch.zeros(len(wavelengths), dtype=torch.int64, device=device)
 
         segments = list(band_names.keys())
         for segment in segments[::-1]:
@@ -385,9 +360,7 @@ class Lime(Explainer):
         for segment in band_names.keys():
             if band_names[segment] not in unique_segments:
                 display_name = segment
-                print(
-                    f"bands {display_name} not found in the wavelengths or bands are overlapping"
-                )
+                print(f"bands {display_name} not found in the wavelengths or bands are overlapping")
         return resolution_segments
 
     def get_spatial_attributes(
@@ -400,14 +373,10 @@ class Lime(Explainer):
     ) -> ImageSpatialAttributes:
         assert self._lime is not None, "Lime object not initialized"
 
-        assert (
-            self.explainable_model.problem_type == "regression"
-        ), "For now only the regression problem is supported"
+        assert self.explainable_model.problem_type == "regression", "For now only the regression problem is supported"
 
         if segmentation_mask is None:
-            segmentation_mask = self.get_segmentation_mask(
-                image, segmentation_method, segmentation_method_params
-            )
+            segmentation_mask = self.get_segmentation_mask(image, segmentation_method, segmentation_method_params)
 
         if isinstance(image.image, np.ndarray):
             image.image = torch.tensor(image.image, device=self._device)
@@ -462,9 +431,7 @@ class Lime(Explainer):
     ) -> ImageSpectralAttributes:
         assert self._lime is not None, "Lime object not initialized"
 
-        assert (
-            self.explainable_model.problem_type == "regression"
-        ), "For now only the regression problem is supported"
+        assert self.explainable_model.problem_type == "regression", "For now only the regression problem is supported"
 
         if isinstance(image.image, np.ndarray):
             image.image = torch.tensor(image.image, device=self._device)
@@ -524,9 +491,7 @@ class Lime(Explainer):
         return spectral_attribution
 
     @staticmethod
-    def __get_slick_segmentation_mask(
-        image: Image, num_interpret_features: int, *args, **kwargs
-    ) -> torch.tensor:
+    def __get_slick_segmentation_mask(image: Image, num_interpret_features: int, *args, **kwargs) -> torch.tensor:
         device = image.image.device
         numpy_image = np.array(image.image.to("cpu"))
         segmentation_mask = slic(
@@ -542,39 +507,28 @@ class Lime(Explainer):
             segmentation_mask -= 1
 
         # segmentation_mask = np.repeat(np.expand_dims(segmentation_mask, axis=image.band_axis), repeats=image.image.shape[image.band_axis], axis=image.band_axis)
-        segmentation_mask = torch.tensor(
-            segmentation_mask, dtype=torch.int64, device=device
-        )
+        segmentation_mask = torch.tensor(segmentation_mask, dtype=torch.int64, device=device)
         segmentation_mask = torch.unsqueeze(segmentation_mask, dim=image.band_axis)
         # segmentation_mask = torch.repeat_interleave(torch.unsqueeze(segmentation_mask, dim=image.band_axis), repeats=image.image.shape[image.band_axis], dim=image.band_axis)
         return segmentation_mask
 
     @staticmethod
-    def __get_patch_segmentation_mask(
-        image: Image, patch_size=10, *args, **kwargs
-    ) -> torch.tensor:
+    def __get_patch_segmentation_mask(image: Image, patch_size=10, *args, **kwargs) -> torch.tensor:
         print("Patch segmentation only works for band_index = 0 now")
 
         device = image.image.device
-        if (
-            image.image.shape[1] % patch_size != 0
-            or image.image.shape[2] % patch_size != 0
-        ):
-            raise ValueError(
-                "Invalid patch_size. patch_size must be a factor of both width and height of the image"
-            )
+        if image.image.shape[1] % patch_size != 0 or image.image.shape[2] % patch_size != 0:
+            raise ValueError("Invalid patch_size. patch_size must be a factor of both width and height of the image")
 
         height, width = image.image.shape[1], image.image.shape[2]
 
         mask_zero = torch.tensor(image.image.bool()[0], device=device)
-        idx_mask = torch.arange(
-            height // patch_size * width // patch_size, device=device
-        ).reshape(height // patch_size, width // patch_size)
+        idx_mask = torch.arange(height // patch_size * width // patch_size, device=device).reshape(
+            height // patch_size, width // patch_size
+        )
         idx_mask += 1
         segmentation_mask = torch.repeat_interleave(idx_mask, patch_size, dim=0)
-        segmentation_mask = torch.repeat_interleave(
-            segmentation_mask, patch_size, dim=1
-        )
+        segmentation_mask = torch.repeat_interleave(segmentation_mask, patch_size, dim=1)
         segmentation_mask = segmentation_mask * mask_zero
         # segmentation_mask = torch.repeat_interleave(torch.unsqueeze(segmentation_mask, dim=image.band_axis), repeats=image.image.shape[image.band_axis], dim=image.band_axis)
         segmentation_mask = torch.unsqueeze(segmentation_mask, dim=image.band_axis)

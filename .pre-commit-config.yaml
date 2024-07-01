@@ -1,25 +1,36 @@
-default_language_version:
-  python: python3.10
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.5.0
     hooks:
       - id: ruff
+        name: ✅ Lint using ruff
         types_or: [python, pyi, jupyter, toml]
-        args: [--fix, --show-fixes]
+        args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
+        name: ☕️ Format using ruff
         types_or: [python, pyi, jupyter, toml]
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
+        name: 💄 Ensuring files are prettier
         args: [--write]
         types_or: [yaml, markdown, json]
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+  - repo: local
     hooks:
       - id: codespell
-        args: [--write-changes]
+        name: ✅ Check code for common misspellings
+        language: system
+        types: [text]
+        exclude: |
+          (?x)^(
+            rye.lock|
+            custom_components/foldingathomecontrol/translations/de.json|
+            custom_components/foldingathomecontrol/translations/nb.json|
+            custom_components/foldingathomecontrol/translations/pl.json|
+            custom_components/foldingathomecontrol/translations/pt.json
+          )$
+        entry: rye run codespell
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:

@@ -1,10 +1,5 @@
-import os
-import sys
 import torch
 import pytest
-
-# TODO: This is a workaround to import the module from the src directory - should be fixed
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 import meteors as mt
 
 
@@ -28,9 +23,7 @@ def test_artificial_mask():
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     image = mt.Image(image=sample, wavelengths=wavelengths, binary_mask="artificial")
-    assert torch.equal(
-        image.binary_mask, torch.tensor([[[0]]])
-    ), "The simplest mask with no data should be created"
+    assert torch.equal(image.binary_mask, torch.tensor([[[0]]])), "The simplest mask with no data should be created"
 
 
 def test_incorrect_shape_mask():

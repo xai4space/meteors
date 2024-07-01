@@ -18,32 +18,42 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
 
     steps:
       - name: Checkout code 📂
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }} 🐍
-        uses: actions/setup-python@v5
+      - name: Setup Rye 🌾
+        id: setup-rye
+        uses: eifinger/setup-rye@v3
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
+          version: "0.35.0"
+          enable-cache: true
+          cache-prefix: ${{ matrix.python-version }}
+
+      - name: Pin python-version ${{ matrix.python-version }} 📌
+        if: steps.setup-rye.outputs.cache-hit != 'true'
+        run: rye pin ${{ matrix.python-version }}
 
       - name: Install dependencies 🛠️
+        if: steps.setup-rye.outputs.cache-hit != 'true'
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install -r requirements-dev.txt
+          rye sync --no-lock
+
+      - name: Cache pre-commit 📦
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Run pre-commit 🚦
         run: |
-          pre-commit install
-          pre-commit run --all-files --show-diff-on-failure --color always
+          rye run pre-commit run --all-files --show-diff-on-failure --color always
 
       - name: Run tests 🧪
         run: |
-          python -m pytest --cov=src --cov-report=xml
+          rye test
 
       - name: Upload coverage report to Codecov 📈
         uses: codecov/codecov-action@v3

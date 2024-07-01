@@ -24,9 +24,11 @@ class ExplainableModel(BaseModel):
     @field_validator("problem_type")
     @classmethod
     def validate_problem_type(cls, value):
-        assert (
-            value in ["classification", "regression", "segmentation"]
-        ), "Problem type must be either 'classification', 'regression' or 'segmentation'"
+        assert value in [
+            "classification",
+            "regression",
+            "segmentation",
+        ], "Problem type must be either 'classification', 'regression' or 'segmentation'"
         return value
 
     def __call__(self, x):
@@ -129,27 +131,19 @@ class LinearModel(nn.Module, InterpretableModel):
                 Default: None
         """
         if norm_type not in LinearModel.SUPPORTED_NORMS:
-            raise ValueError(
-                f"{norm_type} not supported. Please use {LinearModel.SUPPORTED_NORMS}"
-            )
+            raise ValueError(f"{norm_type} not supported. Please use {LinearModel.SUPPORTED_NORMS}")
 
         if weight_values is not None:
             in_features = weight_values.shape[-1]
-            out_features = (
-                1 if len(weight_values.shape) == 1 else weight_values.shape[0]
-            )
+            out_features = 1 if len(weight_values.shape) == 1 else weight_values.shape[0]
 
         if in_features is None or out_features is None:
-            raise ValueError(
-                "Please provide `in_features` and `out_features` or `weight_values`"
-            )
+            raise ValueError("Please provide `in_features` and `out_features` or `weight_values`")
 
         if norm_type == "batch_norm":
             self.norm = nn.BatchNorm1d(in_features, eps=1e-8, affine=affine_norm)
         elif norm_type == "layer_norm":
-            self.norm = nn.LayerNorm(
-                in_features, eps=1e-8, elementwise_affine=affine_norm
-            )
+            self.norm = nn.LayerNorm(in_features, eps=1e-8, elementwise_affine=affine_norm)
         else:
             self.norm = None
 
@@ -245,9 +239,7 @@ class SkLearnLinearModel(LinearModel):
             kwargs
                 Arguments to feed to `.fit` method for sklearn
         """
-        return super().fit(
-            train_data=train_data, sklearn_trainer=self.sklearn_module, **kwargs
-        )
+        return super().fit(train_data=train_data, sklearn_trainer=self.sklearn_module, **kwargs)
 
 
 class SkLearnLasso(SkLearnLinearModel):
