@@ -88,6 +88,9 @@ imageio==2.34.2
     # via scikit-image
 importlib-metadata==8.0.0
     # via dask
+importlib-resources==6.4.0
+    # via matplotlib
+    # via meteors
 jinja2==3.1.4
     # via torch
 joblib==1.4.2
@@ -225,3 +228,4 @@ xarray==2024.6.0
     # via spyndex
 zipp==3.19.2
     # via importlib-metadata
+    # via importlib-resources
