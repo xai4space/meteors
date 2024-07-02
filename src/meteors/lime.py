@@ -321,8 +321,8 @@ class Lime(Explainer):
                 "Getting band mask from band groups given by ranges of indices"
             )
             band_groups = Lime._get_band_groups_from_band_ranges_indices(
-                band_ranges_indices
-            )  # type: ignore
+                band_ranges_indices  # type: ignore
+            )
 
         if band_groups is None:
             raise ValueError("No band names, groups, or ranges provided")
@@ -433,7 +433,8 @@ class Lime(Explainer):
     def _get_band_range_indices_from_band_ranges_wavelengths(
         image: Image,
         band_ranges_wavelengths: dict[
-            str | tuple[str, ...], list[tuple[float, float]] | tuple[float, float]
+            str | tuple[str, ...],
+            list[tuple[float, float] | list[float]] | tuple[float, float] | list[float],
         ],
     ) -> dict[str | tuple[str, ...], list[tuple[int, int]]]:
         """function converts the ranges of wavelengths into ranges of indices"""
@@ -455,13 +456,16 @@ class Lime(Explainer):
 
             for segment_part in segment_range:
                 if (
-                    not isinstance(segment_part, Iterable)
+                    (
+                        not isinstance(segment_part, list)
+                        and not isinstance(segment_part, tuple)
+                    )
                     or len(segment_part) != 2
                     or not isinstance(segment_part[0], (int, float))
                     or not isinstance(segment_part[1], (int, float))
                 ):
                     raise ValueError(
-                        f"Segment {segment_label} has incorrect structure - it should be a Tuple of length 2 or an Iterable with Tuples of length 2"
+                        f"Segment {segment_label} has incorrect structure - it should be a tuple or list of length 2 or an Iterable with tuples or lists of length 2"
                     )
                 if segment_part[0] >= segment_part[1]:
                     raise ValueError(f"Order of the range {segment_label} is incorrect")
@@ -490,7 +494,8 @@ class Lime(Explainer):
     @staticmethod
     def _get_band_groups_from_band_ranges_indices(
         band_ranges_indices: dict[
-            str | tuple[str, ...], list[tuple[int, int]] | tuple[int, int]
+            str | tuple[str, ...],
+            list[tuple[int, int] | list[int]] | tuple[int, int] | list[int],
         ],
     ) -> dict[str | tuple[str, ...], list[int]]:
         """function converts the ranges of indices into actual indices of bands"""
@@ -510,9 +515,15 @@ class Lime(Explainer):
                 band_ranges_indices[segment_label] = segment_range  # type: ignore
 
             for segment_part in segment_range:
-                if not isinstance(segment_part, list) or len(segment_part) != 2:
+                if (
+                    not (
+                        isinstance(segment_part, list)
+                        or isinstance(segment_part, tuple)
+                    )
+                    or len(segment_part) != 2
+                ):
                     raise ValueError(
-                        f"Segment {segment_label} has incorrect structure - it should be a Tuple of length 2 or an Iterable with Tuples of length 2"
+                        f"Segment {segment_label} has incorrect structure - it should be a list or tuple of length 2 or an Iterable with list or tuples of length 2"
                     )
                 if segment_part[0] > segment_part[1]:
                     raise ValueError(f"Order of the range {segment_label} is incorrect")
