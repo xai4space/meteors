@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Checkout code 📂
         uses: actions/checkout@v4
-
+      
       - name: Setup Rye 🌾
         id: setup-rye
         uses: eifinger/setup-rye@v3
@@ -19,7 +19,7 @@ jobs:
           version: "0.35.0"
           enable-cache: true
           cache-prefix: "3.10"
-
+      
       - name: Pin python-version 3.10 📌
         if: steps.setup-rye.outputs.cache-hit != 'true'
         run: rye pin 3.10
@@ -28,20 +28,6 @@ jobs:
         if: steps.setup-rye.outputs.cache-hit != 'true'
         run: |
           rye sync --no-lock
-
-      - name: Checkout code 📂
-        uses: actions/checkout@v3
-
-      - name: Set up Python 🐍
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10
-          cache: pip # Cache the pip dependencies
-
-      - name: Install dependencies 🛠️
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-docs.txt
 
       - name: Get the README 📝
         run: |
