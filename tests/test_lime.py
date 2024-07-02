@@ -224,7 +224,7 @@ def test_band_mask_errors():
 
     with pytest.raises(
         ValueError,
-        match="Segment bad_structure has incorrect structure - it should be a Tuple of length 2 or an Iterable with Tuples of length 2",
+        match="Segment bad_structure has incorrect structure - it should be a tuple or list of length 2 or an Iterable with tuples or lists of length 2",
     ):
         band_ranges_wavelengths = {"bad_structure": (1, 2, 3)}
         mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
@@ -245,7 +245,7 @@ def test_band_mask_errors():
 
     with pytest.raises(
         ValueError,
-        match="Segment bad_structure has incorrect structure - it should be a Tuple of length 2 or an Iterable with Tuples of length 2",
+        match="Segment bad_structure has incorrect structure - it should be a tuple or list of length 2 or an Iterable with tuples or lists of length 2",
     ):
         band_ranges_indices = {"bad_structure": (1, 2, 3)}
         mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
