@@ -30,7 +30,7 @@ jobs:
         with:
           version: "0.35.0"
           enable-cache: true
-          cache-prefix: ${{ matrix.python-version }}
+          cache-prefix: ${{ matrix.python-version }}-${{ runner.os }}
 
       - name: Pin python-version ${{ matrix.python-version }} 📌
         if: steps.setup-rye.outputs.cache-hit != 'true'
