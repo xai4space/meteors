@@ -501,7 +501,7 @@ class Lime(Explainer):
         """function converts the ranges of indices into actual indices of bands"""
         logger.debug("Verifying format of band_ranges_indices")
         for segment_label, segment_range in band_ranges_indices.items():
-            if not isinstance(segment_range, list):
+            if not isinstance(segment_range, Iterable):
                 raise ValueError(
                     f"Incorrect type for range of segment with label {segment_label}"
                 )
