@@ -211,7 +211,7 @@ def test_band_mask_errors():
 
     with pytest.raises(
         ValueError,
-        match="Incorrect band_names type. It should be a dict or a Sequence",
+        match="Incorrect band_names type. It should be a dict or a list",
     ):
         mt.Lime.get_band_mask(image, band_names=4)
 
@@ -224,7 +224,7 @@ def test_band_mask_errors():
 
     with pytest.raises(
         ValueError,
-        match="Segment bad_structure has incorrect structure - it should be a Tuple of length 2 or a Sequence with Tuples of length 2",
+        match="Segment bad_structure has incorrect structure - it should be a Tuple of length 2 or an Iterable with Tuples of length 2",
     ):
         band_ranges_wavelengths = {"bad_structure": (1, 2, 3)}
         mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
@@ -245,7 +245,7 @@ def test_band_mask_errors():
 
     with pytest.raises(
         ValueError,
-        match="Segment bad_structure has incorrect structure - it should be a Tuple of length 2 or a Sequence with Tuples of length 2",
+        match="Segment bad_structure has incorrect structure - it should be a Tuple of length 2 or an Iterable with Tuples of length 2",
     ):
         band_ranges_indices = {"bad_structure": (1, 2, 3)}
         mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
@@ -295,6 +295,7 @@ def test_dummy_explainer():
     )
 
     segmentation_mask = lime.get_segmentation_mask(image, "patch")
+    segmentation_mask = lime.get_segmentation_mask(image, "slic")
     segmentation_mask = lime.get_segmentation_mask(image, "slic")
 
     lime.get_spatial_attributes(image=image, segmentation_mask=segmentation_mask)
