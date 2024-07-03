@@ -45,10 +45,8 @@ ee-extra==0.0.15
     # via eemont
 eemont==0.3.6
     # via spyndex
-eval-type-backport==0.2.0
+eval-type-backport==0.1.0
     # via meteors
-exceptiongroup==1.2.1
-    # via pytest
 filelock==3.15.4
     # via torch
     # via virtualenv
@@ -98,10 +96,7 @@ idna==3.7
     # via requests
 imageio==2.34.2
     # via scikit-image
-importlib-metadata==8.0.0
-    # via dask
-importlib-resources==6.4.0
-    # via matplotlib
+importlib-resources==4.0.0
     # via meteors
 iniconfig==2.0.0
     # via pytest
@@ -180,9 +175,9 @@ pyasn1==0.6.0
     # via rsa
 pyasn1-modules==0.4.0
     # via google-auth
-pydantic==2.7.4
+pydantic==2.6.0
     # via meteors
-pydantic-core==2.18.4
+pydantic-core==2.16.1
     # via pydantic
 pyparsing==3.1.2
     # via httplib2
@@ -234,13 +229,12 @@ threadpoolctl==3.5.0
 tifffile==2024.6.18
     # via scikit-image
 tomli==2.0.1
-    # via coverage
-    # via pytest
 toolz==0.12.1
     # via dask
     # via partd
 torch==2.2.2
     # via captum
+    # via meteors
 tqdm==4.66.4
     # via captum
 typing-extensions==4.12.2
@@ -255,8 +249,5 @@ urllib3==2.2.2
     # via requests
 virtualenv==20.26.3
     # via pre-commit
-xarray==2024.6.0
+xarray==2023.10.0
     # via spyndex
-zipp==3.19.2
-    # via importlib-metadata
-    # via importlib-resources

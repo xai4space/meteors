@@ -17,19 +17,20 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "captum==0.7.0",
-    "loguru==0.7.2",
-    "matplotlib==3.9.0",
-    "numpy==1.26.4",
-    "pandas==2.2.2",
-    "pydantic==2.7.4",
-    "scikit-image==0.24.0rc1",
-    "scikit-learn==1.5.0",
-    "seaborn==0.13.2",
-    "setuptools==70.0.0",
-    "spyndex==0.6.0",
-    "eval-type-backport>=0.2.0",
-    "importlib-resources>=6.4.0",
+    "captum>=0.7.0",
+    "spyndex>=0.6.0",
+    "torch",
+    "numpy",
+    "setuptools",
+    "eval-type-backport",
+    "importlib-resources",
+    "loguru",
+    "matplotlib",
+    "seaborn",
+    "pandas",
+    "pydantic",
+    "scikit-image",
+    "scikit-learn",
 ]
 
 [build-system]
