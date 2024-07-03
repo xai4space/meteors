@@ -9,7 +9,14 @@ from meteors import Image
 
 from meteors.lime_base import Lime as LimeBase
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+    validate_arguments,
+)
 from typing_extensions import Annotated, Self
 
 import torch
@@ -265,21 +272,22 @@ class Lime(Explainer):
             )
         raise NotImplementedError("Only slic and patch methods are supported for now")
 
+    @validate_arguments  # type: ignore
     @staticmethod
     def get_band_mask(
         image: Image,
-        band_names: list[str | list[str]]
-        | dict[tuple[str, ...] | str, int]
-        | None = None,
+        band_names: None
+        | (list[str | list[str]] | dict[tuple[str, ...] | str, int]) = None,
         band_groups: dict[str | tuple[str, ...], list[int]] | None = None,
-        band_ranges_indices: dict[
-            str | tuple[str, ...], list[tuple[int, int]] | tuple[int, int]
-        ]
-        | None = None,
-        band_ranges_wavelengths: dict[
-            str | tuple[str, ...], Iterable[tuple[float, float]] | tuple[float, float]
-        ]
-        | None = None,
+        band_ranges_indices: None
+        | (dict[str | tuple[str, ...], list[tuple[int, int]] | tuple[int, int]]) = None,
+        band_ranges_wavelengths: None
+        | (
+            dict[
+                str | tuple[str, ...],
+                Iterable[tuple[float, float]] | tuple[float, float],
+            ]
+        ) = None,
         device: torch.device | str | None = None,
         repeat_dimensions: bool = False,
     ) -> tuple[torch.Tensor, dict[tuple[str, ...] | str, int]]:
@@ -293,12 +301,16 @@ class Lime(Explainer):
             band_ranges_wavelengths (Dict[str, list[Tuple[float, float]] | Tuple[float, float]]): dictionary containing user-made band ranges as keys and tuple of start and end wavelengths as values. For instance, if our image contains wavelengths [400, 405, 410, 420, 450], then dictionary could equal to `{"A": (400, 410), "B": [(420, 450)]}`. "A" and "B" would be the names of the segments, the created segment indices would equal to [0, 1, 2] and [3, 4]
 
             device (torch.device | str | None): a device on which the band mask will be created. If None, it is created on the same device as the image. Defaults to None
-            repeat_dimensions (bool, optional): Whether to repeat the band mask over all image dimensions For instance, if False the output mask could have shape (1, 1, 150). If True - (64, 64, 150). Defaults to False
+            repeat_dimensions bool: Whether to repeat the band mask over all image dimensions For instance, if False the output mask could have shape (1, 1, 150). If True - (64, 64, 150). Defaults to False
 
 
         Returns:
             Tuple[torch.Tensor, Dict[str, int]]: a tuple which consists of an actual band mask and a dictionary that translates the band names into the segment values
         """
+
+        if not isinstance(image, Image):
+            raise ValueError("Image should be an instance of Image class")
+
         dict_labels_to_segment_ids = None
         if band_names is not None:
             logger.debug("Getting band mask from band names of spectral bands")
@@ -337,7 +349,7 @@ class Lime(Explainer):
         )
 
     @staticmethod
-    def _make_band_names_hashable(
+    def _make_band_names_indexable(
         segment_name: Iterable[str] | str,
     ) -> tuple[str, ...] | str:
         """some band names created by user may contain list of strings, that corresponds to different bands. This function converts list of strings into tuple of strings if necessary to make it indexable"""
@@ -397,7 +409,7 @@ class Lime(Explainer):
             )
 
             band_names_hashed = [
-                Lime._make_band_names_hashable(segment) for segment in band_names
+                Lime._make_band_names_indexable(segment) for segment in band_names
             ]
 
             dict_labels_to_segment_ids = {
@@ -673,11 +685,12 @@ class Lime(Explainer):
             return band_mask, dict_labels_to_segment_ids
         return band_mask
 
+    @validate_arguments  # type: ignore
     def get_spatial_attributes(
         self,
         image: Image,
         segmentation_mask: np.ndarray | torch.Tensor | None = None,
-        target=None,
+        target: int | None = None,
         segmentation_method: Literal["slic", "patch"] = "slic",
         **segmentation_method_params,
     ) -> ImageSpatialAttributes:
@@ -692,11 +705,11 @@ class Lime(Explainer):
         Returns:
             ImageSpatialAttributes: An object that contains the image, the attributions, the segmentation mask, and the score of the interpretable model used for the explanation.
         """
-        assert self._lime is not None, "Lime object not initialized"
+        if self._lime is None:
+            raise ValueError("Lime object not initialized")
 
-        assert (
-            self.explainable_model.problem_type == "regression"
-        ), "For now only the regression problem is supported"
+        if self.explainable_model.problem_type != "regression":
+            raise ValueError("For now only the regression problem is supported")
 
         if segmentation_mask is None:
             segmentation_mask = self.get_segmentation_mask(
@@ -771,6 +784,7 @@ class Lime(Explainer):
 
         return spatial_attribution
 
+    @validate_arguments  # type: ignore
     def get_spectral_attributes(
         self,
         image: Image,
@@ -791,11 +805,12 @@ class Lime(Explainer):
         Returns:
             ImageSpectralAttributes: _description_
         """
-        assert self._lime is not None, "Lime object not initialized"
 
-        assert (
-            self.explainable_model.problem_type == "regression"
-        ), "For now only the regression problem is supported"
+        if self._lime is None:
+            raise ValueError("Lime object not initialized")
+
+        if self.explainable_model.problem_type != "regression":
+            raise ValueError("For now only the regression problem is supported")
 
         if isinstance(image.image, np.ndarray):
             logger.debug("Converting numpy image to torch tensor")
