@@ -15,7 +15,7 @@ from pydantic import (
     Field,
     field_validator,
     model_validator,
-    validate_arguments,
+    validate_call,
 )
 from typing_extensions import Annotated, Self
 
@@ -24,6 +24,7 @@ import numpy as np
 import spyndex
 
 from loguru import logger
+
 
 try:
     from fast_slic import Slic as slic
@@ -272,7 +273,6 @@ class Lime(Explainer):
             )
         raise NotImplementedError("Only slic and patch methods are supported for now")
 
-    @validate_arguments  # type: ignore
     @staticmethod
     def get_band_mask(
         image: Image,
@@ -288,7 +288,7 @@ class Lime(Explainer):
                 Iterable[tuple[float, float]] | tuple[float, float],
             ]
         ) = None,
-        device: torch.device | str | None = None,
+        device: str | torch.device | None = None,
         repeat_dimensions: bool = False,
     ) -> tuple[torch.Tensor, dict[tuple[str, ...] | str, int]]:
         """function generates band mask - a tensor that corresponds to the image, which values are different segments. Can be used in spectral attribution. Each slice of the image - a single, one-dimensional tensor has identical values.
@@ -311,9 +311,28 @@ class Lime(Explainer):
         if not isinstance(image, Image):
             raise ValueError("Image should be an instance of Image class")
 
+        # validate types
+
         dict_labels_to_segment_ids = None
         if band_names is not None:
             logger.debug("Getting band mask from band names of spectral bands")
+            if not isinstance(band_names, (list, dict)):
+                raise TypeError("Band names should be either a list or a dictionary")
+            if isinstance(band_names, dict):
+                if not all(isinstance(key, (tuple, str)) for key in band_names.keys()):
+                    raise TypeError(
+                        "Keys in band names dictionary should be either a tuple or a string"
+                    )
+                if not all(isinstance(value, int) for value in band_names.values()):
+                    raise TypeError(
+                        "Values in band names dictionary should be integers"
+                    )
+            if isinstance(band_names, list):
+                if not all(isinstance(segment, (str, list)) for segment in band_names):
+                    raise TypeError(
+                        "Elements in band names list should be either a string or a list"
+                    )
+
             band_ranges_wavelengths, dict_labels_to_segment_ids = (
                 Lime._get_band_ranges_wavelengths_from_band_names(image, band_names)  # type: ignore
             )
@@ -321,6 +340,21 @@ class Lime(Explainer):
             logger.debug(
                 "Getting band mask from band groups given by ranges of wavelengths"
             )
+            if not isinstance(band_ranges_wavelengths, dict):
+                raise TypeError("Band ranges should be a dictionary")
+            if not all(
+                isinstance(key, (tuple, str)) for key in band_ranges_wavelengths.keys()
+            ):
+                raise TypeError(
+                    "Keys in band ranges dictionary should be either a tuple or a string"
+                )
+            if not all(
+                isinstance(value, (list, tuple))
+                for value in band_ranges_wavelengths.values()
+            ):
+                raise TypeError(
+                    "Values in band ranges dictionary should be either a list or a tuple"
+                )
             band_ranges_indices = (
                 Lime._get_band_range_indices_from_band_ranges_wavelengths(
                     image,
@@ -332,12 +366,37 @@ class Lime(Explainer):
             logger.debug(
                 "Getting band mask from band groups given by ranges of indices"
             )
+            if not isinstance(band_ranges_indices, dict):
+                raise TypeError("Band ranges should be a dictionary")
+            if not all(
+                isinstance(key, (tuple, str)) for key in band_ranges_indices.keys()
+            ):
+                raise TypeError(
+                    "Keys in band ranges dictionary should be either a tuple or a string"
+                )
+            if not all(
+                isinstance(value, (list, tuple))
+                for value in band_ranges_indices.values()
+            ):
+                raise TypeError(
+                    "Values in band ranges dictionary should be either a list or a tuple"
+                )
+
             band_groups = Lime._get_band_groups_from_band_ranges_indices(
                 band_ranges_indices  # type: ignore
             )
 
         if band_groups is None:
             raise ValueError("No band names, groups, or ranges provided")
+
+        if not isinstance(band_groups, dict):
+            raise TypeError("Band groups should be a dictionary")
+        if not all(isinstance(key, (tuple, str)) for key in band_groups.keys()):
+            raise TypeError(
+                "Keys in band groups dictionary should be either a tuple or a string"
+            )
+        if not all(isinstance(value, list) for value in band_groups.values()):
+            raise TypeError("Values in band groups dictionary should be lists")
 
         return Lime._create_tensor_band_mask(
             image,
@@ -559,7 +618,7 @@ class Lime(Explainer):
         image: Image,
         dict_labels_to_indices: dict[str | tuple[str, ...], list[int]],
         dict_labels_to_segment_ids: dict[str | tuple[str, ...], int] | None = None,
-        device: torch.device | str | None = None,
+        device: str | torch.device | None = None,
         repeat_dimensions: bool = False,
         return_dict_labels_to_segment_ids: bool = True,
     ) -> torch.Tensor | tuple[torch.Tensor, dict[tuple[str, ...] | str, int]]:
@@ -685,7 +744,7 @@ class Lime(Explainer):
             return band_mask, dict_labels_to_segment_ids
         return band_mask
 
-    @validate_arguments  # type: ignore
+    @validate_call(config=dict(arbitrary_types_allowed=True))  # type: ignore
     def get_spatial_attributes(
         self,
         image: Image,
@@ -784,7 +843,7 @@ class Lime(Explainer):
 
         return spatial_attribution
 
-    @validate_arguments  # type: ignore
+    @validate_call(config=dict(arbitrary_types_allowed=True))  # type: ignore
     def get_spectral_attributes(
         self,
         image: Image,

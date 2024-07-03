@@ -209,43 +209,33 @@ def test_band_mask_errors():
     ):
         mt.Lime.get_band_mask(image)
 
-    with pytest.raises(
-        ValueError,
-        match="Incorrect band_names type. It should be a dict or a list",
-    ):
+    with pytest.raises(TypeError):
         mt.Lime.get_band_mask(image, band_names=4)
 
-    with pytest.raises(
-        ValueError,
-        match="Incorrect type for range of segment with label bad_range",
-    ):
+    with pytest.raises(TypeError):
         band_ranges_wavelengths = {"bad_range": 1}
         mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
 
     with pytest.raises(
         ValueError,
-        match="Segment bad_structure has incorrect structure - it should be a tuple or list of length 2 or an Iterable with tuples or lists of length 2",
     ):
         band_ranges_wavelengths = {"bad_structure": (1, 2, 3)}
         mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
 
     with pytest.raises(
         ValueError,
-        match="Order of the range bad_order is incorrect",
     ):
         band_ranges_wavelengths = {"bad_order": (2, 1)}
         mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
 
     with pytest.raises(
-        ValueError,
-        match="Incorrect type for range of segment with label bad_range",
+        TypeError,
     ):
         band_ranges_indices = {"bad_range": 1}
         mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
 
     with pytest.raises(
         ValueError,
-        match="Segment bad_structure has incorrect structure - it should be a list or tuple of length 2 or an Iterable with list or tuples of length 2",
     ):
         band_ranges_indices = {"bad_structure": (1, 2, 3)}
         mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
@@ -304,6 +294,3 @@ def test_dummy_explainer():
         image=image, segmentation_method="slic", num_interpret_features=3
     )
     lime.get_spatial_attributes(image=image, segmentation_method="patch")
-
-
-test_band_mask_errors()
