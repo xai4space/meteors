@@ -21,9 +21,7 @@ dependencies = [
     "spyndex>=0.6.0",
     "torch",
     "numpy",
-    "setuptools",
     "eval-type-backport",
-    "importlib-resources",
     "loguru",
     "matplotlib",
     "seaborn",
@@ -31,6 +29,8 @@ dependencies = [
     "pydantic",
     "scikit-image",
     "scikit-learn",
+    "importlib-resources; python_version < '3.10'",
+    "setuptools>=60.0.0",
 ]
 
 [build-system]
@@ -41,6 +41,7 @@ build-backend = "hatchling.build"
 managed = true
 dev-dependencies = [
     "pre-commit>=3.7.1",
+    'exceptiongroup>=1.0.0rc8; python_version < "3.11"',
     "pytest>=8.2.2",
     "pytest-cov>=5.0.0",
     "tomli>=2.0.1",
