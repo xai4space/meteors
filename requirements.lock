@@ -17,7 +17,7 @@ cachetools==5.3.3
     # via google-auth
 captum==0.7.0
     # via meteors
-certifi==2024.6.2
+certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -31,7 +31,7 @@ cycler==0.12.1
     # via matplotlib
 dask==2024.6.2
     # via spyndex
-earthengine-api==0.1.409
+earthengine-api==0.1.410
     # via ee-extra
     # via eemont
 ee-extra==0.0.15
@@ -105,7 +105,7 @@ loguru==0.7.2
     # via meteors
 markupsafe==2.1.5
     # via jinja2
-matplotlib==3.9.0
+matplotlib==3.9.1
     # via captum
     # via meteors
     # via seaborn
@@ -158,9 +158,9 @@ pyasn1==0.6.0
     # via rsa
 pyasn1-modules==0.4.0
     # via google-auth
-pydantic==2.8.0
+pydantic==2.8.2
     # via meteors
-pydantic-core==2.20.0
+pydantic-core==2.20.1
     # via pydantic
 pyparsing==3.1.2
     # via httplib2
@@ -185,7 +185,7 @@ rsa==4.9
     # via google-auth
 scikit-image==0.24.0
     # via meteors
-scikit-learn==1.5.0
+scikit-learn==1.5.1
     # via meteors
 scipy==1.13.1
     # via scikit-image
