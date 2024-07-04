@@ -118,14 +118,10 @@ class ImageSpatialAttributes(ImageAttributes):
     @model_validator(mode="after")
     def validate_segmentation_mask(self) -> Self:
         if isinstance(self.segmentation_mask, np.ndarray):
-            self.segmentation_mask = torch.tensor(
-                self.segmentation_mask, device=self._device
-            )
+            self.segmentation_mask = torch.tensor(self.segmentation_mask, device=self._device)
 
         if self.segmentation_mask.device != self._device:
-            self.segmentation_mask = self.segmentation_mask.to(
-                self._device
-            )  # move to the device
+            self.segmentation_mask = self.segmentation_mask.to(self._device)  # move to the device
 
         return self
 
@@ -137,17 +133,13 @@ class ImageSpatialAttributes(ImageAttributes):
     def get_flattened_segmentation_mask(self) -> torch.tensor:
         """segmentation mask is after all only two dimensional tensor with some repeated values, this function returns only two-dimensional tensor"""
         if self._flattened_segmentation_mask is None:
-            self._flattened_segmentation_mask = self.segmentation_mask.select(
-                dim=self.image.band_axis, index=0
-            )
+            self._flattened_segmentation_mask = self.segmentation_mask.select(dim=self.image.band_axis, index=0)
         return self._flattened_segmentation_mask
 
     def get_flattened_attributes(self) -> torch.tensor:
         """attributions for spatial case are after all only two dimensional tensor with some repeated values, this function returns only two-dimensional tensor"""
         if self._flattened_attributes is None:
-            self._flattened_attributes = self.attributes.select(
-                dim=self.image.band_axis, index=0
-            )
+            self._flattened_attributes = self.attributes.select(dim=self.image.band_axis, index=0)
         return self._flattened_attributes
 
 
@@ -194,9 +186,9 @@ class ImageSpectralAttributes(ImageAttributes):
         if self._flattened_band_mask is None:
             dims_to_select = [2, 1, 0]
             dims_to_select.remove(self.image.band_axis)
-            self._flattened_band_mask = self.band_mask.select(
-                dim=dims_to_select[0], index=0
-            ).select(dim=dims_to_select[1], index=0)
+            self._flattened_band_mask = self.band_mask.select(dim=dims_to_select[0], index=0).select(
+                dim=dims_to_select[1], index=0
+            )
         return self._flattened_band_mask
 
     def get_flattened_attributes(self) -> torch.tensor:
@@ -204,9 +196,9 @@ class ImageSpectralAttributes(ImageAttributes):
         if self._flattened_attributes is None:
             dims_to_select = [2, 1, 0]
             dims_to_select.remove(self.image.band_axis)
-            self._flattened_attributes = self.attributes.select(
-                dim=dims_to_select[0], index=0
-            ).select(dim=dims_to_select[1], index=0)
+            self._flattened_attributes = self.attributes.select(dim=dims_to_select[0], index=0).select(
+                dim=dims_to_select[1], index=0
+            )
         return self._flattened_attributes
 
 
@@ -264,23 +256,17 @@ class Lime(Explainer):
     ) -> torch.Tensor:
         """function generates a segmentation mask - a tensor, for a given image; the segmentation mask can be used in spatial attribution. This tensor contains different integer values for each segments"""
         if segmentation_method == "slic":
-            return Lime._get_slick_segmentation_mask(
-                image, **segmentation_method_params
-            )
+            return Lime._get_slick_segmentation_mask(image, **segmentation_method_params)
         if segmentation_method == "patch":
-            return Lime._get_patch_segmentation_mask(
-                image, **segmentation_method_params
-            )
+            return Lime._get_patch_segmentation_mask(image, **segmentation_method_params)
         raise NotImplementedError("Only slic and patch methods are supported for now")
 
     @staticmethod
     def get_band_mask(
         image: Image,
-        band_names: None
-        | (list[str | list[str]] | dict[tuple[str, ...] | str, int]) = None,
+        band_names: None | (list[str | list[str]] | dict[tuple[str, ...] | str, int]) = None,
         band_groups: dict[str | tuple[str, ...], list[int]] | None = None,
-        band_ranges_indices: None
-        | (dict[str | tuple[str, ...], list[tuple[int, int]] | tuple[int, int]]) = None,
+        band_ranges_indices: None | (dict[str | tuple[str, ...], list[tuple[int, int]] | tuple[int, int]]) = None,
         band_ranges_wavelengths: None
         | (
             dict[
@@ -320,67 +306,37 @@ class Lime(Explainer):
                 raise TypeError("Band names should be either a list or a dictionary")
             if isinstance(band_names, dict):
                 if not all(isinstance(key, (tuple, str)) for key in band_names.keys()):
-                    raise TypeError(
-                        "Keys in band names dictionary should be either a tuple or a string"
-                    )
+                    raise TypeError("Keys in band names dictionary should be either a tuple or a string")
                 if not all(isinstance(value, int) for value in band_names.values()):
-                    raise TypeError(
-                        "Values in band names dictionary should be integers"
-                    )
+                    raise TypeError("Values in band names dictionary should be integers")
             if isinstance(band_names, list):
                 if not all(isinstance(segment, (str, list)) for segment in band_names):
-                    raise TypeError(
-                        "Elements in band names list should be either a string or a list"
-                    )
+                    raise TypeError("Elements in band names list should be either a string or a list")
 
-            band_ranges_wavelengths, dict_labels_to_segment_ids = (
-                Lime._get_band_ranges_wavelengths_from_band_names(image, band_names)  # type: ignore
+            band_ranges_wavelengths, dict_labels_to_segment_ids = Lime._get_band_ranges_wavelengths_from_band_names(  # type: ignore
+                image, band_names
             )
         if band_ranges_wavelengths is not None:
-            logger.debug(
-                "Getting band mask from band groups given by ranges of wavelengths"
-            )
+            logger.debug("Getting band mask from band groups given by ranges of wavelengths")
             if not isinstance(band_ranges_wavelengths, dict):
                 raise TypeError("Band ranges should be a dictionary")
-            if not all(
-                isinstance(key, (tuple, str)) for key in band_ranges_wavelengths.keys()
-            ):
-                raise TypeError(
-                    "Keys in band ranges dictionary should be either a tuple or a string"
-                )
-            if not all(
-                isinstance(value, (list, tuple))
-                for value in band_ranges_wavelengths.values()
-            ):
-                raise TypeError(
-                    "Values in band ranges dictionary should be either a list or a tuple"
-                )
-            band_ranges_indices = (
-                Lime._get_band_range_indices_from_band_ranges_wavelengths(
-                    image,
-                    band_ranges_wavelengths,  # type: ignore
-                )
+            if not all(isinstance(key, (tuple, str)) for key in band_ranges_wavelengths.keys()):
+                raise TypeError("Keys in band ranges dictionary should be either a tuple or a string")
+            if not all(isinstance(value, (list, tuple)) for value in band_ranges_wavelengths.values()):
+                raise TypeError("Values in band ranges dictionary should be either a list or a tuple")
+            band_ranges_indices = Lime._get_band_range_indices_from_band_ranges_wavelengths(
+                image,
+                band_ranges_wavelengths,  # type: ignore
             )
 
         if band_ranges_indices is not None:
-            logger.debug(
-                "Getting band mask from band groups given by ranges of indices"
-            )
+            logger.debug("Getting band mask from band groups given by ranges of indices")
             if not isinstance(band_ranges_indices, dict):
                 raise TypeError("Band ranges should be a dictionary")
-            if not all(
-                isinstance(key, (tuple, str)) for key in band_ranges_indices.keys()
-            ):
-                raise TypeError(
-                    "Keys in band ranges dictionary should be either a tuple or a string"
-                )
-            if not all(
-                isinstance(value, (list, tuple))
-                for value in band_ranges_indices.values()
-            ):
-                raise TypeError(
-                    "Values in band ranges dictionary should be either a list or a tuple"
-                )
+            if not all(isinstance(key, (tuple, str)) for key in band_ranges_indices.keys()):
+                raise TypeError("Keys in band ranges dictionary should be either a tuple or a string")
+            if not all(isinstance(value, (list, tuple)) for value in band_ranges_indices.values()):
+                raise TypeError("Values in band ranges dictionary should be either a list or a tuple")
 
             band_groups = Lime._get_band_groups_from_band_ranges_indices(
                 band_ranges_indices  # type: ignore
@@ -392,9 +348,7 @@ class Lime(Explainer):
         if not isinstance(band_groups, dict):
             raise TypeError("Band groups should be a dictionary")
         if not all(isinstance(key, (tuple, str)) for key in band_groups.keys()):
-            raise TypeError(
-                "Keys in band groups dictionary should be either a tuple or a string"
-            )
+            raise TypeError("Keys in band groups dictionary should be either a tuple or a string")
         if not all(isinstance(value, list) for value in band_groups.values()):
             raise TypeError("Values in band groups dictionary should be lists")
 
@@ -416,9 +370,7 @@ class Lime(Explainer):
             return segment_name
         if isinstance(segment_name, list):
             return tuple(segment_name)
-        raise ValueError(
-            f"Incorrect segment {segment_name} type. Should be either a list or string"
-        )
+        raise ValueError(f"Incorrect segment {segment_name} type. Should be either a list or string")
 
     @staticmethod
     def _extract_bands_from_spyndex(
@@ -431,9 +383,7 @@ class Lime(Explainer):
             segment_name = tuple([segment_name])
         for band_name in segment_name:
             if band_name in spyndex.indices:
-                band_names_segment = band_names_segment + (
-                    spyndex.indices[band_name].bands
-                )
+                band_names_segment = band_names_segment + (spyndex.indices[band_name].bands)
             elif band_name in spyndex.bands:
                 band_names_segment.append(band_name)
             else:
@@ -463,17 +413,11 @@ class Lime(Explainer):
 
         segments_list = []
         if isinstance(band_names, list):
-            logger.debug(
-                "band_names is a list of segments, creating a dictionary of segments"
-            )
+            logger.debug("band_names is a list of segments, creating a dictionary of segments")
 
-            band_names_hashed = [
-                Lime._make_band_names_indexable(segment) for segment in band_names
-            ]
+            band_names_hashed = [Lime._make_band_names_indexable(segment) for segment in band_names]
 
-            dict_labels_to_segment_ids = {
-                segment: idx + 1 for idx, segment in enumerate(band_names_hashed)
-            }
+            dict_labels_to_segment_ids = {segment: idx + 1 for idx, segment in enumerate(band_names_hashed)}
             segments_list = band_names_hashed
         elif isinstance(band_names, dict):
             logger.debug("band_names is a dictionary of segments")
@@ -482,21 +426,15 @@ class Lime(Explainer):
         else:
             raise ValueError("Incorrect band_names type. It should be a dict or a list")
 
-        segments_list_after_mapping = [
-            Lime._extract_bands_from_spyndex(segment) for segment in segments_list
-        ]
-        band_ranges_wavelengths: dict[
-            str | tuple[str, ...], list[tuple[float, float]]
-        ] = {}
+        segments_list_after_mapping = [Lime._extract_bands_from_spyndex(segment) for segment in segments_list]
+        band_ranges_wavelengths: dict[str | tuple[str, ...], list[tuple[float, float]]] = {}
         for segment in segments_list_after_mapping:
             band_ranges_wavelengths[segment] = []
             for band_name in segment:
                 min_wavelength = spyndex.bands[band_name].min_wavelength
                 max_wavelength = spyndex.bands[band_name].max_wavelength
 
-                band_ranges_wavelengths[segment].append(
-                    (min_wavelength, max_wavelength)
-                )
+                band_ranges_wavelengths[segment].append((min_wavelength, max_wavelength))
 
         return band_ranges_wavelengths, dict_labels_to_segment_ids
 
@@ -513,9 +451,7 @@ class Lime(Explainer):
 
         for segment_label, segment_range in band_ranges_wavelengths.items():
             if not isinstance(segment_range, Iterable):
-                raise ValueError(
-                    f"Incorrect type for range of segment with label {segment_label}"
-                )
+                raise ValueError(f"Incorrect type for range of segment with label {segment_label}")
             if (
                 len(segment_range) == 2
                 and isinstance(segment_range[0], (int, float))  # type: ignore
@@ -527,10 +463,7 @@ class Lime(Explainer):
 
             for segment_part in segment_range:
                 if (
-                    (
-                        not isinstance(segment_part, list)
-                        and not isinstance(segment_part, tuple)
-                    )
+                    (not isinstance(segment_part, list) and not isinstance(segment_part, tuple))
                     or len(segment_part) != 2
                     or not isinstance(segment_part[0], (int, float))
                     or not isinstance(segment_part[1], (int, float))
@@ -573,9 +506,7 @@ class Lime(Explainer):
         logger.debug("Verifying format of band_ranges_indices")
         for segment_label, segment_range in band_ranges_indices.items():
             if not isinstance(segment_range, Iterable):
-                raise ValueError(
-                    f"Incorrect type for range of segment with label {segment_label}"
-                )
+                raise ValueError(f"Incorrect type for range of segment with label {segment_label}")
             if (
                 len(segment_range) == 2
                 and isinstance(segment_range[0], int)  # type: ignore
@@ -586,13 +517,7 @@ class Lime(Explainer):
                 band_ranges_indices[segment_label] = segment_range  # type: ignore
 
             for segment_part in segment_range:
-                if (
-                    not (
-                        isinstance(segment_part, list)
-                        or isinstance(segment_part, tuple)
-                    )
-                    or len(segment_part) != 2
-                ):
+                if not (isinstance(segment_part, list) or isinstance(segment_part, tuple)) or len(segment_part) != 2:
                     raise ValueError(
                         f"Segment {segment_label} has incorrect structure - it should be a list or tuple of length 2 or an Iterable with list or tuples of length 2"
                     )
@@ -642,9 +567,7 @@ class Lime(Explainer):
         segment_labels = list(dict_labels_to_indices.keys())
         hashed = False
 
-        logger.debug(
-            f"Creating a band mask on the device {device} using {len(segment_labels)} segments"
-        )
+        logger.debug(f"Creating a band mask on the device {device} using {len(segment_labels)} segments")
 
         logger.debug("Checking if the bands are overlapping")
         overlapping_segments = {wavelength: None for wavelength in image.wavelengths}
@@ -659,30 +582,23 @@ class Lime(Explainer):
         # check if there exists a dictionary dict_labels_to_segment_ids, if not, create it
         if dict_labels_to_segment_ids is None:
             logger.debug("Creating mapping from segment labels into ids")
-            dict_labels_to_segment_ids = {
-                segment: idx + 1 for idx, segment in enumerate(segment_labels)
-            }
+            dict_labels_to_segment_ids = {segment: idx + 1 for idx, segment in enumerate(segment_labels)}
         else:
             logger.debug("Using existing mapping from segment labels into segment ids")
             logger.debug("Verifying if the passed mapping is correct")
             segment_labels_from_id_mapping = list(dict_labels_to_segment_ids)
             segment_labels_from_id_mapping_hashed = [
-                Lime._extract_bands_from_spyndex(segment)
-                for segment in segment_labels_from_id_mapping
+                Lime._extract_bands_from_spyndex(segment) for segment in segment_labels_from_id_mapping
             ]
             if len(segment_labels_from_id_mapping) != len(segment_labels):
-                raise ValueError(
-                    "Incorrect dict_labels_to_segment_ids - does not match length with segment labels"
-                )
+                raise ValueError("Incorrect dict_labels_to_segment_ids - does not match length with segment labels")
 
             for segment_label in segment_labels:
                 if (
                     segment_label not in segment_labels_from_id_mapping
                     and segment_label not in segment_labels_from_id_mapping_hashed
                 ):
-                    raise ValueError(
-                        f"{segment_label} not present in the dict_labels_to_segment_ids"
-                    )
+                    raise ValueError(f"{segment_label} not present in the dict_labels_to_segment_ids")
                 if segment_label in segment_labels_from_id_mapping_hashed:
                     logger.debug(
                         "Detected that the segment labels are converted using hashing function. Hashed flag set to True"
@@ -690,21 +606,15 @@ class Lime(Explainer):
                     hashed = True  # this type of verification might cause some problems in the future if someone wants to break the code from the inside
             unique_segment_ids = set(dict_labels_to_segment_ids.values())
             if len(unique_segment_ids) != len(segment_labels):
-                raise ValueError(
-                    "Non unique segment ids in the dict_labels_to_segment_ids"
-                )
+                raise ValueError("Non unique segment ids in the dict_labels_to_segment_ids")
             logger.debug("Passed mapping is correct")
 
         logger.debug("Creating a single dim band mask")
 
-        band_mask_single_dim = torch.zeros(
-            len(image.wavelengths), dtype=torch.int64, device=device
-        )
+        band_mask_single_dim = torch.zeros(len(image.wavelengths), dtype=torch.int64, device=device)
 
         if hashed:
-            segment_labels = (
-                segment_labels_from_id_mapping  # segment labels without hashing
-            )
+            segment_labels = segment_labels_from_id_mapping  # segment labels without hashing
 
         for segment_label in segment_labels[::-1]:
             segment_label_hashed = segment_label
@@ -713,10 +623,7 @@ class Lime(Explainer):
             segment_indices = dict_labels_to_indices[segment_label_hashed]
             segment_id = dict_labels_to_segment_ids[segment_label]
 
-            are_indices_valid = all(
-                0 <= idx < dim
-                for idx, dim in zip(segment_indices, band_mask_single_dim.shape)
-            )
+            are_indices_valid = all(0 <= idx < dim for idx, dim in zip(segment_indices, band_mask_single_dim.shape))
             if not are_indices_valid:
                 raise ValueError(
                     f"Indices for segment {segment_label} are out of bounds for the one-dimensional band mask of shape {band_mask_single_dim.shape}"
@@ -771,36 +678,26 @@ class Lime(Explainer):
             raise ValueError("For now only the regression problem is supported")
 
         if segmentation_mask is None:
-            segmentation_mask = self.get_segmentation_mask(
-                image, segmentation_method, **segmentation_method_params
-            )
+            segmentation_mask = self.get_segmentation_mask(image, segmentation_method, **segmentation_method_params)
 
         if isinstance(image.image, np.ndarray):
             logger.debug("Converting numpy image to torch tensor")
             image.image = torch.tensor(image.image, device=self._device)
-        elif (
-            isinstance(image.image, torch.Tensor) and image.image.device != self._device
-        ):
+        elif isinstance(image.image, torch.Tensor) and image.image.device != self._device:
             logger.debug("Moving image to the device" + self._device)
             image.image = image.image.to(self._device)
 
         if isinstance(image.binary_mask, np.ndarray):
             logger.debug("Converting numpy binary mask to torch tensor")
             image.binary_mask = torch.tensor(image.image, device=self._device)
-        elif (
-            isinstance(image.binary_mask, torch.Tensor)
-            and image.binary_mask.device != self._device
-        ):
+        elif isinstance(image.binary_mask, torch.Tensor) and image.binary_mask.device != self._device:
             logger.debug("Moving binary mask to the device" + self._device)
             image.binary_mask = image.binary_mask.to(self._device)
 
         if isinstance(segmentation_mask, np.ndarray):
             logger.debug("Converting numpy segmentation mask to torch tensor")
             segmentation_mask = torch.tensor(segmentation_mask, device=self._device)
-        elif (
-            isinstance(segmentation_mask, torch.Tensor)
-            and segmentation_mask.device != self._device
-        ):
+        elif isinstance(segmentation_mask, torch.Tensor) and segmentation_mask.device != self._device:
             logger.debug("Moving segmentation mask to the device" + self._device)
             segmentation_mask = segmentation_mask.to(self._device)
 
@@ -825,12 +722,8 @@ class Lime(Explainer):
         )
 
         if score < 0 or score > 1:
-            logger.warning(
-                "Score is out of range [0, 1]. Clamping the score value to the range"
-            )
-            score = torch.clamp(
-                score, 0, 1
-            )  # it seems that scikit learn sometimes returns negative values
+            logger.warning("Score is out of range [0, 1]. Clamping the score value to the range")
+            score = torch.clamp(score, 0, 1)  # it seems that scikit learn sometimes returns negative values
 
         spatial_attribution = ImageSpatialAttributes(
             image=image,
@@ -874,19 +767,14 @@ class Lime(Explainer):
         if isinstance(image.image, np.ndarray):
             logger.debug("Converting numpy image to torch tensor")
             image.image = torch.tensor(image.image, device=self._device)
-        elif (
-            isinstance(image.image, torch.Tensor) and image.image.device != self._device
-        ):
+        elif isinstance(image.image, torch.Tensor) and image.image.device != self._device:
             logger.debug("Moving image to the device" + self._device)
             image.image = image.image.to(self._device)
 
         if isinstance(image.binary_mask, np.ndarray):
             logger.debug("Converting numpy binary mask to torch tensor")
             image.binary_mask = torch.tensor(image.image, device=self._device)
-        elif (
-            isinstance(image.binary_mask, torch.Tensor)
-            and image.binary_mask.device != self._device
-        ):
+        elif isinstance(image.binary_mask, torch.Tensor) and image.binary_mask.device != self._device:
             logger.debug("Moving binary mask to the device" + self._device)
             image.binary_mask = image.binary_mask.to(self._device)
 
@@ -914,9 +802,7 @@ class Lime(Explainer):
             # unique_segments = torch.unique(band_mask)
             # if isinstance(band_names, dict):
             #     assert set(unique_segments).issubset(set(band_names.values())), "Incorrect band names"
-            logger.debug(
-                "Band names are provided, using them. In future it there should be an option to validate them"
-            )
+            logger.debug("Band names are provided, using them. In future it there should be an option to validate them")
 
         if isinstance(band_mask, np.ndarray):
             band_mask = torch.tensor(band_mask, device=self._device)
@@ -938,12 +824,8 @@ class Lime(Explainer):
         )
 
         if score < 0 or score > 1:
-            logger.warning(
-                "Score is out of range [0, 1]. Clamping the score value to the range"
-            )
-            score = torch.clamp(
-                score, 0, 1
-            )  # it seems that scikit learn sometimes returns negative values
+            logger.warning("Score is out of range [0, 1]. Clamping the score value to the range")
+            score = torch.clamp(score, 0, 1)  # it seems that scikit learn sometimes returns negative values
 
         lime_attributes = lime_attributes[0]
 
@@ -958,9 +840,7 @@ class Lime(Explainer):
         return spectral_attribution
 
     @staticmethod
-    def _get_slick_segmentation_mask(
-        image: Image, num_interpret_features: int = 10, *args, **kwargs
-    ) -> torch.tensor:
+    def _get_slick_segmentation_mask(image: Image, num_interpret_features: int = 10, *args, **kwargs) -> torch.tensor:
         """creates a segmentation mask using SLIC method
 
         Args:
@@ -985,17 +865,13 @@ class Lime(Explainer):
             segmentation_mask -= 1
 
         # segmentation_mask = np.repeat(np.expand_dims(segmentation_mask, axis=image.band_axis), repeats=image.image.shape[image.band_axis], axis=image.band_axis)
-        segmentation_mask = torch.tensor(
-            segmentation_mask, dtype=torch.int64, device=device
-        )
+        segmentation_mask = torch.tensor(segmentation_mask, dtype=torch.int64, device=device)
         segmentation_mask = torch.unsqueeze(segmentation_mask, dim=image.band_axis)
         # segmentation_mask = torch.repeat_interleave(torch.unsqueeze(segmentation_mask, dim=image.band_axis), repeats=image.image.shape[image.band_axis], dim=image.band_axis)
         return segmentation_mask
 
     @staticmethod
-    def _get_patch_segmentation_mask(
-        image: Image, patch_size=10, *args, **kwargs
-    ) -> torch.tensor:
+    def _get_patch_segmentation_mask(image: Image, patch_size=10, *args, **kwargs) -> torch.tensor:
         """creates a segmentation mask using patch method - creates small squares of the same size
 
         Args:
@@ -1009,25 +885,18 @@ class Lime(Explainer):
         logger.warning("Patch segmentation only works for band_index = 0 now")
 
         device = image.image.device
-        if (
-            image.image.shape[1] % patch_size != 0
-            or image.image.shape[2] % patch_size != 0
-        ):
-            raise ValueError(
-                "Invalid patch_size. patch_size must be a factor of both width and height of the image"
-            )
+        if image.image.shape[1] % patch_size != 0 or image.image.shape[2] % patch_size != 0:
+            raise ValueError("Invalid patch_size. patch_size must be a factor of both width and height of the image")
 
         height, width = image.image.shape[1], image.image.shape[2]
 
         mask_zero = torch.tensor(image.image.bool()[0], device=device)
-        idx_mask = torch.arange(
-            height // patch_size * width // patch_size, device=device
-        ).reshape(height // patch_size, width // patch_size)
+        idx_mask = torch.arange(height // patch_size * width // patch_size, device=device).reshape(
+            height // patch_size, width // patch_size
+        )
         idx_mask += 1
         segmentation_mask = torch.repeat_interleave(idx_mask, patch_size, dim=0)
-        segmentation_mask = torch.repeat_interleave(
-            segmentation_mask, patch_size, dim=1
-        )
+        segmentation_mask = torch.repeat_interleave(segmentation_mask, patch_size, dim=1)
         segmentation_mask = segmentation_mask * mask_zero
         # segmentation_mask = torch.repeat_interleave(torch.unsqueeze(segmentation_mask, dim=image.band_axis), repeats=image.image.shape[image.band_axis], dim=image.band_axis)
         segmentation_mask = torch.unsqueeze(segmentation_mask, dim=image.band_axis)

@@ -1,10 +1,5 @@
-import os
-import sys
 import torch
 import pytest
-
-# TODO: This is a workaround to import the module from the src directory - should be fixed
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 import meteors as mt
 
 
@@ -178,9 +173,10 @@ def test_band_mask_created_from_band_names():
 
     band_mask, band_names = mt.Lime.get_band_mask(image, band_names_list)
 
-    assert (
-        band_names == {("R", "G"): 1, "B": 2}
-    ), "There should be only 3 values in the band mask corresponding to (R, G), B and background"
+    assert band_names == {
+        ("R", "G"): 1,
+        "B": 2,
+    }, "There should be only 3 values in the band mask corresponding to (R, G), B and background"
     assert (
         len(torch.unique(band_mask)) == 3
     ), "There should be only 3 values in the band mask corresponding to (R, G), B and background"
@@ -188,9 +184,7 @@ def test_band_mask_created_from_band_names():
         torch.unique(band_mask), torch.tensor([0, 1, 2])
     ), "There should be only 3 values in the band mask corresponding to (R, G), B and background"
     for c in range(shape[0]):
-        assert (
-            len(torch.unique(band_mask[c, :, :])) == 1
-        ), "On each channel there should be only one unique number"
+        assert len(torch.unique(band_mask[c, :, :])) == 1, "On each channel there should be only one unique number"
 
 
 def test_band_mask_errors():
@@ -252,15 +246,11 @@ def test_dummy_explainer():
     def forward_func(x: torch.tensor):
         return x.mean(dim=(1, 2, 3))
 
-    explainable_model = mt.utils.models.ExplainableModel(
-        forward_func=forward_func, problem_type="regression"
-    )
+    explainable_model = mt.utils.models.ExplainableModel(forward_func=forward_func, problem_type="regression")
 
     interpretable_model = mt.utils.models.SkLearnLasso()
 
-    lime = mt.Lime(
-        explainable_model=explainable_model, interpretable_model=interpretable_model
-    )
+    lime = mt.Lime(explainable_model=explainable_model, interpretable_model=interpretable_model)
 
     assert lime._device == torch.device("cpu"), "Device should be set to cpu by default"
 
@@ -280,9 +270,7 @@ def test_dummy_explainer():
 
     band_mask, band_names = lime.get_band_mask(image, band_names_list)
 
-    lime.get_spectral_attributes(
-        image=image, band_mask=band_mask, band_names=band_names
-    )
+    lime.get_spectral_attributes(image=image, band_mask=band_mask, band_names=band_names)
 
     segmentation_mask = lime.get_segmentation_mask(image, "patch")
     segmentation_mask = lime.get_segmentation_mask(image, "slic")
@@ -290,7 +278,5 @@ def test_dummy_explainer():
 
     lime.get_spatial_attributes(image=image, segmentation_mask=segmentation_mask)
 
-    lime.get_spatial_attributes(
-        image=image, segmentation_method="slic", num_interpret_features=3
-    )
+    lime.get_spatial_attributes(image=image, segmentation_method="slic", num_interpret_features=3)
     lime.get_spatial_attributes(image=image, segmentation_method="patch")
