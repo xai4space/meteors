@@ -16,9 +16,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def visualise_image(
-    image: Image | ImageAttributes, ax: matplotlib.axes.Axes | None
-) -> None | matplotlib.axes.Axes:
+def visualise_image(image: Image | ImageAttributes, ax: matplotlib.axes.Axes | None) -> None | matplotlib.axes.Axes:
     if isinstance(image, ImageAttributes):
         image = image.image
     rgb = image.get_rgb_image(output_band_index=2)
@@ -31,18 +29,14 @@ def visualise_image(
     return ax
 
 
-def visualise_spatial_attributes(
-    spatial_attributes: ImageSpatialAttributes, use_pyplot=False
-):
+def visualise_spatial_attributes(spatial_attributes: ImageSpatialAttributes, use_pyplot=False):
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
     fig.suptitle("Lime attribution")
     ax[0].imshow(spatial_attributes.image.get_rgb_image(output_band_index=2).cpu())
     ax[0].set_title("Original image")
 
     viz.visualize_image_attr(
-        spatial_attributes.attributes.permute(1, 2, 0)
-        .cpu()
-        .numpy(),  # adjust shape to height, width, channels
+        spatial_attributes.attributes.permute(1, 2, 0).cpu().numpy(),  # adjust shape to height, width, channels
         method="heat_map",
         sign="all",
         plt_fig_axis=(fig, ax[1]),
@@ -115,14 +109,10 @@ def visualise_spectral_attributes_by_waveband(
         wavelengths = spectral_attributes[0].image.wavelengths
         for i in range(1, len(spectral_attributes)):
             if band_names != spectral_attributes[i].band_names:
-                raise ValueError(
-                    "All spectral attributes must have the same band names"
-                )
+                raise ValueError("All spectral attributes must have the same band names")
                 # if band names are all the same, then we can assume that also the masks are the same
             if (wavelengths != spectral_attributes[i].image.wavelengths).any():
-                raise ValueError(
-                    "All spectral attributes must have the same wavelengths"
-                )
+                raise ValueError("All spectral attributes must have the same wavelengths")
 
         flattened_band_mask = spectral_attributes[0].get_flattened_band_mask().cpu()
         wavelengths = spectral_attributes[0].image.wavelengths
@@ -139,9 +129,7 @@ def visualise_spectral_attributes_by_waveband(
         flattened_band_mask = spectral_attributes.get_flattened_band_mask().cpu()
         wavelengths = spectral_attributes.image.wavelengths
 
-        attribution_map = (
-            spectral_attributes.get_flattened_attributes().unsqueeze(0).cpu()
-        )
+        attribution_map = spectral_attributes.get_flattened_attributes().unsqueeze(0).cpu()
 
     if not show_not_included and band_names.get("not_included") is not None:
         band_names.pop("not_included")
@@ -194,14 +182,10 @@ def visualise_spectral_attributes_by_magnitude(
         wavelengths = spectral_attributes[0].image.wavelengths
         for i in range(1, len(spectral_attributes)):
             if band_names != spectral_attributes[i].band_names:
-                raise ValueError(
-                    "All spectral attributes must have the same band names"
-                )
+                raise ValueError("All spectral attributes must have the same band names")
                 # if band names are all the same, then we can assume that also the masks are the same
             if (wavelengths != spectral_attributes[i].image.wavelengths).any():
-                raise ValueError(
-                    "All spectral attributes must have the same wavelengths"
-                )
+                raise ValueError("All spectral attributes must have the same wavelengths")
 
         flattened_band_mask = spectral_attributes[0].get_flattened_band_mask().cpu()
         wavelengths = spectral_attributes[0].image.wavelengths
@@ -218,9 +202,7 @@ def visualise_spectral_attributes_by_magnitude(
         flattened_band_mask = spectral_attributes.get_flattened_band_mask().cpu()
         wavelengths = spectral_attributes.image.wavelengths
 
-        attribution_map = (
-            spectral_attributes.get_flattened_attributes().unsqueeze(0).cpu()
-        )
+        attribution_map = spectral_attributes.get_flattened_attributes().unsqueeze(0).cpu()
 
     if not show_not_included and band_names.get("not_included") is not None:
         band_names.pop("not_included")

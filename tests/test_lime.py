@@ -1,9 +1,4 @@
-import os
-import sys
 import torch
-
-# TODO: This is a workaround to import the module from the src directory - should be fixed
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 import meteors as mt
 
 
@@ -177,9 +172,11 @@ def test_band_mask():
 
     band_mask, band_names = mt.Lime.get_band_mask(image, band_names_list)
 
-    assert (
-        band_names == {"R": 1, "G": 2, "B": 3}
-    ), "There should be only 4 values in the band mask corresponding to R, G, B, and background"
+    assert band_names == {
+        "R": 1,
+        "G": 2,
+        "B": 3,
+    }, "There should be only 4 values in the band mask corresponding to R, G, B, and background"
     assert (
         len(torch.unique(band_mask)) == 4
     ), "There should be only 4 values in the band mask corresponding to R, G, B, and background"
@@ -187,6 +184,4 @@ def test_band_mask():
         torch.unique(band_mask), torch.tensor([0, 1, 2, 3])
     ), "There should be only 4 values in the band mask corresponding to R, G, B, and background"
     for c in range(shape[0]):
-        assert (
-            len(torch.unique(band_mask[c, :, :])) == 1
-        ), "On each channel there should be only one unique number"
+        assert len(torch.unique(band_mask[c, :, :])) == 1, "On each channel there should be only one unique number"
