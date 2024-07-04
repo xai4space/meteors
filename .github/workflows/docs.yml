@@ -55,7 +55,7 @@ jobs:
           if [ -d "examples" ]; then
             if ls examples/*.ipynb 1> /dev/null 2>&1; then
               for notebook in examples/*.ipynb; do
-                jupyter nbconvert --to markdown "$notebook" --output-dir docs/tutorials
+                rye run jupyter nbconvert --to markdown "$notebook" --output-dir docs/tutorials
               done
             else
               echo "No notebooks to convert."
@@ -68,5 +68,5 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
-          mike set-default --push --branch gh-pages latest
+          rye run mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
+          rye run mike set-default --push --branch gh-pages latest
