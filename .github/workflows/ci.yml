@@ -13,32 +13,35 @@ on:
 jobs:
   test:
     name: Test
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-        # We will use a trick to make torch not install cuda dependencies
-        os: [macos-latest]
 
     steps:
       - name: Checkout code 📂
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Rye 🌾
         id: setup-rye
         uses: eifinger/setup-rye@v3
         with:
           version: "0.35.0"
-          enable-cache: true
-          cache-prefix: ${{ matrix.python-version }}
 
       - name: Pin python-version ${{ matrix.python-version }} 📌
-        if: steps.setup-rye.outputs.cache-hit != 'true'
         run: rye pin ${{ matrix.python-version }}
 
+      - name: Cache dependencies 📦
+        uses: actions/cache@v4
+        with:
+          path: ./venv
+          key: venv-${{ matrix.python-version }}-${{ hashFiles('requirements.lock') }}-${{ hashFiles('requirements-dev.lock') }}
+
       - name: Install dependencies 🛠️
-        if: steps.setup-rye.outputs.cache-hit != 'true'
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: |
           rye sync --no-lock
 
@@ -46,7 +49,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Run pre-commit 🚦
         run: |
