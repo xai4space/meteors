@@ -8,24 +8,30 @@ on:
 jobs:
   docs:
     runs-on: macos-latest
+    permissions:
+      contents: write # This is required to push the changes to the repository
     steps:
       - name: Checkout code 📂
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Rye 🌾
         id: setup-rye
         uses: eifinger/setup-rye@v3
         with:
           version: "0.35.0"
-          enable-cache: true
-          cache-prefix: "3.10"
 
       - name: Pin python-version 3.10 📌
-        if: steps.setup-rye.outputs.cache-hit != 'true'
         run: rye pin 3.10
+      - name: Cache dependencies 📦
+        uses: actions/cache@v4
+        with:
+          path: ./venv
+          key: venv-3.10-${{ hashFiles('requirements.lock') }}-${{ hashFiles('requirements-dev.lock') }}
 
       - name: Install dependencies 🛠️
-        if: steps.setup-rye.outputs.cache-hit != 'true'
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: |
           rye sync --no-lock
 
@@ -43,24 +49,24 @@ jobs:
           VERSION=$(grep -m 1 'version = ' pyproject.toml | sed -E 's/.*version = "(.*)"/\1/')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Convert Jupyter notebooks to Markdown 📓➡️📄
+      - name: Convert Jupyter examples to Markdown 📓➡️📄
         run: |
-          jupyter nbconvert --to markdown --output-dir=docs/tutorials notebooks/*.ipynb
+          mkdir -p docs/tutorials
+          if [ -d "examples" ]; then
+            if ls examples/*.ipynb 1> /dev/null 2>&1; then
+              for notebook in examples/*.ipynb; do
+                rye run jupyter nbconvert --to markdown "$notebook" --output-dir docs/tutorials
+              done
+            else
+              echo "No notebooks to convert."
+            fi
+          else
+            echo "Directory 'examples' does not exist."
+          fi
 
-      - name: Deploy Documentation 🚀
+      - name: Build Docs Website 🌐
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
-          mike set-default --push --branch gh-pages latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ env.VERSION }}
-
-      # - name: Push changes to gh-pages 📤
-      #   run: |
-      #     git config --global user.name "github-actions[bot]"
-      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     VERSION: ${{ env.VERSION }}
+          rye run mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
+          rye run mike set-default --push --branch gh-pages latest
