@@ -1,6 +1,6 @@
 name: "💡 Feature Request"
 description: Create a new ticket for a new feature request
-title: "feature: <Please write a comprehensive title after the 'feature: ' prefix>"
+title: "feat: <Please write a comprehensive title after the 'feature: ' prefix>"
 body:
   - type: input
     id: start_date
@@ -49,7 +49,7 @@ body:
       description: What are the drawbacks/impacts of your feature request ?
       placeholder: Identify the drawbacks and impacts while being neutral on your feature request
     validations:
-      required: true
+      required: false
   - type: textarea
     id: unresolved_question
     attributes:
