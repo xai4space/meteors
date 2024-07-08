@@ -19,10 +19,13 @@ plugins:
             show_source: true
   - mike:
 
-theme: material
+theme:
+  name: material
+  logo: assets/logo.png
 extra:
   version:
     provider: mike
 
 watch:
-  - src # reload docs for any file changes
+  - src
+  - examples
