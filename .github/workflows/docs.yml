@@ -63,7 +63,7 @@ jobs:
           else
             echo "Directory 'examples' does not exist."
           fi
-      
+
       - name: Move Assets to Docs ➡️
         run: |
           mv assets docs/
