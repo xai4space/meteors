@@ -14,8 +14,6 @@ annotated-types==0.7.0
 anyio==4.4.0
     # via httpx
     # via jupyter-server
-appnope==0.1.4
-    # via ipykernel
 argon2-cffi==23.1.0
     # via jupyter-server
 argon2-cffi-bindings==21.2.0
@@ -59,8 +57,14 @@ cloudpickle==3.0.0
     # via dask
 codespell==2.3.0
 colorama==0.4.6
+    # via click
     # via griffe
+    # via ipython
+    # via loguru
+    # via mkdocs
     # via mkdocs-material
+    # via pytest
+    # via tqdm
 comm==0.2.2
     # via ipykernel
     # via ipywidgets
@@ -329,7 +333,7 @@ notebook==7.2.1
 notebook-shim==0.2.4
     # via jupyterlab
     # via notebook
-numpy==2.0.0
+numpy==1.26.4
     # via captum
     # via contourpy
     # via eemont
@@ -376,8 +380,6 @@ partd==1.4.2
     # via dask
 pathspec==0.12.1
     # via mkdocs
-pexpect==4.9.0
-    # via ipython
 pillow==10.4.0
     # via imageio
     # via matplotlib
@@ -403,9 +405,6 @@ protobuf==5.27.2
     # via proto-plus
 psutil==6.0.0
     # via ipykernel
-ptyprocess==0.7.0
-    # via pexpect
-    # via terminado
 pure-eval==0.2.2
     # via stack-data
 pyasn1==0.6.0
@@ -448,6 +447,12 @@ python-json-logger==2.0.7
     # via jupyter-events
 pytz==2024.1
     # via pandas
+pywin32==306
+    # via jupyter-core
+pywinpty==2.0.13
+    # via jupyter-server
+    # via jupyter-server-terminals
+    # via terminado
 pyyaml==6.0.1
     # via dask
     # via jupyter-events
@@ -605,6 +610,8 @@ websocket-client==1.8.0
     # via jupyter-server
 widgetsnbextension==4.0.11
     # via ipywidgets
+win32-setctime==1.1.0
+    # via loguru
 xarray==2024.6.0
     # via spyndex
 zipp==3.19.2
