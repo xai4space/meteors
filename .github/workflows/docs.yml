@@ -64,6 +64,10 @@ jobs:
             echo "Directory 'examples' does not exist."
           fi
 
+      - name: Move Assets to Docs ➡️
+        run: |
+          mv assets docs/
+
       - name: Build Docs Website 🌐
         run: |
           git config --global user.name "github-actions[bot]"
