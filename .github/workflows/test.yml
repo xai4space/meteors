@@ -1,4 +1,4 @@
-name: CI
+name: Test
 
 on:
   push:
@@ -49,7 +49,7 @@ jobs:
           rye test
 
       - name: Upload coverage report to Codecov 📈
-        if : matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
