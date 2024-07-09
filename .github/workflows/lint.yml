@@ -37,9 +37,8 @@ jobs:
           key: venv-3.10-macos-latest-${{ hashFiles('requirements.lock') }}-${{ hashFiles('requirements-dev.lock') }}
 
       - name: Install dependencies 🛠️
-        if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: |
-          rye sync --no-lock
+          rye sync
 
       - name: Cache pre-commit 📦
         uses: actions/cache@v4

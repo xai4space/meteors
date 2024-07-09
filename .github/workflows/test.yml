@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["macos-latest", "ubuntu-latest", "windows-latest"]
+        os: ["macos-latest", "ubuntu-latest"] # for now, only macOS and Ubuntu are supported for rye
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
@@ -40,7 +40,6 @@ jobs:
           key: venv-${{ matrix.python-version }}-${{ matrix.os }}-${{ hashFiles('requirements.lock') }}-${{ hashFiles('requirements-dev.lock') }}
 
       - name: Install dependencies 🛠️
-        if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: |
           rye sync
 
