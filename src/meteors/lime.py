@@ -314,7 +314,7 @@ class Lime(Explainer):
                     raise TypeError("Elements in band names list should be either a string or a list")
 
             band_ranges_wavelengths, dict_labels_to_segment_ids = Lime._get_band_ranges_wavelengths_from_band_names(  # type: ignore
-                image, band_names
+                band_names
             )
         if band_ranges_wavelengths is not None:
             logger.debug("Getting band mask from band groups given by ranges of wavelengths")
@@ -395,7 +395,6 @@ class Lime(Explainer):
 
     @staticmethod
     def _get_band_ranges_wavelengths_from_band_names(
-        image: Image,
         band_names: list[str | list[str]] | dict[tuple[str, ...] | str, int],
     ) -> tuple[
         dict[str | tuple[str, ...], list[tuple[float, float]]],
@@ -404,14 +403,12 @@ class Lime(Explainer):
         """function extracts ranges of wavelengths from the band names
 
         Args:
-            image (Image): an image for which the band mask is created. The only important element of image are the wavelengths
             band_names (list[str  |  list[str]] | dict[tuple[str, ...]  |  str, int]): list or dictionary with band names or segments
 
         Returns:
             dict[str | tuple[str, ...], list[tuple[float, float]]], dict[str | tuple[str, ...], int]: tuple containing the dictionary with mapping segment labels into wavelength ranges and mapping from segment labels into segment ids
         """
 
-        segments_list = []
         if isinstance(band_names, list):
             logger.debug("band_names is a list of segments, creating a dictionary of segments")
 
