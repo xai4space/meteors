@@ -1,4 +1,5 @@
 import torch
+import pytest
 import meteors as mt
 
 
@@ -157,7 +158,7 @@ wavelengths = [
 ]
 
 
-def test_band_mask():
+def test_band_mask_created_from_band_names():
     shape = (150, 240, 240)
     sample = torch.ones(shape)
 
@@ -168,20 +169,114 @@ def test_band_mask():
         binary_mask="artificial",
     )
 
-    band_names_list = ["R", "G", "B"]
+    band_names_list = [["R", "G"], "B"]
 
     band_mask, band_names = mt.Lime.get_band_mask(image, band_names_list)
 
     assert band_names == {
-        "R": 1,
-        "G": 2,
-        "B": 3,
-    }, "There should be only 4 values in the band mask corresponding to R, G, B, and background"
+        ("R", "G"): 1,
+        "B": 2,
+    }, "There should be only 3 values in the band mask corresponding to (R, G), B and background"
     assert (
-        len(torch.unique(band_mask)) == 4
-    ), "There should be only 4 values in the band mask corresponding to R, G, B, and background"
+        len(torch.unique(band_mask)) == 3
+    ), "There should be only 3 values in the band mask corresponding to (R, G), B and background"
     assert torch.equal(
-        torch.unique(band_mask), torch.tensor([0, 1, 2, 3])
-    ), "There should be only 4 values in the band mask corresponding to R, G, B, and background"
+        torch.unique(band_mask), torch.tensor([0, 1, 2])
+    ), "There should be only 3 values in the band mask corresponding to (R, G), B and background"
     for c in range(shape[0]):
         assert len(torch.unique(band_mask[c, :, :])) == 1, "On each channel there should be only one unique number"
+
+
+def test_band_mask_errors():
+    shape = (150, 240, 240)
+    sample = torch.ones(shape)
+    image = mt.Image(
+        image=sample,
+        wavelengths=wavelengths,
+        orientation=("C", "H", "W"),
+        binary_mask="artificial",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="No band names, groups, or ranges provided",
+    ):
+        mt.Lime.get_band_mask(image)
+
+    with pytest.raises(TypeError):
+        mt.Lime.get_band_mask(image, band_names=4)
+
+    with pytest.raises(TypeError):
+        band_ranges_wavelengths = {"bad_range": 1}
+        mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
+
+    with pytest.raises(
+        ValueError,
+    ):
+        band_ranges_wavelengths = {"bad_structure": (1, 2, 3)}
+        mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
+
+    with pytest.raises(
+        ValueError,
+    ):
+        band_ranges_wavelengths = {"bad_order": (2, 1)}
+        mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
+
+    with pytest.raises(
+        TypeError,
+    ):
+        band_ranges_indices = {"bad_range": 1}
+        mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
+
+    with pytest.raises(
+        ValueError,
+    ):
+        band_ranges_indices = {"bad_structure": (1, 2, 3)}
+        mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
+
+    with pytest.raises(
+        ValueError,
+        match="Order of the range bad_order is incorrect",
+    ):
+        band_ranges_indices = {"bad_order": (2, 1)}
+        mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
+
+
+def test_dummy_explainer():
+    def forward_func(x: torch.tensor):
+        return x.mean(dim=(1, 2, 3))
+
+    explainable_model = mt.utils.models.ExplainableModel(forward_func=forward_func, problem_type="regression")
+
+    interpretable_model = mt.utils.models.SkLearnLasso()
+
+    lime = mt.Lime(explainable_model=explainable_model, interpretable_model=interpretable_model)
+
+    assert lime._device == torch.device("cpu"), "Device should be set to cpu by default"
+
+    shape = (150, 240, 240)
+    sample = torch.ones(shape)
+
+    image = mt.Image(
+        image=sample,
+        wavelengths=wavelengths,
+        orientation=("C", "H", "W"),
+        binary_mask="artificial",
+    )
+
+    # Test spectral attribution
+
+    band_names_list = ["IPVI", "AFRI1600", "B"]
+
+    band_mask, band_names = lime.get_band_mask(image, band_names_list)
+
+    lime.get_spectral_attributes(image=image, band_mask=band_mask, band_names=band_names)
+
+    segmentation_mask = lime.get_segmentation_mask(image, "patch")
+    segmentation_mask = lime.get_segmentation_mask(image, "slic")
+    segmentation_mask = lime.get_segmentation_mask(image, "slic")
+
+    lime.get_spatial_attributes(image=image, segmentation_mask=segmentation_mask)
+
+    lime.get_spatial_attributes(image=image, segmentation_method="slic", num_interpret_features=3)
+    lime.get_spatial_attributes(image=image, segmentation_method="patch")
