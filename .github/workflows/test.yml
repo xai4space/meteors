@@ -1,4 +1,4 @@
-name: CI
+name: Test
 
 on:
   push:
@@ -11,10 +11,11 @@ on:
 jobs:
   test:
     name: Test
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: ["macos-latest", "ubuntu-latest"] # for now, only macOS and Ubuntu are supported for rye
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
@@ -36,28 +37,18 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./venv
-          key: venv-${{ matrix.python-version }}-${{ hashFiles('requirements.lock') }}-${{ hashFiles('requirements-dev.lock') }}
+          key: venv-${{ matrix.python-version }}-${{ matrix.os }}-${{ hashFiles('requirements.lock') }}-${{ hashFiles('requirements-dev.lock') }}
 
       - name: Install dependencies 🛠️
-        if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: |
-          rye sync --no-lock
-
-      - name: Cache pre-commit 📦
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
-
-      - name: Run pre-commit 🚦
-        run: |
-          rye run pre-commit run --all-files --show-diff-on-failure --color always
+          rye sync
 
       - name: Run tests 🧪
         run: |
           rye test
 
       - name: Upload coverage report to Codecov 📈
+        if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
