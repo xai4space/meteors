@@ -28,12 +28,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./venv
-          key: venv-3.10-${{ hashFiles('requirements.lock') }}-${{ hashFiles('requirements-dev.lock') }}
+          key: venv-3.10-macos-latest-${{ hashFiles('requirements.lock') }}-${{ hashFiles('requirements-dev.lock') }}
 
       - name: Install dependencies 🛠️
-        if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: |
-          rye sync --no-lock
+          rye sync
 
       - name: Get the README 📝
         run: |

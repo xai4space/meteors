@@ -1,0 +1,51 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Lint
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Checkout code 📂
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rye 🌾
+        id: setup-rye
+        uses: eifinger/setup-rye@v3
+        with:
+          version: "0.35.0"
+
+      - name: Pin python-version 3.10 📌
+        run: rye pin 3.10
+
+      - name: Cache dependencies 📦
+        uses: actions/cache@v4
+        with:
+          path: ./venv
+          key: venv-3.10-macos-latest-${{ hashFiles('requirements.lock') }}-${{ hashFiles('requirements-dev.lock') }}
+
+      - name: Install dependencies 🛠️
+        run: |
+          rye sync
+
+      - name: Cache pre-commit 📦
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ matrix.python-version }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run pre-commit 🚦
+        run: |
+          rye run pre-commit run --all-files --show-diff-on-failure --color always
