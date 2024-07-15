@@ -852,7 +852,7 @@ class Lime(Explainer):
         segmentation_mask = slic(
             numpy_image,
             n_segments=num_interpret_features,
-            mask=np.array(image.get_flattened_binary_mask.to("cpu")),
+            mask=np.array(image.get_squeezed_binary_mask.to("cpu")),
             channel_axis=image.band_axis,
             *args,
             **kwargs,

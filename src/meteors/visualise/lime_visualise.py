@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-
-import matplotlib.figure
+import torch
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from captum.attr import visualization as viz
 
 from meteors import (
     Image,
@@ -9,34 +13,53 @@ from meteors import (
     ImageSpectralAttributes,
     ImageSpatialAttributes,
 )
-import torch
-from captum.attr import visualization as viz
-import matplotlib.pyplot as plt
-
-import seaborn as sns
 
 
-def visualise_image(image: Image | ImageAttributes, ax: matplotlib.axes.Axes | None) -> None | matplotlib.axes.Axes:
+def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:
+    """
+    Visualizes an LIME image object on the given axes.
+
+    Parameters:
+        image (Image | ImageAttributes): The image to be visualized.
+        ax (matplotlib.axes.Axes | None): The axes on which the image will be plotted. If None, the current axes will be used.
+
+    Returns:
+        matplotlib.figure.Figure | None:
+            If use_pyplot is False, returns the figure and axes objects.
+            If use_pyplot is True, returns None.
+    """
     if isinstance(image, ImageAttributes):
         image = image.image
+
     rgb = image.get_rgb_image(output_band_index=2)
-
-    if ax is None:
-        ax = plt.gca()
-
+    ax = ax or plt.gca()
     ax.imshow(rgb)
 
     return ax
 
 
-def visualise_spatial_attributes(spatial_attributes: ImageSpatialAttributes, use_pyplot=False):
+def visualize_spatial_attributes(  # noqa: C901
+    spatial_attributes: ImageSpatialAttributes, use_pyplot: bool = False
+) -> tuple[Figure, Axes] | None:
+    """
+    Visualizes the spatial attributes of an image using Lime attribution.
+
+    Args:
+        spatial_attributes (ImageSpatialAttributes): The spatial attributes of the image object to visualize.
+        use_pyplot (bool, optional): Whether to use pyplot for visualization. Defaults to False.
+
+    Returns:
+        tuple[matplotlib.figure.Figure, matplotlib.axes.Axes] | None:
+            If use_pyplot is False, returns the figure and axes objects.
+            If use_pyplot is True, returns None.
+    """
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
-    fig.suptitle("Lime attribution")
+    fig.suptitle("Spatial Attributes Visualization")
     ax[0].imshow(spatial_attributes.image.get_rgb_image(output_band_index=2).cpu())
     ax[0].set_title("Original image")
 
     viz.visualize_image_attr(
-        spatial_attributes.attributes.permute(1, 2, 0).cpu().numpy(),  # adjust shape to height, width, channels
+        spatial_attributes.attributes.cpu().numpy(),  # height, width, channels
         method="heat_map",
         sign="all",
         plt_fig_axis=(fig, ax[1]),
@@ -46,43 +69,67 @@ def visualise_spatial_attributes(spatial_attributes: ImageSpatialAttributes, use
 
     if spatial_attributes.segmentation_mask is not None:
         mask = spatial_attributes.segmentation_mask.cpu()
-        highmask = torch.max(mask)
-        if len(mask.shape) == 3:
+        if mask.ndim == 3:
             mask = mask[0]
-        ax[2].imshow(mask / highmask, cmap="gray")
+        ax[2].imshow(mask / mask.max(), cmap="gray")
         ax[2].set_title("Mask")
         ax[2].grid(False)
 
     if use_pyplot:
         plt.show()
+        return None
     else:
         return fig, ax
 
 
-def visualise_spectral_attributes(
+def visualize_spectral_attributes(
     spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
-    use_pyplot=False,
-    color_palette=None,
-    show_not_included=False,
-):
-    if isinstance(spectral_attributes, ImageSpectralAttributes):
-        band_names = spectral_attributes.band_names
-    else:
-        band_names = spectral_attributes[0].band_names
+    use_pyplot: bool = False,
+    color_palette: list[str] | None = None,
+    show_not_included: bool = True,
+) -> tuple[Figure, Axes] | None:
+    """
+    Visualizes the spectral attributes of an image or a list of images.
 
-    if color_palette is None:
-        color_palette = sns.color_palette("hsv", len(band_names.keys()))
+    Args:
+        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]):
+            The spectral attributes of the image object to visualize.
+        use_pyplot (bool, optional):
+            If True, displays the visualization using pyplot. If False, returns the figure and axes objects.
+            Defaults to False.
+        color_palette (list[str] | None, optional):
+            The color palette to use for visualizing different spectral bands.
+            If None, a default color palette is used.
+            Defaults to None.
+        show_not_included (bool, optional):
+            If True, includes the spectral bands that are not included in the visualization.
+            If False, only includes the spectral bands that are included in the visualization.
+            Defaults to True.
+
+    Returns:
+        tuple[matplotlib.figure.Figure, matplotlib.axes.Axes] | None:
+            If use_pyplot is False, returns the figure and axes objects.
+            If use_pyplot is True, returns None.
+    """
+    band_names = (
+        spectral_attributes.band_names
+        if isinstance(spectral_attributes, ImageSpectralAttributes)
+        else spectral_attributes[0].band_names
+    )
+
+    color_palette = color_palette or sns.color_palette("hsv", len(band_names.keys()))
 
     fig, ax = plt.subplots(1, 2, figsize=(15, 5))
-    fig.suptitle("Lime attribution")
-    visualise_spectral_attributes_by_waveband(
+    fig.suptitle("Spectral Attributes Visualization")
+
+    visualize_spectral_attributes_by_waveband(
         spectral_attributes,
         ax[0],
         color_palette=color_palette,
         show_not_included=show_not_included,
     )
 
-    visualise_spectral_attributes_by_magnitude(
+    visualize_spectral_attributes_by_magnitude(
         spectral_attributes,
         ax[1],
         color_palette=color_palette,
@@ -91,16 +138,18 @@ def visualise_spectral_attributes(
 
     if use_pyplot:
         plt.show()
+        return None
     else:
         return fig, ax
 
 
-def visualise_spectral_attributes_by_waveband(
+# TODO: Refactor the following two functions to use the same code
+def visualize_spectral_attributes_by_waveband(
     spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
-    ax: matplotlib.axes.Axes | None,
-    color_palette=None,
-    show_not_included=True,
-) -> matplotlib.axes.Axes:
+    ax: Axes | None,
+    color_palette: list[str] | None = None,
+    show_not_included: bool = True,
+) -> Axes:
     aggregate_results = False
     if not isinstance(spectral_attributes, ImageSpectralAttributes):
         aggregate_results = True
@@ -168,13 +217,13 @@ def visualise_spectral_attributes_by_waveband(
     return ax
 
 
-def visualise_spectral_attributes_by_magnitude(
+def visualize_spectral_attributes_by_magnitude(
     spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
-    ax: matplotlib.axes.Axes | None,
+    ax: Axes | None,
     color_palette=None,
     annotate_bars=True,
     show_not_included=True,
-) -> matplotlib.axes.Axes:
+) -> Axes:
     aggregate_results = False
     if not isinstance(spectral_attributes, ImageSpectralAttributes):
         aggregate_results = True

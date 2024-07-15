@@ -224,7 +224,7 @@ class LimeBase(PerturbationAttribution):
                     All kwargs passed to the attribute method are
                     provided as keyword arguments (kwargs) to this callable.
         """
-        PerturbationAttribution.__init__(self, forward_func)
+        super().__init__(forward_func)
         self.interpretable_model = interpretable_model
         self.similarity_func = similarity_func
         self.perturb_func = perturb_func
@@ -235,12 +235,11 @@ class LimeBase(PerturbationAttribution):
         if self.perturb_interpretable_space:
             assert (
                 self.from_interp_rep_transform is not None
-            ), "Must provide transform from interpretable space to original input space"
-            " when sampling from interpretable space."
+            ), "Must provide transform from interpretable space when sampling from it."
         else:
             assert (
                 self.to_interp_rep_transform is not None
-            ), "Must provide transform from original input space to interpretable space"
+            ), "Must provide transform to interpretable space when sampling from original space."
 
     @log_usage()
     def attribute(
@@ -355,7 +354,7 @@ class LimeBase(PerturbationAttribution):
                     type matches the return type of train_interpretable_model_func.
                     For example, this could contain coefficients of a
                     linear surrogate model.
-            R^2 value: R^2 value of the interpretable model trained.
+            - R^2 (*Tensor*): R^2 score of the interpretable model on the training data.
 
         Examples::
 
@@ -419,7 +418,7 @@ class LimeBase(PerturbationAttribution):
                                      to_interp_rep_transform=to_interp_transform)
             >>> # Computes interpretable model, returning coefficients of linear
             >>> # model.
-            >>> attr_coefs = lime_attr.attribute(input, target=1, kernel_width=1.1)
+            >>> attr_coefs, r2 = lime_attr.attribute(input, target=1, kernel_width=1.1)
         """
         with torch.no_grad():
             inp_tensor = cast(Tensor, inputs) if isinstance(inputs, Tensor) else inputs[0]
@@ -454,20 +453,14 @@ class LimeBase(PerturbationAttribution):
                 else:
                     curr_sample = self.perturb_func(inputs, **kwargs)
                 batch_count += 1
-                if self.perturb_interpretable_space:
+                if self.perturb_interpretable_space and self.from_interp_rep_transform is not None:
                     interpretable_inps.append(curr_sample)
-                    curr_model_inputs.append(
-                        self.from_interp_rep_transform(  # type: ignore
-                            curr_sample, inputs, **kwargs
-                        )
-                    )
-                else:
+                    curr_model_inputs.append(self.from_interp_rep_transform(curr_sample, inputs, **kwargs))
+                elif self.to_interp_rep_transform is not None:
                     curr_model_inputs.append(curr_sample)
-                    interpretable_inps.append(
-                        self.to_interp_rep_transform(  # type: ignore
-                            curr_sample, inputs, **kwargs
-                        )
-                    )
+                    interpretable_inps.append(self.to_interp_rep_transform(curr_sample, inputs, **kwargs))
+                else:
+                    raise ValueError("Must provide either `to_interp_rep_transform` or `from_interp_rep_transform`")
                 curr_sim = self.similarity_func(inputs, curr_model_inputs[-1], interpretable_inps[-1], **kwargs)
                 similarities.append(
                     curr_sim.flatten() if isinstance(curr_sim, Tensor) else torch.tensor([curr_sim], device=device)
@@ -527,7 +520,9 @@ class LimeBase(PerturbationAttribution):
                     self.interpretable_model(combined_interp_inps).cpu().numpy(),
                 )
 
-            return self.interpretable_model.get_representation(), torch.tensor(r2)
+            return self.interpretable_model.get_representation(), torch.tensor(r2) if isinstance(
+                r2, float
+            ) else torch.from_numpy(r2)
 
     def _evaluate_batch(
         self,
@@ -535,20 +530,34 @@ class LimeBase(PerturbationAttribution):
         expanded_target: TargetType,
         expanded_additional_args: Any,
         device: torch.device,
-    ):
+    ) -> Tensor:
+        """
+        This method evaluates the model on a batch of perturbed inputs.
+
+        Args:
+            curr_model_inputs (List[TensorOrTupleOfTensorsGeneric]): List of perturbed inputs.
+            expanded_target (TargetType): Target index or indices for which the model is evaluated.
+            expanded_additional_args (Any): additional arguments to be passed to the forward function.
+            device (torch.device): The device on which the model is evaluated.
+
+        Returns:
+            Tensor: The output of the model evaluated on the batch of perturbed inputs.
+        """
         model_out = _run_forward(
             self.forward_func,
             _reduce_list(curr_model_inputs),
             expanded_target,
             expanded_additional_args,
         )
-        if isinstance(model_out, Tensor):
-            assert model_out.numel() == len(curr_model_inputs), (
-                "Number of outputs is not appropriate, must return " "one output per perturbed input"
-            )
-        if isinstance(model_out, Tensor):
+        if not isinstance(model_out, Tensor):
+            model_out = torch.tensor([model_out], device=device)
+
+        if isinstance(model_out, Tensor) and model_out.numel() == len(curr_model_inputs):
             return model_out.flatten()
-        return torch.tensor([model_out], device=device)
+
+        raise ValueError(
+            "Model output must be a tensor with the same number of elements as the number of perturbations."
+        )
 
     def has_convergence_delta(self) -> bool:
         return False
@@ -562,7 +571,19 @@ class LimeBase(PerturbationAttribution):
 # for Lime child implementation.
 
 
-def default_from_interp_rep_transform(curr_sample, original_inputs, **kwargs):
+def default_from_interp_rep_transform(
+    curr_sample: TensorOrTupleOfTensorsGeneric, original_inputs: TensorOrTupleOfTensorsGeneric, **kwargs
+) -> TensorOrTupleOfTensorsGeneric:
+    """
+    This function takes a single sampled interpretable representation (tensor of shape 1 x num_interp_features) and returns the corresponding representation in the input space (matching shapes of original input to attribute).
+
+    Args:
+        curr_sample (Tensor): A single sampled interpretable representation (tensor of shape 1 x num_interp_features)
+        original_inputs (Tensor or tuple[Tensor, ...]): Original input for which LIME is computed. If forward_func takes a single tensor as input, a single input tensor should be provided. If forward_func takes multiple tensors as input, a tuple of the input tensors should be provided. It is assumed that for all given input tensors, dimension 0 corresponds to the number of examples, and if multiple input tensors are provided, the examples must be aligned appropriately.
+
+    Returns:
+        Tensor or tuple[Tensor, ...]: The corresponding representation in the input space (matching shapes of original input to attribute).
+    """
     assert "feature_mask" in kwargs, "Must provide feature_mask to use default interpretable representation transform"
     assert "baselines" in kwargs, "Must provide baselines to use default interpretable representation transform"
     feature_mask = kwargs["feature_mask"]
@@ -808,7 +829,7 @@ class Lime(LimeBase):
         )
 
     @log_usage()
-    def attribute(  # type: ignore
+    def attribute(
         self,
         inputs: TensorOrTupleOfTensorsGeneric,
         baselines: BaselineType = None,
@@ -819,7 +840,7 @@ class Lime(LimeBase):
         perturbations_per_eval: int = 1,
         return_input_shape: bool = True,
         show_progress: bool = False,
-    ) -> TensorOrTupleOfTensorsGeneric:
+    ) -> tuple[TensorOrTupleOfTensorsGeneric, Tensor]:
         r"""
         This method attributes the output of the model with given target index
         (in case it is provided, otherwise it assumes that output is a
@@ -997,7 +1018,7 @@ class Lime(LimeBase):
                         tensor is returned, containing only the coefficients
                         of the trained interpreatable models, with length
                         num_interp_features.
-            *Tensor* of **R^2 value**: R^2 value of the interpretable model trained.
+            - **R^2** (*Tensor*): R^2 score of the interpretable model on the training data.
         Examples::
 
             >>> # SimpleClassifier takes a single input tensor of size Nx4x4,
@@ -1036,7 +1057,7 @@ class Lime(LimeBase):
 
             >>> # Computes interpretable model and returning attributions
             >>> # matching input shape.
-            >>> attr = lime.attribute(input, target=1, feature_mask=feature_mask)
+            >>> attr, r2s = lime.attribute(input, target=1, feature_mask=feature_mask)
         """
         return self._attribute_kwargs(
             inputs=inputs,
@@ -1062,7 +1083,7 @@ class Lime(LimeBase):
         return_input_shape: bool = True,
         show_progress: bool = False,
         **kwargs,
-    ) -> TensorOrTupleOfTensorsGeneric:
+    ) -> tuple[TensorOrTupleOfTensorsGeneric, Tensor]:
         is_inputs_tuple = _is_tuple(inputs)
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
         bsz = formatted_inputs[0].shape[0]
@@ -1129,7 +1150,7 @@ class Lime(LimeBase):
                                 )
                             )
                         else:
-                            output_list.append(coefs.reshape(1, -1))  # type: ignore
+                            output_list.append(coefs.reshape(1, -1))
                         output_r2s.append(r2s)
 
                     return _reduce_list(output_list), sum(output_r2s) / len(output_r2s)
@@ -1195,6 +1216,20 @@ class Lime(LimeBase):
         num_interp_features: int,
         is_inputs_tuple: bool,
     ) -> Union[Tensor, Tuple[Tensor, ...]]:
+        """
+        This method converts the output of the interpretable model to match the input shape.
+
+        Args:
+            formatted_inp (Tuple[Tensor, ...]): Formatted input tensors.
+            feature_mask (Tuple[Tensor, ...]): Tuple of feature masks.
+            coefs (Tensor): Coefficients of the interpretable model.
+            num_interp_features (int): Number of interpretable features.
+            is_inputs_tuple (bool): Whether inputs are a tuple.
+
+        Returns:
+            Union[Tensor, Tuple[Tensor, ...]]: The coefficients of the interpretable model
+            reshaped to match the input shape.
+        """
         coefs = coefs.flatten()
         attr = [torch.zeros_like(single_inp, dtype=torch.float) for single_inp in formatted_inp]
         for tensor_ind in range(len(formatted_inp)):

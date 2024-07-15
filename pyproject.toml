@@ -57,7 +57,7 @@ dev-dependencies = [
 ignore_missing_imports = true
 files = ["src"]
 plugins = [
-  "pydantic.mypy"
+  "pydantic.mypy",
 ]
 
 [tool.ruff]
