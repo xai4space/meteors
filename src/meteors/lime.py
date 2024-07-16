@@ -1129,6 +1129,7 @@ class Lime(Explainer):
 
         return band_mask
 
+    # TODO: finish the implementation of the Lime class
     @staticmethod
     def _create_tensor_band_mask(
         image: Image,

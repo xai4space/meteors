@@ -280,11 +280,6 @@ class LinearModel(nn.Module, InterpretableModel):
 
     def bias(self) -> torch.Tensor | None:
         r"""Returns the bias of the linear model."""
-        if self.linear is None or self.linear.bias is None:
-            return None
-        return self.linear.bias.detach()
-
-    def classes(self) -> torch.Tensor | None:
         r"""Returns the list of prediction classes supported by the model in case it performs classification.
 
         In case of regression, it returns None.
