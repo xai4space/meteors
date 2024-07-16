@@ -1,62 +1,165 @@
 from __future__ import annotations
 
+from typing import Callable
 from abc import ABC, abstractmethod
-from typing import Callable, cast
 
+import torch
+import warnings
 import torch.nn as nn
-from torch import Tensor
-from torch.utils.data import DataLoader
-
-from pydantic import BaseModel, Field, field_validator
-from typing_extensions import Annotated
+from captum._utils.models.linear_model.train import sklearn_train_linear_model
 
 
-class ExplainableModel(BaseModel):
-    forward_func: Callable
-    problem_type: Annotated[
-        str,
-        Field(
-            validate_default=True,
-            description="Problem type of the model. Must be either 'classification', 'regression' or 'segmentation'",
-        ),
-    ]
+class ExplainableModel:
+    """
+    A class representing an explainable model.
 
-    @field_validator("problem_type")
-    @classmethod
-    def validate_problem_type(cls, value):
-        assert value in [
-            "classification",
-            "regression",
-            "segmentation",
-        ], "Problem type must be either 'classification', 'regression' or 'segmentation'"
+    Args:
+        forward_func (Callable): The forward function of the model.
+        problem_type (str): The type of the problem the model is designed to solve.
+
+    Attributes:
+        forward_func (Callable): The forward function of the model.
+        problem_type (str): The type of the problem the model is designed to solve.
+
+    Raises:
+        TypeError: If the problem_type is not a string.
+        ValueError: If the problem_type is not one of 'classification', 'regression', or 'segmentation'.
+
+    Methods:
+        __call__(self, x: torch.Tensor) -> torch.Tensor: Calls the forward function of the model.
+        to(self, device: torch.device | str) -> ExplainableModel: Moves the model to the specified device.
+
+    """
+
+    VALID_PROBLEM_TYPES = {"classification", "regression", "segmentation"}
+
+    def __init__(self, forward_func: Callable, problem_type: str) -> None:
+        self.forward_func = forward_func
+        self.problem_type = self.validate_problem_type(problem_type)
+
+    @staticmethod
+    def validate_problem_type(value: str) -> str:
+        """
+        Validates the problem type.
+
+        Args:
+            value (str): The problem type.
+
+        Returns:
+            str: The validated problem type.
+
+        Raises:
+            TypeError: If the problem type is not a string.
+            ValueError: If the problem type is not one of 'classification', 'regression', or 'segmentation'.
+
+        """
+        if not isinstance(value, str):
+            raise TypeError("Problem type must be a string")
+
+        value = value.lower()
+
+        if value not in ExplainableModel.VALID_PROBLEM_TYPES:
+            raise ValueError(f"Invalid problem type. Expected one of {ExplainableModel.VALID_PROBLEM_TYPES}")
+
         return value
 
-    def __call__(self, x):
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Calls the forward function of the model.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The output tensor.
+
+        """
         return self.forward_func(x)
 
-    def to(self, device):
-        self.forward_func.to(device)
+    def to(self, device: torch.device | str) -> ExplainableModel:
+        """
+        Moves the model to the specified device.
+
+        Args:
+            device (torch.device | str): The device to move the model to.
+
+        Returns:
+            ExplainableModel: The model itself.
+
+        """
+        if hasattr(self.forward_func, "to") and callable(getattr(self.forward_func, "to")):
+            self.forward_func.to(device)
+        else:
+            warnings.warn("Model does not have a `to` method, it might not be a PyTorch model.")
         return self
 
 
 class InterpretableModel(ABC):
+    """
+    Abstract base class for an interpretable model.
+
+    This class defines the interface for an interpretable model, which is a model that provides
+    interpretability in addition to its predictive capabilities.
+
+    Attributes:
+        None
+
+    Methods:
+        fit(train_data: torch.utils.data.DataLoader, **kwargs) -> None:
+            Fits the model to the training data.
+
+        get_representation() -> torch.Tensor:
+            Returns the learned representation of the model.
+
+        __call__(x: torch.Tensor) -> torch.Tensor:
+            Makes predictions for the input tensor x.
+
+    """
+
     def __init__(self) -> None:
         pass
 
     @abstractmethod
-    def fit(self, train_data: DataLoader, **kwargs):
+    def fit(self, train_data: torch.utils.data.DataLoader, **kwargs) -> None:
+        """
+        Fits the model to the training data.
+
+        Args:
+            train_data (torch.utils.data.DataLoader): The training data.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            None
+        """
         pass
 
     @abstractmethod
-    def get_representation(self):
+    def get_representation(self) -> torch.Tensor:
+        """
+        Returns the representation of the object as a torch.Tensor.
+
+        Returns:
+            torch.Tensor: The representation of the object.
+        """
         pass
 
     @abstractmethod
-    def __call__(self, x):
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Apply the model to the input tensor.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The output tensor.
+        """
         pass
 
 
-### Code below is copied from captum library. It has slight modifications made jointly by me or Vladimir
+############################################################################################################
+### Code below is copied from captum library. It has slight modifications made jointly by me or Vladimir ###
+############################################################################################################
 
 
 class LinearModel(nn.Module, InterpretableModel):
@@ -73,13 +176,13 @@ class LinearModel(nn.Module, InterpretableModel):
         Please note that this is an experimental feature.
 
         Args:
-            train_fn (Callable)
+            train_fn (Callable):
                 The function to train with. See
                 `captum._utils.models.linear_model.train.sgd_train_linear_model`
                 and
                 `captum._utils.models.linear_model.train.sklearn_train_linear_model`
-                for examples
-            kwargs
+                for examples.
+            kwargs:
                 Any additional keyword arguments to send to
                 `self._construct_model_params` once a `self.fit` is called.
         """
@@ -97,17 +200,17 @@ class LinearModel(nn.Module, InterpretableModel):
         norm_type: str | None = None,
         affine_norm: bool = False,
         bias: bool = True,
-        weight_values: Tensor | None = None,
-        bias_value: Tensor | None = None,
-        classes: Tensor | None = None,
-    ):
+        weight_values: torch.Tensor | None = None,
+        bias_value: torch.Tensor | None = None,
+        classes: torch.Tensor | None = None,
+    ) -> None:
         r"""
         Lazily initializes a linear model. This will be called for you in a
         train method.
 
         Args:
             in_features (int):
-                The number of input features
+                The number of input features.
             output_features (int):
                 The number of output features.
             norm_type (str, optional):
@@ -127,7 +230,7 @@ class LinearModel(nn.Module, InterpretableModel):
                 The bias value to initialize the model with.
             classes (Tensor, optional):
                 The list of prediction classes supported by the model in case it
-                performs classificaton. In case of regression it is set to None.
+                performs classification. In case of regression, it is set to None.
                 Default: None
         """
         if norm_type not in LinearModel.SUPPORTED_NORMS:
@@ -161,9 +264,9 @@ class LinearModel(nn.Module, InterpretableModel):
         if classes is not None:
             self.linear.classes = classes
 
-    def fit(self, train_data: DataLoader, **kwargs):
+    def fit(self, train_data: torch.utils.data.DataLoader, **kwargs) -> None:
         r"""
-        Calls `self.train_fn`
+        Calls `self.train_fn`.
         """
         return self.train_fn(
             self,
@@ -172,32 +275,45 @@ class LinearModel(nn.Module, InterpretableModel):
             **kwargs,
         )
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of the model.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor.
+        """
         assert self.linear is not None
-        if self.norm is not None:
+        if self.norm:
             x = self.norm(x)
         return self.linear(x)
 
-    def get_representation(self) -> Tensor:
+    def get_representation(self) -> torch.Tensor:
         r"""
         Returns a tensor which describes the hyper-plane input space. This does
-        not include the bias. For bias/intercept, please use `self.bias`
+        not include the bias. For bias/intercept, please use `self.bias`.
         """
         assert self.linear is not None
         return self.linear.weight.detach()
 
-    def bias(self) -> Tensor | None:
+    def bias(self) -> torch.Tensor | None:
         r"""
-        Returns the bias of the linear model
+        Returns the bias of the linear model.
         """
         if self.linear is None or self.linear.bias is None:
             return None
         return self.linear.bias.detach()
 
-    def classes(self) -> Tensor | None:
+    def classes(self) -> torch.Tensor | None:
+        r"""
+        Returns the list of prediction classes supported by the model in case it
+        performs classification. In case of regression, it returns None.
+        """
         if self.linear is None or self.linear.classes is None:
             return None
-        return cast(Tensor, self.linear.classes).detach()
+        return self.linear.classes.detach()
 
 
 class SkLearnLinearModel(LinearModel):
@@ -224,20 +340,19 @@ class SkLearnLinearModel(LinearModel):
             kwargs
                 The kwargs to pass to the construction of the sklearn model
         """
-        # avoid cycles
-        from captum._utils.models.linear_model.train import sklearn_train_linear_model
-
         super().__init__(train_fn=sklearn_train_linear_model, **kwargs)
 
         self.sklearn_module = sklearn_module
 
-    def fit(self, train_data: DataLoader, **kwargs):
+    def fit(self, train_data: torch.utils.data.DataLoader, **kwargs) -> None:
         r"""
+        Fits the model to the given training data using the sklearn module.
+
         Args:
             train_data
-                Train data to use
+                The training data to use for fitting the model.
             kwargs
-                Arguments to feed to `.fit` method for sklearn
+                Additional arguments to pass to the `.fit` method of the sklearn module.
         """
         return super().fit(train_data=train_data, sklearn_trainer=self.sklearn_module, **kwargs)
 
@@ -251,5 +366,15 @@ class SkLearnLasso(SkLearnLinearModel):
         """
         super().__init__(sklearn_module="linear_model.Lasso", **kwargs)
 
-    def fit(self, train_data: DataLoader, **kwargs):
+    def fit(self, train_data: torch.utils.data.DataLoader, **kwargs) -> None:
+        """
+        Fits the `SkLearnLasso` model to the provided training data.
+
+        Args:
+            train_data (torch.utils.data.DataLoader): The training data.
+            **kwargs: Additional keyword arguments to be passed to the `fit` method.
+
+        Returns:
+            None
+        """
         return super().fit(train_data=train_data, **kwargs)

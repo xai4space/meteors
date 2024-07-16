@@ -182,18 +182,18 @@ class Image(BaseModel):
     image: Annotated[  # Should always be a first field
         torch.Tensor,
         BeforeValidator(validate_image),
-        Field(description="hyperspectral imaage. Converted to torch tensor."),
+        Field(description="Hyperspectral image. Converted to torch tensor."),
     ]
     wavelengths: Annotated[
         torch.Tensor,
         BeforeValidator(validate_wavelengths),
-        Field(description="wave lengths present in the image. Defaults to None."),
+        Field(description="Wavelengths present in the image. Defaults to None."),
     ]
     orientation: Annotated[
         tuple[str, str, str],
         BeforeValidator(validate_orientation),
         Field(
-            description='orientation of the image - sequence of three one-letter strings in any order: "C", "H", "W" meaning respectively channels, height and width of the image. Defaults to ("C", "H", "W")'
+            description='Orientation of the image - sequence of three one-letter strings in any order: "C", "H", "W" meaning respectively channels, height and width of the image. Defaults to ("C", "H", "W").'
         ),
     ] = ("C", "H", "W")
     device: Annotated[
@@ -202,7 +202,7 @@ class Image(BaseModel):
         Field(
             validate_default=True,
             exclude=True,
-            description="device to be used for inference. If None, the device of the input image will be used. Defaults to None.",
+            description="Device to be used for inference. If None, the device of the input image will be used. Defaults to None.",
         ),
     ] = None
     binary_mask: Annotated[
@@ -210,7 +210,7 @@ class Image(BaseModel):
         BeforeValidator(validate_binary_mask),
         Field(
             validate_default=True,
-            description="binary mask used to cover not important parts of the base image, masked parts have values equals to 0. Converted to torch tensor. Defaults to None.",
+            description="Binary mask used to cover not important parts of the base image, masked parts have values equals to 0. Converted to torch tensor. Defaults to None.",
         ),
     ] = None
 
