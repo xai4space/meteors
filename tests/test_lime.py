@@ -252,7 +252,7 @@ def test_dummy_explainer():
 
     lime = mt.Lime(explainable_model=explainable_model, interpretable_model=interpretable_model)
 
-    assert lime._device == torch.device("cpu"), "Device should be set to cpu by default"
+    assert lime.device == torch.device("cpu"), "Device should be set to cpu by default"
 
     shape = (150, 240, 240)
     sample = torch.ones(shape)

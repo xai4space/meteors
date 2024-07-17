@@ -220,8 +220,8 @@ def visualize_spectral_attributes_by_waveband(
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
-    flattened_band_mask = spectral_attributes[0].get_flattened_band_mask().cpu()
-    attribution_map = torch.stack([attr.get_flattened_attributes().cpu() for attr in spectral_attributes])
+    flattened_band_mask = spectral_attributes[0].flattened_band_mask.cpu()
+    attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
 
     for idx, (band_name, segment_id) in enumerate(band_names.items()):
         current_wavelengths = wavelengths[flattened_band_mask == segment_id]
@@ -311,8 +311,8 @@ def visualize_spectral_attributes_by_magnitude(
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
-    flattened_band_mask = spectral_attributes[0].get_flattened_band_mask().cpu()
-    attribution_map = torch.stack([attr.get_flattened_attributes().cpu() for attr in spectral_attributes])
+    flattened_band_mask = spectral_attributes[0].flattened_band_mask.cpu()
+    attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
     avg_magnitudes = calculate_average_magnitudes(band_names, flattened_band_mask, attribution_map)
 
     if aggregate_results:
