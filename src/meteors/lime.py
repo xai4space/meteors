@@ -1129,7 +1129,6 @@ class Lime(Explainer):
 
         return band_mask
 
-    # TODO: finish the implementation of the Lime class
     @staticmethod
     def _create_tensor_band_mask(
         image: Image,
@@ -1176,6 +1175,42 @@ class Lime(Explainer):
         # Create single-dimensional band mask
         band_mask_single_dim = Lime._create_single_dim_band_mask(
             image, dict_labels_to_indices, dict_labels_to_segment_ids, device
+        )
+
+        # Expand band mask to match image dimensions
+        band_mask = Lime._expand_band_mask(image, band_mask_single_dim, repeat_dimensions)
+
+        return band_mask
+
+    @staticmethod
+    def _create_tensor_band_mask(
+        image: Image,
+        dict_labels_to_indices: dict[str | tuple[str, ...], list[int]],
+        dict_labels_to_segment_ids: dict[str | tuple[str, ...], int] | None = None,
+        device: str | torch.device | None = None,
+        repeat_dimensions: bool = False,
+        return_dict_labels_to_segment_ids: bool = True,
+    ) -> torch.Tensor | tuple[torch.Tensor, dict[tuple[str, ...] | str, int]]:
+        """Create tensor band mask from dictionaries."""
+        if device is None:
+            device = image.image.device
+
+        segment_labels = list(dict_labels_to_indices.keys())
+        hashed = False
+
+        logger.debug(f"Creating a band mask on the device {device} using {len(segment_labels)} segments")
+
+        # Check for overlapping segments
+        Lime._check_overlapping_segments(image, dict_labels_to_indices)
+
+        # Create or validate dict_labels_to_segment_ids
+        dict_labels_to_segment_ids, hashed = Lime._create_or_validate_dict_labels_to_segment_ids(
+            dict_labels_to_segment_ids, segment_labels
+        )
+
+        # Create single-dimensional band mask
+        band_mask_single_dim = Lime._create_single_dim_band_mask(
+            image, dict_labels_to_indices, dict_labels_to_segment_ids, device, hashed
         )
 
         # Expand band mask to match image dimensions
