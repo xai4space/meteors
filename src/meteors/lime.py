@@ -255,8 +255,7 @@ def validate_segment_format_range(
 def validate_segment_range(
     wavelengths: torch.Tensor, segment_range: list[tuple[IntOrFloat, IntOrFloat]]
 ) -> list[tuple[IntOrFloat, IntOrFloat]]:
-    """
-    Validates the segment range and adjusts it if necessary.
+    """Validates the segment range and adjusts it if possible.
 
     Args:
         wavelengths (torch.Tensor): The wavelengths tensor.
@@ -267,7 +266,6 @@ def validate_segment_range(
 
     Raises:
         ValueError: If the segment range is out of bounds.
-
     """
     wavelengths_max_index = wavelengths.shape[0]
     out_segment_range = []
