@@ -11,8 +11,7 @@ import spyndex
 
 
 def get_band_axis(orientation: tuple[str, str, str]) -> int:
-    """
-    Returns the index of the band axis in the orientation list.
+    """Returns the index of the band axis in the orientation list.
 
     Returns:
         int: The index of the band axis.
@@ -21,17 +20,18 @@ def get_band_axis(orientation: tuple[str, str, str]) -> int:
 
 
 def validate_orientation(value: tuple[str, str, str]) -> tuple[str, str, str]:
-    """
-    Validates the orientation value.
+    """Validates the orientation value.
 
     Args:
-        value (tuple[str, str, str]): The orientation value to be validated. It should be a tuple of three one-letter strings.
+        value (tuple[str, str, str]):
+            The orientation value to be validated. It should be a tuple of three one-letter strings.
 
     Returns:
         tuple[str, str, str]: The validated orientation value.
 
     Raises:
-        ValueError: If the value is not a tuple of three one-letter strings or if it does not contain 'W', 'H', and 'C' in any order.
+        ValueError: If the value is not a tuple of three one-letter strings
+            or if it does not contain 'W', 'H', and 'C' in any order.
     """
     if not isinstance(value, tuple):
         value = tuple(value)
@@ -42,8 +42,7 @@ def validate_orientation(value: tuple[str, str, str]) -> tuple[str, str, str]:
 
 
 def validate_image(image: np.ndarray | torch.Tensor) -> torch.Tensor:
-    """
-    Validates the input image and converts it to a torch tensor if necessary.
+    """Validates the input image and converts it to a torch tensor if necessary.
 
     Args:
         image (np.ndarray | torch.Tensor): The input image to be validated.
@@ -53,7 +52,6 @@ def validate_image(image: np.ndarray | torch.Tensor) -> torch.Tensor:
 
     Raises:
         TypeError: If the image is not a numpy array or torch tensor.
-
     """
     if not isinstance(image, (torch.Tensor, np.ndarray)):
         raise TypeError("Image should be a numpy array or torch tensor")
@@ -64,11 +62,11 @@ def validate_image(image: np.ndarray | torch.Tensor) -> torch.Tensor:
 
 
 def validate_device(device: str | torch.device | None, info: ValidationInfo) -> torch.device:
-    """
-    Validates and returns the device to be used for inference.
+    """Validates and returns the device to be used for inference.
 
     Args:
-        device (str | torch.device | None): The device to be used for inference. If None, the device of the input image will be used.
+        device (str | torch.device | None): The device to be used for inference.
+            If None, the device of the input image will be used.
         info (ValidationInfo): The validation information.
 
     Returns:
@@ -90,11 +88,11 @@ def validate_device(device: str | torch.device | None, info: ValidationInfo) -> 
 def validate_wavelengths(
     wavelengths: torch.Tensor | np.ndarray | list[int | float] | tuple[int | float],
 ) -> torch.Tensor:
-    """
-    Validates the input wavelengths and converts them to a numpy array if necessary.
+    """Validates the input wavelengths and converts them to a numpy array if necessary.
 
     Args:
-        wavelengths (torch.Tensor | np.ndarray | list[int | float] | tuple[int | float]): The input wavelengths to be validated.
+        wavelengths (torch.Tensor | np.ndarray | list[int | float] | tuple[int | float]):
+            The input wavelengths to be validated.
 
     Returns:
         torch.Tensor: The validated and converted wavelengths as a torch tensor.
@@ -111,8 +109,7 @@ def validate_wavelengths(
 
 
 def validate_shapes(wavelengths: np.ndarray, image: torch.Tensor, band_axis: int) -> None:
-    """
-    Validates the shape of the wavelengths array against the image tensor.
+    """Validates the shape of the wavelengths array against the image tensor.
 
     Args:
         wavelengths (np.ndarray): Array of wavelengths.
@@ -127,8 +124,7 @@ def validate_shapes(wavelengths: np.ndarray, image: torch.Tensor, band_axis: int
 
 
 def validate_binary_mask(mask: np.ndarray | torch.Tensor | None | str, info: ValidationInfo) -> torch.Tensor:
-    """
-    Validates and processes a binary mask.
+    """Validates and processes a binary mask.
 
     Args:
         mask (np.ndarray | torch.Tensor | None | str): The binary mask to validate and process.
@@ -193,7 +189,10 @@ class Image(BaseModel):
         tuple[str, str, str],
         BeforeValidator(validate_orientation),
         Field(
-            description='Orientation of the image - sequence of three one-letter strings in any order: "C", "H", "W" meaning respectively channels, height and width of the image. Defaults to ("C", "H", "W").'
+            description=(
+                'Orientation of the image - sequence of three one-letter strings in any order: "C", "H", "W" '
+                'meaning respectively channels, height and width of the image. Defaults to ("C", "H", "W").'
+            ),
         ),
     ] = ("C", "H", "W")
     device: Annotated[
@@ -210,14 +209,16 @@ class Image(BaseModel):
         BeforeValidator(validate_binary_mask),
         Field(
             validate_default=True,
-            description="Binary mask used to cover not important parts of the base image, masked parts have values equals to 0. Converted to torch tensor. Defaults to None.",
+            description=(
+                "Binary mask used to cover not important parts of the base image, masked parts have values equals to 0. "
+                "Converted to torch tensor. Defaults to None."
+            ),
         ),
     ] = None
 
     @property
     def band_axis(self) -> int:
-        """
-        Returns the index of the band axis in the orientation list.
+        """Returns the index of the band axis in the orientation list.
 
         Returns:
             int: The index of the band axis.
@@ -226,8 +227,8 @@ class Image(BaseModel):
 
     @property
     def get_squeezed_binary_mask(self) -> torch.Tensor:
-        """
-        Returns the squeezed binary mask tensor. We assume that the binary mask is a 3D tensor with the same mask for all bands.
+        """Returns the squeezed binary mask tensor. We assume that the binary mask is a 3D tensor with the same mask for
+        all bands.
 
         Returns:
             torch.Tensor | None: The squeezed binary mask tensor.
@@ -241,8 +242,7 @@ class Image(BaseModel):
 
     @model_validator(mode="after")
     def validate_image_data(self) -> Self:
-        """
-        Validates the image data by checking the shape of the wavelengths, image, and band_axis.
+        """Validates the image data by checking the shape of the wavelengths, image, and band_axis.
 
         Returns:
             Self: The instance of the class.
@@ -251,15 +251,13 @@ class Image(BaseModel):
         return self
 
     def to(self, device: str | torch.device) -> Self:
-        """
-        Moves the image and binary mask (if available) to the specified device.
+        """Moves the image and binary mask (if available) to the specified device.
 
         Args:
             device (str or torch.device): The device to move the image and binary mask to.
 
         Returns:
             Self: The updated Image object.
-
         """
         self.image = self.image.to(device)
         self.binary_mask = self.binary_mask.to(device)
@@ -270,13 +268,13 @@ class Image(BaseModel):
     def get_rgb_image(
         self, mask: bool = True, cutoff_min: bool = False, output_rgb_band_axis: int | None = None
     ) -> torch.Tensor:
-        """
-        Returns the RGB image of the meteor data.
+        """Returns the RGB image of the meteor data.
 
         Args:
             mask (bool, optional): Whether to apply a mask to the image. Defaults to True.
             cutoff_min (bool, optional): Whether to apply a minimum cutoff to the image. Defaults to False.
-            output_rgb_band_axis (int | None, optional): The axis where the RGB bands should be placed. If None, uses the default band axis. Defaults to None.
+            output_rgb_band_axis (int | None, optional): The axis where the RGB bands should be placed.
+                If None, uses the default band axis. Defaults to None.
 
         Returns:
             torch.Tensor: The RGB image tensor.
@@ -313,8 +311,7 @@ class Image(BaseModel):
     def _get_central_band(
         self, selected_wavelengths: torch.Tensor, mask: bool = True, cutoff_min: bool = False, normalize: bool = True
     ) -> torch.Tensor:
-        """
-        Retrieves the central band from the image based on the selected wavelengths.
+        """Retrieves the central band from the image based on the selected wavelengths.
 
         Args:
             selected_wavelengths (torch.Tensor): The selected wavelengths.
@@ -359,14 +356,14 @@ class Image(BaseModel):
     def select_single_band_from_name(
         self, band_name: str, method="center", mask=True, cutoff_min=False, normalize=True
     ) -> torch.Tensor:
-        """
-        Selects a single band from the image based on the given band name.
+        """Selects a single band from the image based on the given band name.
 
         Args:
             band_name (str): The name of the band to select.
             method (str, optional): The method to use for band selection. Defaults to "center".
             mask (bool, optional): Whether to apply a mask to the selected band. Defaults to True.
-            cutoff_min (bool, optional): Whether to cutoff the minimum value of the selected band. Defaults to False.
+            cutoff_min (bool, optional): Whether to cutoff the minimum value of the selected band.
+                Defaults to False.
             normalize (bool, optional): Whether to normalize the selected band. Defaults to True.
 
         Returns:
@@ -377,7 +374,6 @@ class Image(BaseModel):
 
         Raises:
             NotImplementedError: If the specified method is not supported.
-
         """
         band = spyndex.bands.get(band_name)
         assert band is not None, f"Band {band_name} not found"

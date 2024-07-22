@@ -16,12 +16,12 @@ from meteors import (
 
 
 def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:
-    """
-    Visualizes an LIME image object on the given axes.
+    """Visualizes an LIME image object on the given axes.
 
     Parameters:
         image (Image | ImageAttributes): The image to be visualized.
-        ax (matplotlib.axes.Axes | None): The axes on which the image will be plotted. If None, the current axes will be used.
+        ax (matplotlib.axes.Axes | None): The axes on which the image will be plotted.
+            If None, the current axes will be used.
 
     Returns:
         matplotlib.figure.Figure | None:
@@ -41,12 +41,13 @@ def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:
 def visualize_spatial_attributes(  # noqa: C901
     spatial_attributes: ImageSpatialAttributes, use_pyplot: bool = False
 ) -> tuple[Figure, Axes] | None:
-    """
-    Visualizes the spatial attributes of an image using Lime attribution.
+    """Visualizes the spatial attributes of an image using Lime attribution.
 
     Args:
-        spatial_attributes (ImageSpatialAttributes): The spatial attributes of the image object to visualize.
-        use_pyplot (bool, optional): Whether to use pyplot for visualization. Defaults to False.
+        spatial_attributes (ImageSpatialAttributes):
+            The spatial attributes of the image object to visualize.
+        use_pyplot (bool, optional):
+            Whether to use pyplot for visualization. Defaults to False.
 
     Returns:
         tuple[matplotlib.figure.Figure, matplotlib.axes.Axes] | None:
@@ -88,15 +89,14 @@ def visualize_spectral_attributes(
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
 ) -> tuple[Figure, Axes] | None:
-    """
-    Visualizes the spectral attributes of an image or a list of images.
+    """Visualizes the spectral attributes of an image or a list of images.
 
     Args:
         spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]):
             The spectral attributes of the image object to visualize.
         use_pyplot (bool, optional):
-            If True, displays the visualization using pyplot. If False, returns the figure and axes objects.
-            Defaults to False.
+            If True, displays the visualization using pyplot.
+            If False, returns the figure and axes objects. Defaults to False.
         color_palette (list[str] | None, optional):
             The color palette to use for visualizing different spectral bands.
             If None, a default color palette is used.
@@ -146,8 +146,7 @@ def visualize_spectral_attributes(
 def validate_consistent_band_and_wavelengths(
     band_names: dict[str, int], wavelengths: torch.Tensor, spectral_attributes: list[ImageSpectralAttributes]
 ) -> None:
-    """
-    Validates that all spectral attributes have consistent band names and wavelengths.
+    """Validates that all spectral attributes have consistent band names and wavelengths.
 
     Args:
         band_names (dict[str, int]): A dictionary mapping band names to their indices.
@@ -165,8 +164,7 @@ def validate_consistent_band_and_wavelengths(
 
 
 def setup_visualization(ax: Axes | None, title: str, xlabel: str, ylabel: str) -> Axes:
-    """
-    Set up the visualization by configuring the axes with the provided title, xlabel, and ylabel.
+    """Set up the visualization by configuring the axes with the provided title, xlabel, and ylabel.
 
     Parameters:
         ax (Axes | None): The axes object to be configured. If None, the current axes will be used.
@@ -191,14 +189,17 @@ def visualize_spectral_attributes_by_waveband(
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
 ) -> Axes:
-    """
-    Visualizes spectral attributes by waveband.
+    """Visualizes spectral attributes by waveband.
 
     Args:
-        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]): The spectral attributes to visualize.
-        ax (Axes | None): The matplotlib axes to plot the visualization on. If None, a new axes will be created.
-        color_palette (list[str] | None): The color palette to use for plotting. If None, a default color palette will be used.
-        show_not_included (bool): Whether to show the "not_included" band in the visualization. Default is True.
+        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]):
+            The spectral attributes to visualize.
+        ax (Axes | None): The matplotlib axes to plot the visualization on.
+            If None, a new axes will be created.
+        color_palette (list[str] | None): The color palette to use for plotting.
+            If None, a default color palette will be used.
+        show_not_included (bool): Whether to show the "not_included" band in the visualization.
+            Default is True.
 
     Returns:
         Axes: The matplotlib axes object containing the visualization.
@@ -251,8 +252,7 @@ def visualize_spectral_attributes_by_waveband(
 def calculate_average_magnitudes(
     band_names: dict[str, int], flattened_band_mask: torch.Tensor, attribution_map: torch.Tensor
 ) -> list[torch.Tensor]:
-    """
-    Calculates the average magnitudes for each segment ID in the attribution map.
+    """Calculates the average magnitudes for each segment ID in the attribution map.
 
     Args:
         band_names (dict[str, int]): A dictionary mapping band names to segment IDs.
@@ -260,7 +260,8 @@ def calculate_average_magnitudes(
         attribution_map (torch.Tensor): A tensor representing the attribution map.
 
     Returns:
-        list[torch.Tensor]: A list of tensors containing the average magnitudes for each segment ID.
+        list[torch.Tensor]:
+            A list of tensors containing the average magnitudes for each segment ID.
     """
     avg_magnitudes = []
     for segment_id in band_names.values():
@@ -280,15 +281,19 @@ def visualize_spectral_attributes_by_magnitude(
     annotate_bars: bool = True,
     show_not_included: bool = True,
 ) -> Axes:
-    """
-    Visualizes the spectral attributes by magnitude.
+    """Visualizes the spectral attributes by magnitude.
 
     Args:
-        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]): The spectral attributes to visualize.
-        ax (Axes | None): The matplotlib Axes object to plot the visualization on. If None, a new Axes object will be created.
-        color_palette (list[str] | None): The color palette to use for the visualization. If None, a default color palette will be used.
-        annotate_bars (bool): Whether to annotate the bars with their magnitudes. Defaults to True.
-        show_not_included (bool): Whether to show the 'not_included' band in the visualization. Defaults to True.
+        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]):
+            The spectral attributes to visualize.
+        ax (Axes | None): The matplotlib Axes object to plot the visualization on.
+            If None, a new Axes object will be created.
+        color_palette (list[str] | None): The color palette to use for the visualization.
+            If None, a default color palette will be used.
+        annotate_bars (bool): Whether to annotate the bars with their magnitudes.
+            Defaults to True.
+        show_not_included (bool): Whether to show the 'not_included' band in the visualization.
+            Defaults to True.
 
     Returns:
         Axes: The matplotlib Axes object containing the visualization.

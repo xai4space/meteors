@@ -46,11 +46,9 @@ from meteors.utils.models import InterpretableModel, SkLearnLasso
 
 
 class LimeBase(PerturbationAttribution):
-    r"""
-    Lime is an interpretability method that trains an interpretable surrogate model
-    by sampling points around a specified input example and using model evaluations
-    at these points to train a simpler interpretable 'surrogate' model, such as a
-    linear model.
+    r"""Lime is an interpretability method that trains an interpretable surrogate model by sampling points around a
+    specified input example and using model evaluations at these points to train a simpler interpretable 'surrogate'
+    model, such as a linear model.
 
     LimeBase provides a generic framework to train a surrogate interpretable model.
     This differs from most other attribution methods, since the method returns a
@@ -252,12 +250,9 @@ class LimeBase(PerturbationAttribution):
         show_progress: bool = False,
         **kwargs,
     ) -> tuple[Tensor, Tensor]:
-        r"""
-        This method attributes the output of the model with given target index
-        (in case it is provided, otherwise it assumes that output is a
-        scalar) to the inputs of the model using the approach described above.
-        It trains an interpretable model and returns a representation of the
-        interpretable model.
+        r"""This method attributes the output of the model with given target index (in case it is provided, otherwise it
+        assumes that output is a scalar) to the inputs of the model using the approach described above. It trains an
+        interpretable model and returns a representation of the interpretable model.
 
         It is recommended to only provide a single example as input (tensors
         with first dimension or batch size = 1). This is because LIME is generally
@@ -531,8 +526,7 @@ class LimeBase(PerturbationAttribution):
         expanded_additional_args: Any,
         device: torch.device,
     ) -> Tensor:
-        """
-        This method evaluates the model on a batch of perturbed inputs.
+        """This method evaluates the model on a batch of perturbed inputs.
 
         Args:
             curr_model_inputs (List[TensorOrTupleOfTensorsGeneric]): List of perturbed inputs.
@@ -574,8 +568,8 @@ class LimeBase(PerturbationAttribution):
 def default_from_interp_rep_transform(
     curr_sample: TensorOrTupleOfTensorsGeneric, original_inputs: TensorOrTupleOfTensorsGeneric, **kwargs
 ) -> TensorOrTupleOfTensorsGeneric:
-    """
-    This function takes a single sampled interpretable representation (tensor of shape 1 x num_interp_features) and returns the corresponding representation in the input space (matching shapes of original input to attribute).
+    """This function takes a single sampled interpretable representation (tensor of shape 1 x num_interp_features) and
+    returns the corresponding representation in the input space (matching shapes of original input to attribute).
 
     Args:
         curr_sample (Tensor): A single sampled interpretable representation (tensor of shape 1 x num_interp_features)
@@ -603,12 +597,9 @@ def default_from_interp_rep_transform(
 
 
 def get_exp_kernel_similarity_function(distance_mode: str = "cosine", kernel_width: float = 1.0) -> Callable:
-    r"""
-    This method constructs an appropriate similarity function to compute
-    weights for perturbed sample in LIME. Distance between the original
-    and perturbed inputs is computed based on the provided distance mode,
-    and the distance is passed through an exponential kernel with given
-    kernel width to convert to a range between 0 and 1.
+    r"""This method constructs an appropriate similarity function to compute weights for perturbed sample in LIME.
+    Distance between the original and perturbed inputs is computed based on the provided distance mode, and the distance
+    is passed through an exponential kernel with given kernel width to convert to a range between 0 and 1.
 
     The callable returned can be provided as the `similarity_fn` for
     Lime or LimeBase.
@@ -679,11 +670,9 @@ def construct_feature_mask(feature_mask, formatted_inputs):
 
 
 class Lime(LimeBase):
-    r"""
-    Lime is an interpretability method that trains an interpretable surrogate model
-    by sampling points around a specified input example and using model evaluations
-    at these points to train a simpler interpretable 'surrogate' model, such as a
-    linear model.
+    r"""Lime is an interpretability method that trains an interpretable surrogate model by sampling points around a
+    specified input example and using model evaluations at these points to train a simpler interpretable 'surrogate'
+    model, such as a linear model.
 
     Lime provides a more specific implementation than LimeBase in order to expose
     a consistent API with other perturbation-based algorithms. For more general
@@ -841,12 +830,9 @@ class Lime(LimeBase):
         return_input_shape: bool = True,
         show_progress: bool = False,
     ) -> tuple[TensorOrTupleOfTensorsGeneric, Tensor]:
-        r"""
-        This method attributes the output of the model with given target index
-        (in case it is provided, otherwise it assumes that output is a
-        scalar) to the inputs of the model using the approach described above,
-        training an interpretable model and returning a representation of the
-        interpretable model.
+        r"""This method attributes the output of the model with given target index (in case it is provided, otherwise it
+        assumes that output is a scalar) to the inputs of the model using the approach described above, training an
+        interpretable model and returning a representation of the interpretable model.
 
         It is recommended to only provide a single example as input (tensors
         with first dimension or batch size = 1). This is because LIME is generally
@@ -1216,8 +1202,7 @@ class Lime(LimeBase):
         num_interp_features: int,
         is_inputs_tuple: bool,
     ) -> Union[Tensor, Tuple[Tensor, ...]]:
-        """
-        This method converts the output of the interpretable model to match the input shape.
+        """This method converts the output of the interpretable model to match the input shape.
 
         Args:
             formatted_inp (Tuple[Tensor, ...]): Formatted input tensors.
