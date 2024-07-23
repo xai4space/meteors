@@ -830,8 +830,8 @@ class Lime(LimeBase):
         return_input_shape: bool = True,
         show_progress: bool = False,
     ) -> tuple[TensorOrTupleOfTensorsGeneric, Tensor]:
-        r"""This method attributes the output of the model with given target index (in case it is provided, otherwise 
-        it assumes that output is a scalar) to the inputs of the model using the approach described above, training an
+        r"""This method attributes the output of the model with given target index (in case it is provided, otherwise it
+        assumes that output is a scalar) to the inputs of the model using the approach described above, training an
         interpretable model and returning a representation of the interpretable model.
 
         It is recommended to only provide a single example as input (tensors
