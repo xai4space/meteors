@@ -187,14 +187,14 @@ def validate_band_ranges_or_list(
         if not (isinstance(keys, str) or (isinstance(keys, tuple) and all(isinstance(key, str) for key in keys))):
             raise TypeError(f"{variable_name} keys should be string or tuple of strings")
         if isinstance(band_ranges, (int, float)):
-            return
+            continue
         elif (
             isinstance(band_ranges, tuple)
             and len(band_ranges) == 2
             and all(isinstance(item, (int, float)) for item in band_ranges)
             and band_ranges[0] < band_ranges[1]
         ):
-            return
+            continue
         elif isinstance(band_ranges, list) and (
             all(
                 isinstance(item, tuple)
@@ -205,7 +205,7 @@ def validate_band_ranges_or_list(
             )
             or all(isinstance(item, (int, float)) for item in band_ranges)
         ):
-            return
+            continue
         raise TypeError(
             (
                 f"{variable_name} should be either a value, list of values, "
@@ -249,20 +249,18 @@ def validate_segment_format_range(
                 f"Where start < end. But got: {segment_range}"
             )
         )
-    return segment_range  # type: ignore
+    return segment_range
 
 
-def validate_segment_range(
-    wavelengths: torch.Tensor, segment_range: list[tuple[IntOrFloat, IntOrFloat]]
-) -> list[tuple[IntOrFloat, IntOrFloat]]:
+def validate_segment_range(wavelengths: torch.Tensor, segment_range: list[tuple[int, int]]) -> list[tuple[int, int]]:
     """Validates the segment range and adjusts it if possible.
 
     Args:
         wavelengths (torch.Tensor): The wavelengths tensor.
-        segment_range (list[tuple[IntOrFloat, IntOrFloat]]): The segment range to be validated.
+        segment_range (list[tuple[int, int]]): The segment range to be validated.
 
     Returns:
-        list[tuple[IntOrFloat, IntOrFloat]]: The validated segment range.
+        list[tuple[int, int]]: The validated segment range.
 
     Raises:
         ValueError: If the segment range is out of bounds.
@@ -270,7 +268,7 @@ def validate_segment_range(
     wavelengths_max_index = wavelengths.shape[0]
     out_segment_range = []
     for segment in segment_range:
-        new_segment: list[IntOrFloat] = list(segment)
+        new_segment: list[int] = list(segment)
         if new_segment[0] < 0:
             if new_segment[1] >= 1:
                 new_segment[0] = 0
