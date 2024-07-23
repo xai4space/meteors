@@ -101,7 +101,7 @@ def validate_wavelengths(
         ValueError: If the wavelengths cannot be converted to a torch tensor.
     """
     if not isinstance(wavelengths, (np.ndarray, torch.Tensor, list, tuple)):
-        raise ValueError("Wavelengths should be a numpy array, torch tensor or a sequence of integers or floats")
+        raise TypeError("Wavelengths should be a numpy array, torch tensor or a sequence of integers or floats")
 
     if not isinstance(wavelengths, torch.Tensor):
         wavelengths = torch.as_tensor(wavelengths)
