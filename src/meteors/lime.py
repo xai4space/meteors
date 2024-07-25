@@ -908,7 +908,6 @@ class Lime(Explainer):
                 band_indices[original_segment] = segment_list
             except Exception as e:
                 raise ValueError(f"Problem with segment {original_segment} and bands {segment}") from e
-
         return band_indices, dict_labels_to_segment_ids
 
     @staticmethod
@@ -1172,7 +1171,6 @@ class Lime(Explainer):
             band_mask = band_mask_single_dim.unsqueeze(0).unsqueeze(-1)
         elif image.band_axis == 2:
             band_mask = band_mask_single_dim.unsqueeze(0).unsqueeze(0)
-
         if repeat_dimensions:
             size_image = image.image.size()
             size_mask = band_mask.size()
@@ -1249,7 +1247,6 @@ class Lime(Explainer):
             device = image.image.device
 
         segment_labels = list(dict_labels_to_indices.keys())
-        hashed = False
 
         logger.debug(f"Creating a band mask on the device {device} using {len(segment_labels)} segments")
 
@@ -1257,13 +1254,13 @@ class Lime(Explainer):
         Lime._check_overlapping_segments(image, dict_labels_to_indices)
 
         # Create or validate dict_labels_to_segment_ids
-        dict_labels_to_segment_ids, hashed = Lime._validate_and_create_dict_labels_to_segment_ids(
+        dict_labels_to_segment_ids = Lime._validate_and_create_dict_labels_to_segment_ids(
             dict_labels_to_segment_ids, segment_labels
         )
-
+        
         # Create single-dimensional band mask
         band_mask_single_dim = Lime._create_single_dim_band_mask(
-            image, dict_labels_to_indices, dict_labels_to_segment_ids, device, hashed
+            image, dict_labels_to_indices, dict_labels_to_segment_ids, device
         )
 
         # Expand band mask to match image dimensions
