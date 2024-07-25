@@ -28,21 +28,17 @@ HSI_AXIS_ORDER = [2, 1, 0]  # (bands, rows, columns)
 
 # Types
 IntOrFloat = TypeVar("IntOrFloat", int, float)
-ListOfWavelengthsIndices = TypeVar("ListOfWavelengthsIndices", 
-    list[tuple[int, int]], 
-    tuple[int, int], 
-    list[int], 
-    int
-)
-ListOfWavelengths = TypeVar("ListOfWavelengths", 
-    list[tuple[float, float]], 
-    list[tuple[int, int]], 
-    tuple[float, float], 
-    tuple[int, int], 
-    list[float], 
-    list[int], 
+ListOfWavelengthsIndices = TypeVar("ListOfWavelengthsIndices", list[tuple[int, int]], tuple[int, int], list[int], int)
+ListOfWavelengths = TypeVar(
+    "ListOfWavelengths",
+    list[tuple[float, float]],
+    list[tuple[int, int]],
+    tuple[float, float],
+    tuple[int, int],
+    list[float],
+    list[int],
     float,
-    int
+    int,
 )
 
 #####################################################################
@@ -171,9 +167,10 @@ def validate_band_names(band_names: list[str | list[str]] | dict[tuple[str, ...]
         raise TypeError("band_names should be either a list or a dictionary.")
 
 
-def validate_band_ranges_or_list(bands: dict[str | tuple[str, ...], ListOfWavelengths | ListOfWavelengthsIndices], variable_name: str) -> None:
-    """
-    Validate the band ranges or list of wavelengths for a given variable.
+def validate_band_ranges_or_list(
+    bands: dict[str | tuple[str, ...], ListOfWavelengths | ListOfWavelengthsIndices], variable_name: str
+) -> None:
+    """Validate the band ranges or list of wavelengths for a given variable.
 
     Args:
         bands (dict[str | tuple[str, ...], ListOfWavelengths | ListOfWavelengthsIndices]): A dictionary containing band ranges or list of wavelengths.
@@ -200,7 +197,10 @@ def validate_band_ranges_or_list(bands: dict[str | tuple[str, ...], ListOfWavele
             return
         elif isinstance(band_ranges, list) and (
             all(
-                isinstance(item, tuple) and len(item) == 2 and all(isinstance(subitem, (int, float)) and subitem[0] < subitem[1] for subitem in item)
+                isinstance(item, tuple)
+                and len(item) == 2
+                and all(isinstance(subitem, (int, float)) for subitem in item)
+                and item[0] < item[1]
                 for item in band_ranges
             )
             or all(isinstance(item, (int, float)) for item in band_ranges)
@@ -243,10 +243,12 @@ def validate_segment_format_range(
             for part in segment_range
         )
     ):
-        raise ValueError((
-            f"Each segment range should be a tuple or list of two numbers of data type {dtype} (start, end). "
-            f"Where start < end. But got: {segment_range}"
-        ))
+        raise ValueError(
+            (
+                f"Each segment range should be a tuple or list of two numbers of data type {dtype} (start, end). "
+                f"Where start < end. But got: {segment_range}"
+            )
+        )
     return segment_range
 
 
@@ -678,7 +680,10 @@ class Lime(Explainer):
             raise ValueError("Image should be an instance of Image class")
 
         assert (
-            band_groups is not None or band_names is not None or band_ranges_indices is not None or band_ranges_wavelengths is not None
+            band_groups is not None
+            or band_names is not None
+            or band_ranges_indices is not None
+            or band_ranges_wavelengths is not None
         ), "No band names, groups, or ranges provided"
 
         # validate types
@@ -694,21 +699,25 @@ class Lime(Explainer):
                 raise ValueError("Incorrect band names provided") from e
         if band_ranges_wavelengths is not None and band_groups is None:
             logger.debug("Getting band mask from band groups given by ranges of wavelengths")
-            validate_band_ranges_or_list(band_ranges_wavelengths, variable_name="band_ranges_wavelengths")
+            validate_band_ranges_or_list(band_ranges_wavelengths, variable_name="band_ranges_wavelengths")  # type: ignore
             try:
                 band_groups = Lime._get_band_indices_from_band_ranges_wavelengths(
                     image.wavelengths,
                     band_ranges_wavelengths,
                 )
             except Exception as e:
-                raise ValueError("Incorrect band ranges wavelengths provided, please check if provided wavelengths are correct") from e
+                raise ValueError(
+                    "Incorrect band ranges wavelengths provided, please check if provided wavelengths are correct"
+                ) from e
         if band_ranges_indices is not None and band_groups is None:
             logger.debug("Getting band mask from band groups given by ranges of indices")
             validate_band_ranges_or_list(band_ranges_indices, variable_name="band_ranges_indices")
             try:
                 band_groups = Lime._get_band_indices_from_band_ranges_indices(image.wavelengths, band_ranges_indices)
             except Exception as e:
-                raise ValueError("Incorrect band ranges indices provided, please check if provided indices are correct") from e
+                raise ValueError(
+                    "Incorrect band ranges indices provided, please check if provided indices are correct"
+                ) from e
 
         if band_groups is None:
             raise ValueError("No band names, groups, or ranges provided")
@@ -846,7 +855,7 @@ class Lime(Explainer):
                 band_indices[original_segment] = segment_list
             except Exception as e:
                 raise ValueError(f"Problem with segment {original_segment} and bands {segment}") from e
-        
+
         return band_indices, dict_labels_to_segment_ids
 
     @staticmethod
@@ -903,10 +912,13 @@ class Lime(Explainer):
                     indices = Lime._convert_wavelengths_list_to_indices(wavelengths, segment_range_dtype)  # type: ignore
                 else:
                     if isinstance(segment_range, list):
-                        segment_range_dtype = [tuple(change_dtype_of_list(list(ranges), dtype)) for ranges in segment_range]
+                        segment_range_dtype = [
+                            tuple(change_dtype_of_list(list(ranges), dtype))  # type: ignore
+                            for ranges in segment_range
+                        ]
                     else:
                         segment_range_dtype = tuple(change_dtype_of_list(segment_range, dtype))
-                
+
                     valid_segment_range = validate_segment_format_range(segment_range_dtype, dtype)  # type: ignore
                     range_indices = Lime._convert_wavelengths_to_indices(wavelengths, valid_segment_range)  # type: ignore
                     valid_indices_format = validate_segment_format_range(range_indices)
@@ -1107,7 +1119,7 @@ class Lime(Explainer):
             band_mask = band_mask_single_dim.unsqueeze(0).unsqueeze(-1)
         elif image.band_axis == 2:
             band_mask = band_mask_single_dim.unsqueeze(0).unsqueeze(0)
-        
+
         if repeat_dimensions:
             size_image = image.image.size()
             size_mask = band_mask.size()
@@ -1159,7 +1171,7 @@ class Lime(Explainer):
         dict_labels_to_segment_ids = Lime._validate_and_create_dict_labels_to_segment_ids(
             dict_labels_to_segment_ids, segment_labels
         )
-        
+
         # Create single-dimensional band mask
         band_mask_single_dim = Lime._create_single_dim_band_mask(
             image, dict_labels_to_indices, dict_labels_to_segment_ids, device

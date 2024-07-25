@@ -206,13 +206,13 @@ def test_band_mask_errors():
     with pytest.raises(
         ValueError,
         match="Incorrect band names provided",
-        ):
+    ):
         mt.Lime.get_band_mask(image, band_names=4)
 
     with pytest.raises(
         ValueError,
         match="Incorrect band ranges wavelengths provided, please check if provided wavelengths are correct",
-        ):
+    ):
         band_ranges_wavelengths = {"bad_range": 1}
         mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
 
@@ -234,7 +234,6 @@ def test_band_mask_errors():
     #     band_ranges_indices = {"bad_range": 1}
     #     mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
     # Now we accept band range with one value as its mean that we want to have mask with only this value
-    
 
     with pytest.raises(
         TypeError,
