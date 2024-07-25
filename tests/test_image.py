@@ -13,7 +13,7 @@ def test_wavelengths():
     sample = torch.tensor([[[0]]])
     with pytest.raises(
         ValueError,
-        match="Improper length of wavelengths - it should correspond to the number of channels",
+        match="Length of wavelengths must match the number of channels in the image.",
     ):
         wavelengths = [0, 1]
         mt.Image(image=sample, wavelengths=wavelengths)
