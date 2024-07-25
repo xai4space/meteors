@@ -16,6 +16,7 @@ from meteors import Image
 from meteors.image import validate_device
 from meteors.lime_base import Lime as LimeBase
 from meteors.utils.models import ExplainableModel, InterpretableModel
+from meteors.utils.utils import torch_dtype_to_python_dtype, change_dtype_of_list
 
 try:
     from fast_slic import Slic as slic
@@ -27,8 +28,22 @@ HSI_AXIS_ORDER = [2, 1, 0]  # (bands, rows, columns)
 
 # Types
 IntOrFloat = TypeVar("IntOrFloat", int, float)
-ListOfWavelengthsIndices = TypeVar("ListOfWavelengthsIndices", list[tuple[int, int]], tuple[int, int], list[int], int)
-ListOfWavelengths = TypeVar("ListOfWavelengths", list[tuple[float, float]], tuple[float, float], list[float], float)
+ListOfWavelengthsIndices = TypeVar("ListOfWavelengthsIndices", 
+    list[tuple[int, int]], 
+    tuple[int, int], 
+    list[int], 
+    int
+)
+ListOfWavelengths = TypeVar("ListOfWavelengths", 
+    list[tuple[float, float]], 
+    list[tuple[int, int]], 
+    tuple[float, float], 
+    tuple[int, int], 
+    list[float], 
+    list[int], 
+    float,
+    int
+)
 
 #####################################################################
 ############################ VALIDATIONS ############################
@@ -156,41 +171,47 @@ def validate_band_names(band_names: list[str | list[str]] | dict[tuple[str, ...]
         raise TypeError("band_names should be either a list or a dictionary.")
 
 
-def validate_band_ranges(band_ranges: Any, variable_name: str) -> None:
-    """Validates the band ranges dictionary.
+def validate_band_ranges_or_list(bands: dict[str | tuple[str, ...], ListOfWavelengths | ListOfWavelengthsIndices], variable_name: str) -> None:
+    """
+    Validate the band ranges or list of wavelengths for a given variable.
 
     Args:
-        band_ranges (Any): The band ranges dictionary to validate.
+        bands (dict[str | tuple[str, ...], ListOfWavelengths | ListOfWavelengthsIndices]): A dictionary containing band ranges or list of wavelengths.
+            The keys can be either a string or a tuple of strings. The values can be a single value, a tuple of two values, or a list of values.
         variable_name (str): The name of the variable being validated.
 
     Raises:
-        TypeError: If the band_ranges dictionary is not of the expected format.
+        TypeError: If the keys are not a string or a tuple of strings, or if the values do not match the expected types.
 
     Returns:
         None
     """
-    if isinstance(band_ranges, (int, float)):
-        return
-    elif (
-        isinstance(band_ranges, tuple)
-        and len(band_ranges) == 2
-        and all(isinstance(item, (int, float)) for item in band_ranges)
-    ):
-        return
-    elif isinstance(band_ranges, list) and (
-        all(
-            isinstance(item, tuple) and len(item) == 2 and all(isinstance(subitem, (int, float)) for subitem in item)
-            for item in band_ranges
+    for keys, band_ranges in bands.items():
+        if not (isinstance(keys, str) or (isinstance(keys, tuple) and all(isinstance(key, str) for key in keys))):
+            raise TypeError(f"{variable_name} keys should be string or tuple of strings")
+        if isinstance(band_ranges, (int, float)):
+            return
+        elif (
+            isinstance(band_ranges, tuple)
+            and len(band_ranges) == 2
+            and all(isinstance(item, (int, float)) for item in band_ranges)
+            and band_ranges[0] < band_ranges[1]
+        ):
+            return
+        elif isinstance(band_ranges, list) and (
+            all(
+                isinstance(item, tuple) and len(item) == 2 and all(isinstance(subitem, (int, float)) and subitem[0] < subitem[1] for subitem in item)
+                for item in band_ranges
+            )
+            or all(isinstance(item, (int, float)) for item in band_ranges)
+        ):
+            return
+        raise TypeError(
+            (
+                f"{variable_name} should be either a value, list of values, "
+                "tuple of two values or list of tuples of two values."
+            )
         )
-        or all(isinstance(item, (int, float)) for item in band_ranges)
-    ):
-        return
-    raise TypeError(
-        (
-            f"{variable_name} should be either a value, list of values, "
-            "tuple of two values or list of tuples of two values."
-        )
-    )
 
 
 def validate_segment_format_range(
@@ -222,9 +243,10 @@ def validate_segment_format_range(
             for part in segment_range
         )
     ):
-        raise ValueError(
-            f"Each segment range should be a tuple or list of two numbers (start, end). Where start < end. But got: {segment_range}"
-        )
+        raise ValueError((
+            f"Each segment range should be a tuple or list of two numbers of data type {dtype} (start, end). "
+            f"Where start < end. But got: {segment_range}"
+        ))
     return segment_range
 
 
@@ -656,32 +678,41 @@ class Lime(Explainer):
             raise ValueError("Image should be an instance of Image class")
 
         assert (
-            band_groups is not None or band_ranges_indices is not None or band_ranges_wavelengths is not None
+            band_groups is not None or band_names is not None or band_ranges_indices is not None or band_ranges_wavelengths is not None
         ), "No band names, groups, or ranges provided"
 
         # validate types
         dict_labels_to_segment_ids = None
         if band_names is not None and band_groups is None:
             logger.debug("Getting band mask from band names of spectral bands")
-            validate_band_names(band_names)
-            band_groups, dict_labels_to_segment_ids = Lime._get_band_wavelengths_indices_from_band_names(
-                image.wavelengths, band_names
-            )
+            try:
+                validate_band_names(band_names)
+                band_groups, dict_labels_to_segment_ids = Lime._get_band_wavelengths_indices_from_band_names(
+                    image.wavelengths, band_names
+                )
+            except Exception as e:
+                raise ValueError("Incorrect band names provided") from e
         if band_ranges_wavelengths is not None and band_groups is None:
             logger.debug("Getting band mask from band groups given by ranges of wavelengths")
-            validate_band_ranges(band_ranges_wavelengths, variable_name="band_ranges_wavelengths")
-            band_groups = Lime._get_band_indices_from_band_ranges_wavelengths(
-                image.wavelengths,
-                band_ranges_wavelengths,
-            )
+            validate_band_ranges_or_list(band_ranges_wavelengths, variable_name="band_ranges_wavelengths")
+            try:
+                band_groups = Lime._get_band_indices_from_band_ranges_wavelengths(
+                    image.wavelengths,
+                    band_ranges_wavelengths,
+                )
+            except Exception as e:
+                raise ValueError("Incorrect band ranges wavelengths provided, please check if provided wavelengths are correct") from e
         if band_ranges_indices is not None and band_groups is None:
             logger.debug("Getting band mask from band groups given by ranges of indices")
-            validate_band_ranges(band_ranges_indices, variable_name="band_ranges_indices")
-            band_groups = Lime._get_band_indices_from_band_ranges_indices(image.wavelengths, band_ranges_indices)
+            validate_band_ranges_or_list(band_ranges_indices, variable_name="band_ranges_indices")
+            try:
+                band_groups = Lime._get_band_indices_from_band_ranges_indices(image.wavelengths, band_ranges_indices)
+            except Exception as e:
+                raise ValueError("Incorrect band ranges indices provided, please check if provided indices are correct") from e
 
         if band_groups is None:
             raise ValueError("No band names, groups, or ranges provided")
-        validate_band_ranges(band_groups, variable_name="band_groups")
+        validate_band_ranges_or_list(band_groups, variable_name="band_groups")
 
         return Lime._create_tensor_band_mask(
             image,
@@ -729,7 +760,7 @@ class Lime(Explainer):
                 The band name must be either in `spyndex.indices` or `spyndex.bands`.
         """
         if isinstance(segment_name, str):
-            segment_name = tuple(segment_name)
+            segment_name = tuple([segment_name])
         elif isinstance(segment_name, list):
             segment_name = tuple(segment_name)
 
@@ -791,7 +822,6 @@ class Lime(Explainer):
                 A tuple containing the dictionary with mapping segment labels into wavelength indices and the mapping
                 from segment labels into segment ids.
         """
-
         if isinstance(band_names, list):
             logger.debug("band_names is a list of segments, creating a dictionary of segments")
             band_names_hashed = [Lime._make_band_names_indexable(segment) for segment in band_names]
@@ -802,20 +832,22 @@ class Lime(Explainer):
             segments_list = tuple(band_names.keys())  # type: ignore
         else:
             raise ValueError("Incorrect band_names type. It should be a dict or a list")
-
         segments_list_after_mapping = [Lime._extract_bands_from_spyndex(segment) for segment in segments_list]  # TODO:
-        band_ranges_wavelengths: dict[tuple[str, ...] | str, list[int]] = {}
-        for segment in segments_list_after_mapping:
-            segment_indices_ranges: list[tuple[int, int]] = []
-            for band_name in segment:
-                segment_indices_ranges += Lime._convert_wavelengths_to_indices(
-                    wavelengths, (spyndex.indices[band_name].min_wavelength, spyndex.indices[band_name].max_wavelength)
-                )
+        band_indices: dict[tuple[str, ...] | str, list[int]] = {}
+        for original_segment, segment in zip(segments_list, segments_list_after_mapping):
+            try:
+                segment_indices_ranges: list[tuple[int, int]] = []
+                for band_name in segment:
+                    segment_indices_ranges += Lime._convert_wavelengths_to_indices(
+                        wavelengths, (spyndex.bands[band_name].min_wavelength, spyndex.bands[band_name].max_wavelength)
+                    )
 
-            segment_list = Lime._get_indices_from_wavelength_indices_range(wavelengths, segment_indices_ranges)
-            band_ranges_wavelengths[segment] = segment_list
-
-        return band_ranges_wavelengths, dict_labels_to_segment_ids
+                segment_list = Lime._get_indices_from_wavelength_indices_range(wavelengths, segment_indices_ranges)
+                band_indices[original_segment] = segment_list
+            except Exception as e:
+                raise ValueError(f"Problem with segment {original_segment} and bands {segment}") from e
+        
+        return band_indices, dict_labels_to_segment_ids
 
     @staticmethod
     def _convert_wavelengths_to_indices(
@@ -835,8 +867,8 @@ class Lime(Explainer):
             ranges = [ranges]
 
         for start, end in ranges:
-            start_idx = torch.searchsorted(wavelengths, start, side="right")
-            end_idx = torch.searchsorted(wavelengths, end, side="left")
+            start_idx = torch.searchsorted(wavelengths, start, side="left")
+            end_idx = torch.searchsorted(wavelengths, end, side="right")
             indices.append((start_idx.item(), end_idx.item()))
         return indices
 
@@ -862,16 +894,26 @@ class Lime(Explainer):
 
         band_indices: dict[str | tuple[str, ...], list[int]] = {}
         for segment_label, segment_range in band_ranges_wavelengths.items():
-            if isinstance(segment_range, float):
-                segment_range = [segment_range]  # type: ignore
-            if isinstance(segment_range, list) and all(isinstance(x, float) for x in segment_range):
-                indices = Lime._convert_wavelengths_list_to_indices(wavelengths, segment_range)  # type: ignore
-            else:
-                valid_segment_range = validate_segment_format_range(segment_range, float)  # type: ignore
-                range_indices = Lime._convert_wavelengths_to_indices(wavelengths, valid_segment_range)  # type: ignore
-                valid_indices_format = validate_segment_format_range(range_indices)
-                valid_range_indices = validate_segment_range(wavelengths, valid_indices_format)
-                indices = Lime._get_indices_from_wavelength_indices_range(wavelengths, valid_range_indices)
+            try:
+                dtype = torch_dtype_to_python_dtype(wavelengths.dtype)
+                if isinstance(segment_range, (float, int)):
+                    segment_range = [dtype(segment_range)]  # type: ignore
+                if isinstance(segment_range, list) and all(isinstance(x, (float, int)) for x in segment_range):
+                    segment_range_dtype = change_dtype_of_list(segment_range, dtype)
+                    indices = Lime._convert_wavelengths_list_to_indices(wavelengths, segment_range_dtype)  # type: ignore
+                else:
+                    if isinstance(segment_range, list):
+                        segment_range_dtype = [tuple(change_dtype_of_list(list(ranges), dtype)) for ranges in segment_range]
+                    else:
+                        segment_range_dtype = tuple(change_dtype_of_list(segment_range, dtype))
+                
+                    valid_segment_range = validate_segment_format_range(segment_range_dtype, dtype)  # type: ignore
+                    range_indices = Lime._convert_wavelengths_to_indices(wavelengths, valid_segment_range)  # type: ignore
+                    valid_indices_format = validate_segment_format_range(range_indices)
+                    valid_range_indices = validate_segment_range(wavelengths, valid_indices_format)
+                    indices = Lime._get_indices_from_wavelength_indices_range(wavelengths, valid_range_indices)
+            except Exception as e:
+                raise ValueError(f"Problem with segment {segment_label}") from e
 
             band_indices[segment_label] = indices
 
@@ -891,8 +933,13 @@ class Lime(Explainer):
         indices = []
         for wavelength in ranges:
             index = (wavelengths == wavelength).nonzero(as_tuple=False)
-            if torch.numel(index) == 1:
+            number_of_elements = torch.numel(index)
+            if number_of_elements == 1:
                 indices.append(index.item())
+            elif number_of_elements == 0:
+                raise ValueError(f"Couldn't find wavelength of value {wavelength} in list of wavelength")
+            else:
+                raise ValueError(f"Wavelength of value {wavelength} was present more than once in list of wavelength")
         return indices
 
     @staticmethod
@@ -918,16 +965,19 @@ class Lime(Explainer):
 
         band_indices: dict[str | tuple[str, ...], list[int]] = {}
         for segment_label, indices_range in band_indices.items():
-            if isinstance(indices_range, int):
-                indices_range = [indices_range]
-            if isinstance(indices_range, list) and all(isinstance(x, int) for x in indices_range):
-                indices = indices_range
-            else:
-                valid_indices_format = validate_segment_format_range(indices_range)  # type: ignore
-                valid_range_indices = validate_segment_range(wavelengths, valid_indices_format)
-                indices = Lime._get_indices_from_wavelength_indices_range(wavelengths, valid_range_indices)
+            try:
+                if isinstance(indices_range, int):
+                    indices_range = [indices_range]
+                if isinstance(indices_range, list) and all(isinstance(x, int) for x in indices_range):
+                    indices = indices_range
+                else:
+                    valid_indices_format = validate_segment_format_range(indices_range)  # type: ignore
+                    valid_range_indices = validate_segment_range(wavelengths, valid_indices_format)
+                    indices = Lime._get_indices_from_wavelength_indices_range(wavelengths, valid_range_indices)
 
-            band_indices[segment_label] = indices
+                band_indices[segment_label] = indices
+            except Exception as e:
+                raise ValueError(f"Problem with segment {segment_label}") from e
 
         return band_indices
 
@@ -958,7 +1008,7 @@ class Lime(Explainer):
     def _validate_and_create_dict_labels_to_segment_ids(
         dict_labels_to_segment_ids: dict[str | tuple[str, ...], int] | None,
         segment_labels: list[str | tuple[str, ...]],
-    ) -> tuple[dict[str | tuple[str, ...], int], bool]:
+    ) -> dict[str | tuple[str, ...], int]:
         """Validates and creates a dictionary mapping segment labels to segment IDs.
 
         Args:
@@ -967,7 +1017,7 @@ class Lime(Explainer):
             segment_labels (list[str | tuple[str, ...]]): The list of segment labels.
 
         Returns:
-            tuple[dict[str | tuple[str, ...], int], bool]: A tuple containing the validated dictionary mapping segment
+            dict[str | tuple[str, ...], int]: A tuple containing the validated dictionary mapping segment
             labels to segment IDs and a boolean flag indicating whether the segment labels are hashed.
 
         Raises:
@@ -975,11 +1025,9 @@ class Lime(Explainer):
             ValueError: If a segment label is not present in `dict_labels_to_segment_ids`.
             ValueError: If there are non-unique segment IDs in `dict_labels_to_segment_ids`.
         """
-        hashed = False
-
         if dict_labels_to_segment_ids is None:
             logger.debug("Creating mapping from segment labels into ids")
-            return {segment: idx + 1 for idx, segment in enumerate(segment_labels)}, hashed
+            return {segment: idx + 1 for idx, segment in enumerate(segment_labels)}
 
         logger.debug("Using existing mapping from segment labels into segment ids")
 
@@ -991,23 +1039,12 @@ class Lime(Explainer):
                 )
             )
 
-        segment_labels_hashed = [Lime._extract_bands_from_spyndex(segment) for segment in segment_labels]
-
-        for segment_label in segment_labels:
-            if segment_label not in dict_labels_to_segment_ids and segment_label not in segment_labels_hashed:
-                raise ValueError(f"{segment_label} not present in the dict_labels_to_segment_ids")
-            if segment_label in segment_labels_hashed:
-                logger.debug(
-                    "Detected that the segment labels are converted using hashing function. Hashed flag set to True"
-                )
-                hashed = True
-
         unique_segment_ids = set(dict_labels_to_segment_ids.values())
         if len(unique_segment_ids) != len(segment_labels):
             raise ValueError("Non unique segment ids in the dict_labels_to_segment_ids")
 
         logger.debug("Passed mapping is correct")
-        return dict_labels_to_segment_ids, hashed
+        return dict_labels_to_segment_ids
 
     @staticmethod
     def _create_single_dim_band_mask(
@@ -1015,7 +1052,6 @@ class Lime(Explainer):
         dict_labels_to_indices: dict[str | tuple[str, ...], list[int]],
         dict_labels_to_segment_ids: dict[str | tuple[str, ...], int],
         device: torch.device,
-        hashed: bool,
     ) -> torch.Tensor:
         """Create a one-dimensional band mask based on the given image, labels, and segment IDs.
 
@@ -1026,7 +1062,6 @@ class Lime(Explainer):
             dict_labels_to_segment_ids (dict[str | tuple[str, ...], int]):
                 A dictionary mapping labels or label tuples to segment IDs.
             device (torch.device): The device to use for the tensor.
-            hashed (bool): A flag indicating whether the labels should be hashed.
 
         Returns:
             torch.Tensor: The one-dimensional band mask tensor.
@@ -1037,8 +1072,6 @@ class Lime(Explainer):
         band_mask_single_dim = torch.zeros(len(image.wavelengths), dtype=torch.int64, device=device)
 
         segment_labels = list(dict_labels_to_segment_ids.keys())
-        if hashed:
-            segment_labels = [Lime._extract_bands_from_spyndex(segment) for segment in segment_labels]
 
         for segment_label in segment_labels[::-1]:
             segment_indices = dict_labels_to_indices[segment_label]
@@ -1068,10 +1101,13 @@ class Lime(Explainer):
         Returns:
             torch.Tensor: The expanded band mask tensor.
         """
-        band_axis = HSI_AXIS_ORDER.copy()
-        band_axis.remove(image.band_axis)
-        band_mask = band_mask_single_dim.unsqueeze(band_axis[0]).unsqueeze(band_axis[1])
-
+        if image.band_axis == 0:
+            band_mask = band_mask_single_dim.unsqueeze(-1).unsqueeze(-1)
+        elif image.band_axis == 1:
+            band_mask = band_mask_single_dim.unsqueeze(0).unsqueeze(-1)
+        elif image.band_axis == 2:
+            band_mask = band_mask_single_dim.unsqueeze(0).unsqueeze(0)
+        
         if repeat_dimensions:
             size_image = image.image.size()
             size_mask = band_mask.size()
@@ -1112,9 +1148,7 @@ class Lime(Explainer):
         """
         if device is None:
             device = image.image.device
-
         segment_labels = list(dict_labels_to_indices.keys())
-        hashed = False
 
         logger.debug(f"Creating a band mask on the device {device} using {len(segment_labels)} segments")
 
@@ -1122,13 +1156,13 @@ class Lime(Explainer):
         Lime._check_overlapping_segments(image, dict_labels_to_indices)
 
         # Create or validate dict_labels_to_segment_ids
-        dict_labels_to_segment_ids, hashed = Lime._validate_and_create_dict_labels_to_segment_ids(
+        dict_labels_to_segment_ids = Lime._validate_and_create_dict_labels_to_segment_ids(
             dict_labels_to_segment_ids, segment_labels
         )
-
+        
         # Create single-dimensional band mask
         band_mask_single_dim = Lime._create_single_dim_band_mask(
-            image, dict_labels_to_indices, dict_labels_to_segment_ids, device, hashed
+            image, dict_labels_to_indices, dict_labels_to_segment_ids, device
         )
 
         # Expand band mask to match image dimensions
