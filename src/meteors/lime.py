@@ -128,17 +128,22 @@ def validate_shapes(attributes: torch.Tensor, image: Image) -> None:
 
 def validate_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tensor) -> dict[str, int]:
     """Validates the band names with a band mask and adds a 'not_included' key to the band_names dictionary if
-    necessary.
+    necessary. The band_names dictionary should have all unique values in the mask.
 
     Args:
         band_names (dict[str, int]): A dictionary containing band names as keys and their corresponding values.
         band_mask (torch.Tensor): A tensor representing the band mask.
+
+    Raises:
+        ValueError: If the band names do not have all unique values in the mask.
 
     Returns:
         dict[str, int]: The updated band_names dictionary.
     """
     if 0 not in band_names.values() and 0 in torch.unique(band_mask):
         band_names["not_included"] = 0
+    if sorted(list(band_names.values())) != sorted(torch.unique(band_mask).tolist()):
+        raise ValueError("Band names should have all unique values in mask")
     return band_names
 
 
@@ -158,11 +163,19 @@ def validate_band_names(band_names: list[str | list[str]] | dict[tuple[str, ...]
         None
     """
     if isinstance(band_names, dict):
-        if not all(isinstance(k, (tuple, str)) and isinstance(v, int) for k, v in band_names.items()):
-            raise TypeError("All keys in band_names must be tuple or str, and all values must be int.")
+        for key, item in band_names.items():
+            if not (
+                isinstance(key, str) or (isinstance(key, tuple) and all(isinstance(subitem, str) for subitem in key))
+            ):
+                raise TypeError("All keys in band_names dictionary should be str or tuple of str.")
+            if not isinstance(item, int):
+                raise TypeError("All values in band_names dictionary should be int.")
     elif isinstance(band_names, list):
-        if not all(isinstance(item, (str, list)) for item in band_names):
-            raise TypeError("All items in band_names list should be str or list.")
+        for item in band_names:  # type: ignore
+            if not (
+                isinstance(item, str) or (isinstance(item, list) and all(isinstance(subitem, str) for subitem in item))
+            ):
+                raise TypeError("All items in band_names list should be str or list of str.")
     else:
         raise TypeError("band_names should be either a list or a dictionary.")
 
@@ -234,6 +247,7 @@ def validate_segment_format_range(
         isinstance(segment_range, tuple)
         and len(segment_range) == 2
         and all(isinstance(x, dtype) for x in segment_range)
+        and segment_range[0] < segment_range[1]
     ):
         segment_range = [segment_range]  # Standardize single tuple to list of tuples
     elif not (
@@ -269,13 +283,13 @@ def validate_segment_range(wavelengths: torch.Tensor, segment_range: list[tuple[
     out_segment_range = []
     for segment in segment_range:
         new_segment: list[int] = list(segment)
-        if new_segment[0] < 0:
+        if new_segment[0] <= 0:
             if new_segment[1] >= 1:
                 new_segment[0] = 0
             else:
                 raise ValueError(f"Segment range {segment} is out of bounds")
 
-        if new_segment[1] > wavelengths_max_index:
+        if new_segment[1] >= wavelengths_max_index:
             if new_segment[0] <= wavelengths_max_index - 1:
                 new_segment[1] = wavelengths_max_index
             else:
