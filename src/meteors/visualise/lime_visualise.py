@@ -31,7 +31,7 @@ def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:
     if isinstance(image, ImageAttributes):
         image = image.image
 
-    rgb = image.get_rgb_image(output_band_index=2)
+    rgb = image.get_rgb_image(output_rgb_band_axis=2)
     ax = ax or plt.gca()
     ax.imshow(rgb)
 
@@ -56,7 +56,7 @@ def visualize_spatial_attributes(  # noqa: C901
     """
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
     fig.suptitle("Spatial Attributes Visualization")
-    ax[0].imshow(spatial_attributes.image.get_rgb_image(output_band_index=2).cpu())
+    ax[0].imshow(spatial_attributes.image.get_rgb_image(output_rgb_band_axis=2).cpu())
     ax[0].set_title("Original image")
 
     viz.visualize_image_attr(

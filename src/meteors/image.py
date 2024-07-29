@@ -3,11 +3,14 @@ from typing_extensions import Annotated, Self
 
 import torch
 import numpy as np
-from functools import lru_cache
 from pydantic import BaseModel, ConfigDict, ValidationInfo, Field, model_validator
-from pydantic.functional_validators import BeforeValidator
+from pydantic.functional_validators import PlainValidator
 
 import spyndex
+
+#####################################################################
+############################ VALIDATIONS ############################
+#####################################################################
 
 
 def get_band_axis(orientation: tuple[str, str, str]) -> int:
@@ -19,11 +22,11 @@ def get_band_axis(orientation: tuple[str, str, str]) -> int:
     return orientation.index("C")
 
 
-def validate_orientation(value: tuple[str, str, str]) -> tuple[str, str, str]:
+def validate_orientation(value: tuple[str, str, str] | list[str]) -> tuple[str, str, str]:
     """Validates the orientation value.
 
     Args:
-        value (tuple[str, str, str]):
+        value (tuple[str, str, str] | list[str]):
             The orientation value to be validated. It should be a tuple of three one-letter strings.
 
     Returns:
@@ -34,11 +37,11 @@ def validate_orientation(value: tuple[str, str, str]) -> tuple[str, str, str]:
             or if it does not contain 'W', 'H', and 'C' in any order.
     """
     if not isinstance(value, tuple):
-        value = tuple(value)
+        value = tuple(value)  # type: ignore
 
     if len(value) != 3 or any(elem not in ["H", "W", "C"] for elem in value):
         raise ValueError("Orientation must be a tuple of 'H', 'W', and 'C' in any order.")
-    return value
+    return value  # type: ignore
 
 
 def validate_image(image: np.ndarray | torch.Tensor) -> torch.Tensor:
@@ -76,10 +79,15 @@ def validate_device(device: str | torch.device | None, info: ValidationInfo) -> 
         TypeError: If the device is not a string or torch device.
     """
     if device is None:
+        if "image" not in info.data:
+            raise AttributeError("Image is not present in the data, INTERNAL ERROR")
         image: torch.Tensor = info.data["image"]
         device = image.device
     elif isinstance(device, str):
-        device = torch.device(device)
+        try:
+            device = torch.device(device)
+        except Exception as e:
+            raise ValueError(f"Device {device} is not valid") from e
     if not isinstance(device, torch.device):
         raise TypeError("Device should be a string or torch device")
     return device
@@ -108,11 +116,11 @@ def validate_wavelengths(
     return wavelengths
 
 
-def validate_shapes(wavelengths: np.ndarray, image: torch.Tensor, band_axis: int) -> None:
+def validate_shapes(wavelengths: torch.Tensor, image: torch.Tensor, band_axis: int) -> None:
     """Validates the shape of the wavelengths array against the image tensor.
 
     Args:
-        wavelengths (np.ndarray): Array of wavelengths.
+        wavelengths (torch.Tensor): Array of wavelengths.
         image (torch.Tensor): Image tensor.
         band_axis (int): Index of the band axis in the image tensor.
 
@@ -143,8 +151,16 @@ def validate_binary_mask(mask: np.ndarray | torch.Tensor | None | str, info: Val
             "Binary mask should be a tensor, numpy ndarray or a string 'artificial' which will create an automatic mask"
         )
 
+    if "image" not in info.data:
+        raise ValueError("Image was not validated correctly")
     image: torch.Tensor = info.data["image"]
+
+    if "orientation" not in info.data:
+        raise ValueError("Orientation was not present in the object")
     band_axis: int = get_band_axis(info.data["orientation"])
+
+    if "device" not in info.data:
+        raise ValueError("Device was not validated correctly")
     device: torch.device = info.data["device"]
 
     if mask is None:
@@ -174,20 +190,25 @@ def validate_binary_mask(mask: np.ndarray | torch.Tensor | None | str, info: Val
     return binary_mask
 
 
+######################################################################
+########################## IMAGE DATACLASS ###########################
+######################################################################
+
+
 class Image(BaseModel):
     image: Annotated[  # Should always be a first field
         torch.Tensor,
-        BeforeValidator(validate_image),
+        PlainValidator(validate_image),
         Field(description="Hyperspectral image. Converted to torch tensor."),
     ]
     wavelengths: Annotated[
         torch.Tensor,
-        BeforeValidator(validate_wavelengths),
+        PlainValidator(validate_wavelengths),
         Field(description="Wavelengths present in the image. Defaults to None."),
     ]
     orientation: Annotated[
         tuple[str, str, str],
-        BeforeValidator(validate_orientation),
+        PlainValidator(validate_orientation),
         Field(
             description=(
                 'Orientation of the image - sequence of three one-letter strings in any order: "C", "H", "W" '
@@ -197,7 +218,7 @@ class Image(BaseModel):
     ] = ("C", "H", "W")
     device: Annotated[
         torch.device,
-        BeforeValidator(validate_device),
+        PlainValidator(validate_device),
         Field(
             validate_default=True,
             exclude=True,
@@ -206,7 +227,7 @@ class Image(BaseModel):
     ] = None
     binary_mask: Annotated[
         torch.Tensor,
-        BeforeValidator(validate_binary_mask),
+        PlainValidator(validate_binary_mask),
         Field(
             validate_default=True,
             description=(
@@ -264,7 +285,7 @@ class Image(BaseModel):
         self.device = self.image.device
         return self
 
-    @lru_cache
+    #     @lru_cache torch.Tensor is not hashable
     def get_rgb_image(
         self, mask: bool = True, cutoff_min: bool = False, output_rgb_band_axis: int | None = None
     ) -> torch.Tensor:
