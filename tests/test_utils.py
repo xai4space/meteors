@@ -9,17 +9,17 @@ def test_torch_dtype_to_python_dtype():
     # Test case 1: torch.float
     for dtype in (torch.float32, torch.float64, torch.float16, torch.bfloat16, torch.complex128):
         result = utils.torch_dtype_to_python_dtype(dtype)
-        assert result == float
+        assert isinstance(result, type) and result == float  # noqa
 
     # Test case 2: torch.int
     for dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
         result = utils.torch_dtype_to_python_dtype(dtype)
-        assert result == int
+        assert isinstance(result, type) and result == int  # noqa
 
     # Test case 3: torch.bool
     dtype = torch.bool
     result = utils.torch_dtype_to_python_dtype(dtype)
-    assert result == bool
+    assert isinstance(result, type) and result == bool  # noqa
 
     # Test case 4: Invalid dtype
     dtype = str
