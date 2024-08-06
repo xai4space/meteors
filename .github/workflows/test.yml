@@ -48,7 +48,7 @@ jobs:
           rye test
 
       - name: Upload coverage report to Codecov 📈
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
