@@ -80,7 +80,7 @@ def validate_device(device: str | torch.device | None, info: ValidationInfo) -> 
     """
     if device is None:
         if "image" not in info.data:
-            raise AttributeError("Image is not present in the data, INTERNAL ERROR")
+            raise ValueError("Image is not present in the data, INTERNAL ERROR")
         image: torch.Tensor = info.data["image"]
         device = image.device
     elif isinstance(device, str):

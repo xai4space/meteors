@@ -206,10 +206,13 @@ def visualize_spectral_attributes_by_waveband(
     """
     if isinstance(spectral_attributes, ImageSpectralAttributes):
         spectral_attributes = [spectral_attributes]
-    if not (isinstance(spectral_attributes, list) and all(
-        isinstance(attr, ImageSpectralAttributes) for attr in spectral_attributes
-    )):
-        raise ValueError("spectral_attributes must be an ImageSpectralAttributes object or a list of ImageSpectralAttributes objects.")
+    if not (
+        isinstance(spectral_attributes, list)
+        and all(isinstance(attr, ImageSpectralAttributes) for attr in spectral_attributes)
+    ):
+        raise ValueError(
+            "spectral_attributes must be an ImageSpectralAttributes object or a list of ImageSpectralAttributes objects."
+        )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
     band_names = dict(spectral_attributes[0].band_names)
@@ -303,10 +306,13 @@ def visualize_spectral_attributes_by_magnitude(
     """
     if isinstance(spectral_attributes, ImageSpectralAttributes):
         spectral_attributes = [spectral_attributes]
-    if not (isinstance(spectral_attributes, list) and all(
-        isinstance(attr, ImageSpectralAttributes) for attr in spectral_attributes
-    )):
-        raise ValueError("spectral_attributes must be an ImageSpectralAttributes object or a list of ImageSpectralAttributes objects.")
+    if not (
+        isinstance(spectral_attributes, list)
+        and all(isinstance(attr, ImageSpectralAttributes) for attr in spectral_attributes)
+    ):
+        raise ValueError(
+            "spectral_attributes must be an ImageSpectralAttributes object or a list of ImageSpectralAttributes objects."
+        )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
     band_names = dict(spectral_attributes[0].band_names)
@@ -327,7 +333,7 @@ def visualize_spectral_attributes_by_magnitude(
     flattened_band_mask = spectral_attributes[0].flattened_band_mask.cpu()
     attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
     avg_magnitudes = calculate_average_magnitudes(band_names, flattened_band_mask, attribution_map)
-    
+
     if aggregate_results:
         boxplot = ax.boxplot(avg_magnitudes, labels=labels, patch_artist=True)
         for patch, color in zip(boxplot["boxes"], color_palette):
