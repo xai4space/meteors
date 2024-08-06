@@ -170,6 +170,12 @@ def test_validate_device():
     with pytest.raises(TypeError):
         mt_image.validate_device(device, info)
 
+    # Test no image in the info
+    device = None
+    info = ValidationInfoMock(data={})
+    with pytest.raises(ValueError):
+        mt_image.validate_device(device, info)
+
 
 def test_validate_wavelengths():
     # Test valid wavelengths as torch tensor
@@ -279,6 +285,12 @@ def test_validate_binary_mask():
     info = ValidationInfoMock(
         data={"image": torch.randn(3, 5, 5), "orientation": ("C", "H", "W"), "device": torch.device("cpu")}
     )
+    with pytest.raises(ValueError):
+        mt_image.validate_binary_mask(mask, info)
+
+    # Test no image in the info
+    mask = torch.ones(3, 5, 5)
+    info = ValidationInfoMock(data={})
     with pytest.raises(ValueError):
         mt_image.validate_binary_mask(mask, info)
 

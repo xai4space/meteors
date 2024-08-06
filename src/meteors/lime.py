@@ -1485,7 +1485,9 @@ class Lime(Explainer):
         return segmentation_mask
 
     @staticmethod
-    def _get_patch_segmentation_mask(image: Image, patch_size=10, *args: Any, **kwargs: Any) -> torch.Tensor:
+    def _get_patch_segmentation_mask(
+        image: Image, patch_size: int | float = 10, *args: Any, **kwargs: Any
+    ) -> torch.Tensor:
         """
         Creates a segmentation mask using the patch method - creates small squares of the same size
             and assigns a unique value to each square.
@@ -1499,6 +1501,9 @@ class Lime(Explainer):
             torch.Tensor: An output segmentation mask.
         """
         logger.warning("Patch segmentation only works for band_index = 0 now")
+
+        if patch_size < 1 or not isinstance(patch_size, (int, float)):
+            raise ValueError("Invalid patch_size. patch_size must be a positive integer")
 
         if image.image.shape[1] % patch_size != 0 or image.image.shape[2] % patch_size != 0:
             raise ValueError("Invalid patch_size. patch_size must be a factor of both width and height of the image")

@@ -20,7 +20,7 @@ def test_torch_dtype_to_python_dtype():
     dtype = torch.bool
     result = utils.torch_dtype_to_python_dtype(dtype)
     assert result == bool
-    
+
     # Test case 4: Invalid dtype
     dtype = str
     with pytest.raises(TypeError):

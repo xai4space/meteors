@@ -288,6 +288,10 @@ def test_validate_band_ranges_or_list():
     band_ranges_tuple = (400.0, 700.0)
     mt_lime.validate_band_ranges_or_list({dict_band_names: band_ranges_tuple}, variable_name="test")
 
+    dict_band_names_tuple = ("test1", "test2")
+    band_ranges_tuple = (400, 700)
+    mt_lime.validate_band_ranges_or_list({dict_band_names_tuple: band_ranges_tuple}, variable_name="test")
+
     # Test case 2: Valid band ranges (list of tuples)
     band_ranges_list = [(400, 500), (600, 700)]
     mt_lime.validate_band_ranges_or_list({dict_band_names: band_ranges_list}, variable_name="test")
@@ -343,6 +347,24 @@ def test_validate_band_ranges_or_list():
         excinfo.value
     ), "The error message should contain the variable name"
     assert "test" not in str(excinfo.value), "The error message should not contain the default variable name"
+
+    # Test case 10: Invalid keys
+    dict_band_names = 123
+    band_value = 400
+    with pytest.raises(TypeError) as excinfo:
+        mt_lime.validate_band_ranges_or_list({dict_band_names: band_value}, variable_name="test")
+    assert "keys should be string or tuple of strings" in str(
+        excinfo.value
+    ), "The error message should contain the variable name"
+
+    # Test case 11: Invalid keys tuple
+    dict_band_names_tuple = (123, "test2")
+    band_value = 400
+    with pytest.raises(TypeError) as excinfo:
+        mt_lime.validate_band_ranges_or_list({dict_band_names: band_value}, variable_name="test")
+    assert "keys should be string or tuple of strings" in str(
+        excinfo.value
+    ), "The error message should contain the variable name"
 
 
 def test_validate_segment_format_range():
@@ -502,6 +524,12 @@ def test_validate_image_attributions():
         mt.ImageAttributes(
             image=image, attributes=invalid_attributes, score=score, device=device, model_config=model_config
         )
+
+    # Not implemented yet functions
+    with pytest.raises(NotImplementedError):
+        image_attributes.flattened_attributes
+
+    #
 
 
 def test_spatial_attributes():
@@ -766,6 +794,44 @@ def test_flattened_attributes_spectral_attributes():
 ###################################################################
 
 
+def test_explainer():
+    # Create mock objects for ExplainableModel and InterpretableModel
+    explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(1, 2, 3)), problem_type="regression")
+    interpretable_model = SkLearnLasso()
+
+    # Create a Explainer object
+    explainer = mt_lime.Explainer(explainable_model, interpretable_model)
+
+    # Assert that the explainable_model and interpretable_model attributes are set correctly
+    assert explainer.explainable_model == explainable_model
+    assert explainer.interpretable_model == interpretable_model
+
+    # Test case 1: Valid input
+    def dumb_model(image: torch.Tensor) -> torch.Tensor:
+        output = torch.empty((image.shape[0], 2))
+        output[:, 0] = 0
+        output[:, 1] = 1
+        return output
+
+    explainable_model = ExplainableModel(forward_func=dumb_model, problem_type="regression")
+    interpretable_model = SkLearnLasso(alpha=0.1)
+    # Create a sample Lime object
+    lime = mt_lime.Explainer(explainable_model, interpretable_model)
+
+    # Assert that the explainable_model and interpretable_model attributes are set correctly
+    assert lime.explainable_model == explainable_model
+    assert lime.interpretable_model == interpretable_model
+
+    # Test case 2: different device
+    device = torch.device("cpu")
+    explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(1, 2, 3)), problem_type="regression")
+    interpretable_model = SkLearnLasso()
+    explainer = mt_lime.Explainer(explainable_model, interpretable_model)
+
+    # Call the to method
+    explainer.to(device)
+
+
 def test_lime_explainer():
     # Create mock objects for ExplainableModel and InterpretableModel
     explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(1, 2, 3)), problem_type="regression")
@@ -852,6 +918,16 @@ def test_get_patch_segmentation_mask():
         assert torch.all(mask_indices[:, 1] < 240)
         assert torch.all(mask_indices[:, 2] < 240)
 
+    # Test case 2: Invalid patch size
+    patch_size = 0
+    with pytest.raises(ValueError):
+        mt_lime.Lime._get_patch_segmentation_mask(image, patch_size=patch_size)
+
+    # Test case 3: Invalid patch size
+    patch_size = 241
+    with pytest.raises(ValueError):
+        mt_lime.Lime._get_patch_segmentation_mask(image, patch_size=patch_size)
+
 
 def test_get_segmentation_mask():
     # Test case 1: Valid segmentation method (slic)
@@ -870,6 +946,11 @@ def test_get_segmentation_mask():
     image = mt.Image(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
     with pytest.raises(ValueError):
         mt_lime.Lime.get_segmentation_mask(image, segmentation_method="invalid")
+
+    # Test case 4: Invalid segmentation image
+    image = torch.ones((3, 240, 240))
+    with pytest.raises(ValueError):
+        mt_lime.Lime.get_segmentation_mask(image, segmentation_method="slic")
 
 
 def test_make_band_names_indexable():
@@ -1140,6 +1221,11 @@ def test_get_band_indices_from_band_ranges_indices():
     result = mt_lime.Lime._get_band_indices_from_band_ranges_indices(wavelengths, band_ranges_indices)
     assert result == expected_result, "The band indices should match the expected result"
 
+    # Test invalid band_ranges_indices
+    band_ranges_indices = 123
+    with pytest.raises(ValueError):
+        mt_lime.Lime._get_band_indices_from_band_ranges_indices(wavelengths, band_ranges_indices)
+
 
 def test_get_band_indices_from_band_ranges_wavelengths():
     # Test case 1: Ranges
@@ -1207,6 +1293,11 @@ def test_get_band_indices_from_band_ranges_wavelengths():
     band_indices = mt_lime.Lime._get_band_indices_from_band_ranges_wavelengths(wavelengths, band_ranges_wavelengths)
     assert band_indices == expected_band_indices, "The band indices should match the expected values"
 
+    # Test invalid band_ranges_wavelengths
+    band_ranges_wavelengths = 123
+    with pytest.raises(ValueError):
+        mt_lime.Lime._get_band_indices_from_band_ranges_wavelengths(wavelengths, band_ranges_wavelengths)
+
 
 def test_get_band_wavelengths_indices_from_band_names():
     # Test bands
@@ -1271,6 +1362,11 @@ def test_get_band_wavelengths_indices_from_band_names():
     # Test bands out of bounds
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     band_names = ["G", "AVI"]
+    with pytest.raises(ValueError):
+        mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
+
+    # Test invialid band names
+    band_names = 123
     with pytest.raises(ValueError):
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
@@ -1583,6 +1679,11 @@ def test_get_band_mask():
     with pytest.raises(ValueError):
         mt_lime.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
 
+    # Test case 9: Invalid input image
+    image = torch.ones((len(wavelengths), 10, 10))
+    with pytest.raises(ValueError):
+        mt_lime.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
+
 
 def test_get_spatial_attributes():
     # Dumb model
@@ -1654,6 +1755,16 @@ def test_get_spatial_attributes():
     assert spatial_attributes.image == image
     assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
     assert spatial_attributes.score == 1.0
+
+    # Test case 5: Not regression problem
+    # Create a sample Lime object
+    lime = mt_lime.Lime(
+        explainable_model=ExplainableModel(dumb_model, "classification"), interpretable_model=SkLearnLasso(alpha=0.1)
+    )
+
+    # Call the get_spatial_attributes method
+    with pytest.raises(ValueError):
+        spatial_attributes = lime.get_spatial_attributes(image, segmentation_mask, target=0)
 
 
 def test_get_spectral_attributes():
@@ -1744,3 +1855,13 @@ def test_get_spectral_attributes():
     assert spectral_attributes.band_names is not None
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
+
+    # Test case 5: Not regression problem
+    # Create a sample Lime object
+    lime = mt_lime.Lime(
+        explainable_model=ExplainableModel(dumb_model, "classification"), interpretable_model=SkLearnLasso(alpha=0.1)
+    )
+
+    # Call the get_spectral_attributes method
+    with pytest.raises(ValueError):
+        spectral_attributes = lime.get_spectral_attributes(image, band_mask, band_names=band_names, target=0)
