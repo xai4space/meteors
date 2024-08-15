@@ -524,32 +524,43 @@ def test_image_to():
     assert result.device == torch.device(device), "Device attribute should be updated"
 
 
-# def test__extract_central_wavelength_band(): # TODO: #Fersoil
-#     # Create a sample Image object
-#     image = torch.randn(10, 5, 5)
-#     wavelengths = torch.arange(10)
-#     binary_mask = torch.ones(10, 5, 5, dtype=torch.bool)
-#     image_obj = mt_image.Image(image=image, wavelengths=wavelengths, binary_mask=binary_mask)
+def test__extract_central_slice_from_band():
+    # Create a sample Image object
 
-#     # Test selecting central band with mask and normalization
-#     selected_wavelengths = torch.tensor([3, 4, 5])
-#     expected_result = (image[3:6, :, :] - image[3:6, :, :].min()) / (image[3:6, :, :].max() - image[3:6, :, :].min())
-#     expected_result *= binary_mask[3:6, :, :]
-#     result = image_obj._extract_central_wavelength_band(selected_wavelengths, apply_mask=True, apply_min_cutoff=False, normalize=True)
-#     assert torch.allclose(result, expected_result), "Incorrect central band with mask and normalization"
+    image = torch.randn(10, 5, 5)
+    wavelengths = torch.arange(10)
+    binary_mask = torch.ones(10, 5, 5, dtype=torch.bool)
+    image_obj = mt_image.Image(image=image, wavelengths=wavelengths, binary_mask=binary_mask)
 
-#     # Test selecting central band without mask and cutoff min
-#     selected_wavelengths = torch.tensor([7, 8, 9])
-#     expected_result = image[7:10, :, :]
-#     result = image_obj._get_central_band(selected_wavelengths, apply_mask=False, apply_min_cutoff=True, normalize=False)
-#     assert torch.allclose(result, expected_result), "Incorrect central band without mask and cutoff min"
+    # Test selecting central band with mask and normalization
+    selected_wavelengths = torch.tensor([3, 4, 5])
+    expected_result = (image[4, :, :] - image[4, :, :].min()) / (image[4, :, :].max() - image[4, :, :].min())
+    expected_result *= binary_mask[4, :, :]
+    result = image_obj._extract_central_slice_from_band(
+        selected_wavelengths, apply_mask=True, apply_min_cutoff=False, normalize=True
+    )
+    assert torch.allclose(result, expected_result), "Incorrect central band with mask and normalization"
 
-#     # Test selecting central band with mask and cutoff min
-#     selected_wavelengths = torch.tensor([1, 2, 3])
-#     expected_result = (image[1:4, :, :] - image[1:4, :, :].min()) / (image[1:4, :, :].max() - image[1:4, :, :].min())
-#     expected_result *= binary_mask[1:4, :, :]
-#     result = image_obj._get_central_band(selected_wavelengths, apply_mask=True, apply_min_cutoff=True, normalize=True)
-#     assert torch.allclose(result, expected_result), "Incorrect central band with mask and cutoff min"
+    # Test selecting central band without mask and cutoff min
+    selected_wavelengths = torch.tensor([7, 8, 9])
+    expected_result = image[8, :, :]
+    result = image_obj._extract_central_slice_from_band(
+        selected_wavelengths, apply_mask=False, apply_min_cutoff=True, normalize=False
+    )
+    assert torch.allclose(result, expected_result), "Incorrect central band without mask and cutoff min"
+
+    # Test selecting central band with mask and cutoff min
+    selected_wavelengths = torch.tensor([1, 2, 3])
+    expected_result = (image[2, :, :] - image[2, :, :].min()) / (image[2, :, :].max() - image[2, :, :].min())
+    expected_result *= binary_mask[2, :, :]
+    result = image_obj._extract_central_slice_from_band(
+        selected_wavelengths, apply_mask=True, apply_min_cutoff=True, normalize=True
+    )
+    assert torch.allclose(result, expected_result), "Incorrect central band with mask and cutoff min"
+
+    selected_wavelengths = [1, 90]
+    with pytest.raises(ValueError):
+        image_obj._extract_central_slice_from_band(selected_wavelengths)
 
 
 def test_extract_band_by_name():

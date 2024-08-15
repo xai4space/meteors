@@ -429,9 +429,9 @@ class Image(BaseModel):
             else torch.moveaxis(rgb_img, self.spectral_axis, output_channel_axis)
         )
 
-    def _extract_central_wavelength_band(
+    def _extract_central_slice_from_band(
         self,
-        wavelength_range: torch.Tensor,
+        band_wavelengths: torch.Tensor,
         apply_mask: bool = True,
         apply_min_cutoff: bool = False,
         normalize: bool = True,
@@ -443,8 +443,9 @@ class Image(BaseModel):
         and returns the resulting 2D image slice.
 
         Args:
-            wavelength_range (torch.Tensor): The range of wavelengths to consider.
-                The central wavelength from this range will be used.
+            band_wavelengths (torch.Tensor): The selected wavelengths that define the whole band
+                from which the central slice will be extracted.
+                All of the passed wavelengths must be present in the image.
             apply_mask (bool, optional): Whether to apply the binary mask to the extracted band.
                 Defaults to True.
             apply_min_cutoff (bool, optional): Whether to apply a minimum intensity cutoff.
@@ -458,49 +459,56 @@ class Image(BaseModel):
                 Shape will be (H, W), where H is height and W is width of the image.
 
         Notes:
-            - The central wavelength is determined as the middle index of the provided wavelength range.
+            - The central wavelength is determined as the middle index of the provided wavelengths list.
             - If normalization is applied, it's done before masking and cutoff operations.
             - The binary mask, if applied, is expected to have the same spatial dimensions as the image.
 
         Examples:
-            >>> hsi_image = Image(image=torch.rand(10, 100, 100), wavelengths=np.linspace(400, 1000, 10))
-            >>> wavelength_range = torch.tensor([500, 600, 700])
-            >>> central_band = hsi_image._extract_central_wavelength_band(wavelength_range)
-            >>> central_band.shape
+            >>> hsi_image = Image(image=torch.rand(13, 100, 100), wavelengths=np.linspace(400, 1000, 13))
+            >>> band_wavelengths = torch.tensor([500, 600, 650, 700])
+            >>> central_slice = hsi_image._extract_central_slice_from_band(band_wavelengths)
+            >>> central_slice.shape
             torch.Size([100, 100])
 
-            >>> # Extract without normalization or masking
-            >>> raw_band = hsi_image._extract_central_wavelength_band(wavelength_range, apply_mask=False, normalize=False)
+            >>> # Extract a slice without normalization or masking
+            >>> raw_band = hsi_image._extract_central_slice_from_band(band_wavelengths, apply_mask=False, normalize=False)
         """
-        start_index = np.where(self.wavelengths == wavelength_range[0])[0][0]
-        center_band_index = len(wavelength_range) // 2
-        band_index = start_index + center_band_index
+        # check if all wavelengths from the `band_wavelengths` are present in the image
+        if not all(wave in self.wavelengths for wave in band_wavelengths):
+            raise ValueError("All of the passed wavelengths must be present in the image")
+
+        # sort the `band_wavelengths` to ensure the central band is selected
+        band_wavelengths = torch.sort(band_wavelengths).values
+
+        start_index = np.where(self.wavelengths == band_wavelengths[0])[0][0]
+        relative_center_band_index = len(band_wavelengths) // 2
+        central_band_index = start_index + relative_center_band_index
 
         # Ensure the spectral dimension is the last
         image = self.image if self.spectral_axis == 2 else torch.moveaxis(self.image, self.spectral_axis, 2)
 
-        band = image[..., band_index]
+        slice = image[..., central_band_index]
 
         if normalize:
             if apply_min_cutoff:
-                band_min = band[band != 0].min()
+                slice_min = slice[slice != 0].min()
             else:
-                band_min = band.min()
+                slice_min = slice.min()
 
-            band_max = band.max()
-            if band_max > band_min:  # Avoid division by zero
-                band = (band - band_min) / (band_max - band_min)
+            slice_max = slice.max()
+            if slice_max > slice_min:  # Avoid division by zero
+                slice = (slice - slice_min) / (slice_max - slice_min)
 
             if apply_min_cutoff:
-                band[band == band.min()] = 0  # Set minimum values to zero
+                slice[slice == slice.min()] = 0  # Set minimum values to zero
 
         if apply_mask:
             mask = (
                 self.binary_mask if self.spectral_axis == 2 else torch.moveaxis(self.binary_mask, self.spectral_axis, 2)
             )
-            band = band * mask[..., band_index]
+            slice = slice * mask[..., central_band_index]
 
-        return band
+        return slice
 
     def extract_band_by_name(
         self,
@@ -558,7 +566,7 @@ class Image(BaseModel):
         selected_wavelengths = self.wavelengths[(self.wavelengths >= min_wave) & (self.wavelengths <= max_wave)]
 
         if selection_method == "center":
-            return self._extract_central_wavelength_band(
+            return self._extract_central_slice_from_band(
                 selected_wavelengths, apply_mask=apply_mask, apply_min_cutoff=apply_min_cutoff, normalize=normalize
             )
         else:
