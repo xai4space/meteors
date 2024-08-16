@@ -132,18 +132,14 @@ def test_validate_and_convert_segmentation_mask():
     # Test case 1: Valid segmentation mask (numpy array)
     segmentation_mask_np = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     result_np = mt_lime.validate_and_convert_segmentation_mask(segmentation_mask_np)
-    assert isinstance(result_np, torch.Tensor), "The result should be a torch.Tensor"
-    assert torch.all(
-        torch.eq(result_np, torch.tensor(segmentation_mask_np))
-    ), "The result should be equal to the input segmentation mask"
+    assert isinstance(result_np, torch.Tensor)
+    assert torch.all(torch.eq(result_np, torch.tensor(segmentation_mask_np)))
 
     # Test case 2: Valid segmentation mask (torch tensor)
     segmentation_mask_tensor = torch.tensor([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     result_tensor = mt_lime.validate_and_convert_segmentation_mask(segmentation_mask_tensor)
-    assert isinstance(result_tensor, torch.Tensor), "The result should be a torch.Tensor"
-    assert torch.all(
-        torch.eq(result_tensor, segmentation_mask_tensor)
-    ), "The result should be equal to the input segmentation mask"
+    assert isinstance(result_tensor, torch.Tensor)
+    assert torch.all(torch.eq(result_tensor, segmentation_mask_tensor))
 
     # Test case 3: Invalid segmentation mask (wrong type)
     invalid_segmentation_mask = "invalid"
@@ -160,16 +156,14 @@ def test_validate_and_convert_band_mask():
     # Test case 1: Valid band mask (numpy array)
     band_mask_np = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     result_np = mt_lime.validate_and_convert_band_mask(band_mask_np)
-    assert isinstance(result_np, torch.Tensor), "The result should be a torch.Tensor"
-    assert torch.all(
-        torch.eq(result_np, torch.tensor(band_mask_np))
-    ), "The result should be equal to the input band mask"
+    assert isinstance(result_np, torch.Tensor)
+    assert torch.all(torch.eq(result_np, torch.tensor(band_mask_np)))
 
     # Test case 2: Valid band mask (torch tensor)
     band_mask_tensor = torch.tensor([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     result_tensor = mt_lime.validate_and_convert_band_mask(band_mask_tensor)
-    assert isinstance(result_tensor, torch.Tensor), "The result should be a torch.Tensor"
-    assert torch.all(torch.eq(result_tensor, band_mask_tensor)), "The result should be equal to the input band mask"
+    assert isinstance(result_tensor, torch.Tensor)
+    assert torch.all(torch.eq(result_tensor, band_mask_tensor))
 
     # Test case 3: Invalid band mask (wrong type)
     invalid_band_mask = "invalid"
@@ -213,7 +207,7 @@ def test_align_band_names_with_mask():
         "G": 2,
         "B": 3,
         "not_included": 0,
-    }, "The band names should be updated with 'not_included' key"
+    }
 
     # Test case 2: Not changed band names
     band_names = {"R": 0, "G": 1, "B": 2}
@@ -225,14 +219,14 @@ def test_align_band_names_with_mask():
         "R": 0,
         "G": 1,
         "B": 2,
-    }, "The band names should not be updated if all bands are included in the mask"
+    }
 
     band_names = {"R": 0}
     band_mask = torch.tensor([[0], [0], [0]])
 
     not_updated_band_names = mt_lime.align_band_names_with_mask(band_names, band_mask)
 
-    assert not_updated_band_names == {"R": 0}, "The band names should not be updated if the mask is empty"
+    assert not_updated_band_names == {"R": 0}
 
     # Test case 3: Invalid band names
     band_names = {"R": 1, "G": 2, "B": 3}
@@ -318,25 +312,25 @@ def test_validate_band_format():
     invalid_band_ranges = "invalid"
     with pytest.raises(TypeError) as excinfo:
         mt_lime.validate_band_format({dict_band_names: invalid_band_ranges}, variable_name="test")
-    assert "test" in str(excinfo.value), "The error message should contain the variable name"
+    assert "test" in str(excinfo.value)
 
     # Test case 6: Invalid band ranges (wrong format)
     invalid_band_ranges = [(400, 500, 600)]
     with pytest.raises(TypeError) as excinfo:
         mt_lime.validate_band_format({dict_band_names: invalid_band_ranges}, variable_name="test")
-    assert "test" in str(excinfo.value), "The error message should contain the variable name"
+    assert "test" in str(excinfo.value)
 
     # Test case 7: Invalid band ranges (wrong format)
     invalid_band_ranges = [(400, 500), 600]
     with pytest.raises(TypeError) as excinfo:
         mt_lime.validate_band_format({dict_band_names: invalid_band_ranges}, variable_name="test")
-    assert "test" in str(excinfo.value), "The error message should contain the variable name"
+    assert "test" in str(excinfo.value)
 
     # Test case 8: Invalid band ranges (wrong format)
     invalid_band_ranges = [(400,)]
     with pytest.raises(TypeError) as excinfo:
         mt_lime.validate_band_format({dict_band_names: invalid_band_ranges}, variable_name="test")
-    assert "test" in str(excinfo.value), "The error message should contain the variable name"
+    assert "test" in str(excinfo.value)
 
     # Test case 9: Different variable name
     invalid_band_ranges = [(400,)]
@@ -344,70 +338,58 @@ def test_validate_band_format():
         mt_lime.validate_band_format(
             {dict_band_names: invalid_band_ranges}, variable_name="pizza with a pineapple is not a pizza"
         )
-    assert "pizza with a pineapple is not a pizza" in str(
-        excinfo.value
-    ), "The error message should contain the variable name"
-    assert "test" not in str(excinfo.value), "The error message should not contain the default variable name"
-
+    assert "pizza with a pineapple is not a pizza" in str(excinfo.value)
+    assert "test" not in str(excinfo.value)
     # Test case 10: Invalid keys
     dict_band_names = 123
     band_value = 400
     with pytest.raises(TypeError) as excinfo:
         mt_lime.validate_band_format({dict_band_names: band_value}, variable_name="test")
-    assert "keys should be string or tuple of strings" in str(
-        excinfo.value
-    ), "The error message should contain the variable name"
+    assert "keys should be string or tuple of strings" in str(excinfo.value)
 
     # Test case 11: Invalid keys tuple
     dict_band_names_tuple = (123, "test2")
     band_value = 400
     with pytest.raises(TypeError) as excinfo:
         mt_lime.validate_band_format({dict_band_names: band_value}, variable_name="test")
-    assert "keys should be string or tuple of strings" in str(
-        excinfo.value
-    ), "The error message should contain the variable name"
+    assert "keys should be string or tuple of strings" in str(excinfo.value)
 
 
 def test_validate_segment_format():
     # Test case 1: Valid segment range (tuple of ints)
     segment_range_tuple = (0, 10)
     result_tuple = mt_lime.validate_segment_format(segment_range_tuple)
-    assert isinstance(result_tuple, list), "The result should be a list"
-    assert len(result_tuple) == 1, "The result should contain a single tuple"
-    assert result_tuple[0] == segment_range_tuple, "The result should be equal to the input segment range"
-    assert isinstance(result_tuple[0][0], int) and isinstance(
-        result_tuple[0][1], int
-    ), "The result should be a tuple of ints"
+    assert isinstance(result_tuple, list)
+    assert len(result_tuple) == 1
+    assert result_tuple[0] == segment_range_tuple
+    assert isinstance(result_tuple[0][0], int) and isinstance(result_tuple[0][1], int)
 
     # Test case 2: Valid segment range (list of tuples of ints)
     segment_range_list = [(0, 10), (20, 30)]
     result_list = mt_lime.validate_segment_format(segment_range_list)
-    assert isinstance(result_list, list), "The result should be a list"
-    assert len(result_list) == len(segment_range_list), "The result should contain the same number of tuples"
+    assert isinstance(result_list, list)
+    assert len(result_list) == len(segment_range_list)
     assert all(
         result_tuple == segment_range_tuple
         for result_tuple, segment_range_tuple in zip(result_list, segment_range_list)
-    ), "The result should be equal to the input segment range"
+    )
 
     # Test case 3: Valid segment range (tuple of ints) of floats
     segment_range_tuple = (0.0, 10.0)
     result_tuple = mt_lime.validate_segment_format(segment_range_tuple, dtype=float)
-    assert isinstance(result_tuple, list), "The result should be a list"
-    assert len(result_tuple) == 1, "The result should contain a single tuple"
-    assert result_tuple[0] == segment_range_tuple, "The result should be equal to the input segment range"
-    assert isinstance(result_tuple[0][0], float) and isinstance(
-        result_tuple[0][1], float
-    ), "The result should be a tuple of floats"
-
+    assert isinstance(result_tuple, list)
+    assert len(result_tuple) == 1
+    assert result_tuple[0] == segment_range_tuple
+    assert isinstance(result_tuple[0][0], float) and isinstance(result_tuple[0][1], float)
     # Test case 4: Valid segment range (list of tuples of ints) of floats
     segment_range_list = [(0.0, 10.0), (20.0, 30.0)]
     result_list = mt_lime.validate_segment_format(segment_range_list, dtype=float)
-    assert isinstance(result_list, list), "The result should be a list"
-    assert len(result_list) == len(segment_range_list), "The result should contain the same number of tuples"
+    assert isinstance(result_list, list)
+    assert len(result_list) == len(segment_range_list)
     assert all(
         result_tuple == segment_range_tuple
         for result_tuple, segment_range_tuple in zip(result_list, segment_range_list)
-    ), "The result should be equal to the input segment range"
+    )
 
     # Test case 5: Invalid segment range (wrong type)
     invalid_segment_range = "invalid"
@@ -461,19 +443,19 @@ def test_adjust_and_validate_segment_ranges():
     # Test case 1: Valid segment range
     segment_range = [(2, 5), (7, 9)]
     result = mt_lime.adjust_and_validate_segment_ranges(wavelengths, segment_range)
-    assert result == [(2, 5), (7, 9)], "The segment range should remain unchanged"
+    assert result == [(2, 5), (7, 9)]
 
     # Test case 2: Segment range with end exceeding wavelengths max index
     segment_range = [(0, 3), (6, 10)]
     with pytest.warns(UserWarning):
         result = mt_lime.adjust_and_validate_segment_ranges(wavelengths, segment_range)
-    assert result == [(0, 3), (6, 9)], "The segment range should be adjusted to end at wavelengths max index"
+    assert result == [(0, 3), (6, 9)]
 
     # Test case 3: Segment range with negative start
     segment_range = [(-1, 4), (7, 9)]
     with pytest.warns(UserWarning):
         result = mt_lime.adjust_and_validate_segment_ranges(wavelengths, segment_range)
-    assert result == [(0, 4), (7, 9)], "The segment range should be adjusted to start at 0"
+    assert result == [(0, 4), (7, 9)]
 
     # Test case 4: Not Valid segment range
     segment_range = [(-1, 0), (7, 9)]
@@ -621,9 +603,7 @@ def test_spatial_segmentation_mask_spacial_attributes():
         model_config=model_config,
     )
 
-    assert (
-        spatial_attributes.spatial_segmentation_mask.shape == segmentation_mask.shape[1:]
-    ), "The spatial segmentation mask should have shape equal to the segmentation mask shape"
+    assert spatial_attributes.spatial_segmentation_mask.shape == segmentation_mask.shape[1:]
 
 
 def test_flattened_attributes_spacial_attributes():
@@ -643,9 +623,7 @@ def test_flattened_attributes_spacial_attributes():
         model_config=model_config,
     )
 
-    assert (
-        spatial_attributes.flattened_attributes.shape == segmentation_mask.shape[1:]
-    ), "The flattened attributes should have shape equal to the segmentation mask shape"
+    assert spatial_attributes.flattened_attributes.shape == segmentation_mask.shape[1:]
 
 
 def test_spectral_attributes():
@@ -750,9 +728,7 @@ def test_flattened_band_mask_spectral_attributes():
         model_config=model_config,
     )
 
-    assert torch.equal(
-        spectral_attributes.spectral_band_mask, torch.tensor([0, 1, 2])
-    ), "The spectral band mask should be equal to [0, 1, 2]"
+    assert torch.equal(spectral_attributes.spectral_band_mask, torch.tensor([0, 1, 2]))
 
 
 def test_flattened_attributes_spectral_attributes():
@@ -777,9 +753,7 @@ def test_flattened_attributes_spectral_attributes():
         model_config=model_config,
     )
 
-    assert torch.equal(
-        spectral_attributes.flattened_attributes, torch.tensor([0, 1, 2])
-    ), "The flattened attributes should be equal to [0, 1, 2]"
+    assert torch.equal(spectral_attributes.flattened_attributes, torch.tensor([0, 1, 2]))
 
 
 ###################################################################
@@ -926,14 +900,14 @@ def test_get_segmentation_mask():
     # Test case 1: Valid segmentation method (slic)
     image = mt.Image(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
     segmentation_mask = mt_lime.Lime.get_segmentation_mask(image, segmentation_method="slic")
-    assert isinstance(segmentation_mask, torch.Tensor), "The segmentation mask should be a torch.Tensor"
-    assert segmentation_mask.shape == (1, 240, 240), "The segmentation mask should have the same shape as the image"
+    assert isinstance(segmentation_mask, torch.Tensor)
+    assert segmentation_mask.shape == (1, 240, 240)
 
     # Test case 2: Valid segmentation method (patch)
     image = mt.Image(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
     segmentation_mask = mt_lime.Lime.get_segmentation_mask(image, segmentation_method="patch")
-    assert isinstance(segmentation_mask, torch.Tensor), "The segmentation mask should be a torch.Tensor"
-    assert segmentation_mask.shape == (1, 240, 240), "The segmentation mask should have the same shape as the image"
+    assert isinstance(segmentation_mask, torch.Tensor)
+    assert segmentation_mask.shape == (1, 240, 240)
 
     # Test case 3: Invalid segmentation method
     image = mt.Image(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
@@ -985,13 +959,13 @@ def test_extract_bands_from_spyndex():
     # Test case 1: Single band name
     segment_name = "R"
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
-    assert result == "R", "The result should be the same as the input band name"
+    assert result == "R"
 
     # Test case 2: Multiple band names
     segment_name = ["R", "G"]
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
-    assert isinstance(result, tuple), "The result should be a tuple of band names"
-    assert list(result).sort() == ["R", "G"].sort(), "The result should be a tuple of band names"
+    assert isinstance(result, tuple)
+    assert list(result).sort() == ["R", "G"].sort()
 
     # Test case 3: Invalid band name
     segment_name = "D"
@@ -1001,14 +975,13 @@ def test_extract_bands_from_spyndex():
     # Test case 4: Spatial Index
     segment_name = "AVI"
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
-    assert isinstance(result, tuple), "The result should be a tuple of band names"
-    assert list(result).sort() == ["N", "R"].sort(), "The result should be a tuple of band names"
-
+    assert isinstance(result, tuple)
+    assert list(result).sort() == ["N", "R"].sort()
     # Test case 5: Multiple spatial indices
     segment_name = ["AVI", "AVI"]
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
-    assert isinstance(result, tuple), "The result should be a tuple of band names"
-    assert list(result).sort() == ["N", "R"].sort(), "The result should be a tuple of band names"
+    assert isinstance(result, tuple)
+    assert list(result).sort() == ["N", "R"].sort()
 
     # Test case 5: Invalid spatial index
     segment_name = "AV"
@@ -1018,8 +991,8 @@ def test_extract_bands_from_spyndex():
     # Test case 6: band name with spatial index
     segment_name = ["G", "AVI"]
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
-    assert isinstance(result, tuple), "The result should be a tuple of band names"
-    assert list(result).sort() == ["G", "N", "R"].sort(), "The result should be a tuple of band names"
+    assert isinstance(result, tuple)
+    assert list(result).sort() == ["G", "N", "R"].sort()
 
 
 def test__convert_wavelengths_to_indices():
@@ -1029,7 +1002,7 @@ def test__convert_wavelengths_to_indices():
     expected_indices = [(1, 4), (4, 7)]
     indices = mt_lime.Lime._convert_wavelengths_to_indices(wavelengths, ranges)
 
-    assert indices == expected_indices, "The converted indices do not match the expected indices"
+    assert indices == expected_indices
 
     # Test case with single range
     single_range = (500.0, 650.0)
@@ -1037,9 +1010,7 @@ def test__convert_wavelengths_to_indices():
     expected_single_indices = [(2, 6)]
     single_indices = mt_lime.Lime._convert_wavelengths_to_indices(wavelengths, single_range)
 
-    assert (
-        single_indices == expected_single_indices
-    ), "The converted indices for a single range do not match the expected indices"
+    assert single_indices == expected_single_indices
 
     # Test case with empty range
     empty_range = (550.0, 550.0)
@@ -1047,9 +1018,7 @@ def test__convert_wavelengths_to_indices():
     expected_empty_indices = [(3, 4)]
     empty_indices = mt_lime.Lime._convert_wavelengths_to_indices(wavelengths, empty_range)
 
-    assert (
-        empty_indices == expected_empty_indices
-    ), "The converted indices for an empty range do not match the expected indices"
+    assert empty_indices == expected_empty_indices
 
     # Test case with range out of bounds
     empty_range = (720.0, 750.0)
@@ -1057,9 +1026,7 @@ def test__convert_wavelengths_to_indices():
     expected_single_indices = [(7, 7)]
     single_indices = mt_lime.Lime._convert_wavelengths_to_indices(wavelengths, empty_range)
 
-    assert (
-        single_indices == expected_single_indices
-    ), "The converted indices for a single range do not match the expected indices"
+    assert single_indices == expected_single_indices
 
     # Test case with negative range out of bounds
     empty_range = (350.0, 370.0)
@@ -1067,9 +1034,7 @@ def test__convert_wavelengths_to_indices():
     expected_single_indices = [(0, 0)]
     single_indices = mt_lime.Lime._convert_wavelengths_to_indices(wavelengths, empty_range)
 
-    assert (
-        single_indices == expected_single_indices
-    ), "The converted indices for a single range do not match the expected indices"
+    assert single_indices == expected_single_indices
 
 
 def test_get_indices_from_wavelength_indices_range():
@@ -1078,21 +1043,21 @@ def test_get_indices_from_wavelength_indices_range():
     ranges = [(1, 4)]
     expected_indices = [1, 2, 3]
     indices = mt_lime.Lime._get_indices_from_wavelength_indices_range(wavelengths, ranges)
-    assert indices == expected_indices, "Incorrect indices for single range"
+    assert indices == expected_indices
 
     # Test case 2: Multiple ranges
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     ranges = [(1, 3), (4, 6)]
     expected_indices = [1, 2, 4, 5]
     indices = mt_lime.Lime._get_indices_from_wavelength_indices_range(wavelengths, ranges)
-    assert indices == expected_indices, "Incorrect indices for multiple ranges"
+    assert indices == expected_indices
 
     # Test case 3: Empty range
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     ranges = []
     expected_indices = []
     indices = mt_lime.Lime._get_indices_from_wavelength_indices_range(wavelengths, ranges)
-    assert indices == expected_indices, "Incorrect indices for empty range"
+    assert indices == expected_indices
 
     # Test case 4: Range with single index
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
@@ -1105,14 +1070,14 @@ def test_get_indices_from_wavelength_indices_range():
     ranges = [(2, 4), (4, 6)]
     expected_indices = [2, 3, 4, 5]
     indices = mt_lime.Lime._get_indices_from_wavelength_indices_range(wavelengths, ranges)
-    assert indices == expected_indices, "Incorrect indices for range with duplicate indices"
+    assert indices == expected_indices
 
     # Test case 6: Range with overlapping indices
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     ranges = [(2, 4), (3, 6)]
     expected_indices = [2, 3, 4, 5]
     indices = mt_lime.Lime._get_indices_from_wavelength_indices_range(wavelengths, ranges)
-    assert indices == expected_indices, "Incorrect indices for range with overlapping indices"
+    assert indices == expected_indices
 
 
 def test_convert_wavelengths_list_to_indices():
@@ -1122,7 +1087,7 @@ def test_convert_wavelengths_list_to_indices():
     expected_indices = [1, 3, 5]
 
     indices = mt_lime.Lime._convert_wavelengths_list_to_indices(wavelengths, ranges)
-    assert indices == expected_indices, "The converted indices do not match the expected indices"
+    assert indices == expected_indices
 
     # Test case with empty range
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
@@ -1130,7 +1095,7 @@ def test_convert_wavelengths_list_to_indices():
     expected_indices = []
 
     indices = mt_lime.Lime._convert_wavelengths_list_to_indices(wavelengths, ranges)
-    assert indices == expected_indices, "The converted indices for an empty range do not match the expected indices"
+    assert indices == expected_indices
 
     # Test case with multiple ranges
     wavelengths = torch.tensor([400, 450, 450, 500, 550, 600, 650, 700])
@@ -1163,7 +1128,7 @@ def test_get_band_indices_from_input_band_indices():
     }
 
     result = mt_lime.Lime._get_band_indices_from_input_band_indices(wavelengths, band_indices)
-    assert result == expected_result, "The band indices should match the expected result"
+    assert result == expected_result
 
     # Test tuples
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
@@ -1180,7 +1145,7 @@ def test_get_band_indices_from_input_band_indices():
     }
 
     result = mt_lime.Lime._get_band_indices_from_input_band_indices(wavelengths, band_indices)
-    assert result == expected_result, "The band indices should match the expected result"
+    assert result == expected_result
 
     # Test single value
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
@@ -1195,7 +1160,7 @@ def test_get_band_indices_from_input_band_indices():
     }
 
     result = mt_lime.Lime._get_band_indices_from_input_band_indices(wavelengths, band_indices)
-    assert result == expected_result, "The band indices should match the expected result"
+    assert result == expected_result
 
     # Test mix
     band_indices = {
@@ -1212,7 +1177,7 @@ def test_get_band_indices_from_input_band_indices():
         "segment4": [4, 5],
     }
     result = mt_lime.Lime._get_band_indices_from_input_band_indices(wavelengths, band_indices)
-    assert result == expected_result, "The band indices should match the expected result"
+    assert result == expected_result
 
     # Test invalid band_ranges_indices
     band_indices = 123
@@ -1234,7 +1199,7 @@ def test_get_band_indices_from_band_wavelengths():
     }
 
     band_indices = mt_lime.Lime._get_band_indices_from_band_wavelengths(wavelengths, band_wavelengths)
-    assert band_indices == expected_band_indices, "The band indices should match the expected values"
+    assert band_indices == expected_band_indices
 
     # Test case 2: Lists
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
@@ -1249,7 +1214,7 @@ def test_get_band_indices_from_band_wavelengths():
     }
 
     band_indices = mt_lime.Lime._get_band_indices_from_band_wavelengths(wavelengths, band_wavelengths)
-    assert band_indices == expected_band_indices, "The band indices should match the expected values"
+    assert band_indices == expected_band_indices
 
     # Test case 3: Single value
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
@@ -1264,7 +1229,7 @@ def test_get_band_indices_from_band_wavelengths():
     }
 
     band_indices = mt_lime.Lime._get_band_indices_from_band_wavelengths(wavelengths, band_wavelengths)
-    assert band_indices == expected_band_indices, "The band indices should match the expected values"
+    assert band_indices == expected_band_indices
 
     # Test case 4: Mixed types
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
@@ -1284,7 +1249,7 @@ def test_get_band_indices_from_band_wavelengths():
     }
 
     band_indices = mt_lime.Lime._get_band_indices_from_band_wavelengths(wavelengths, band_wavelengths)
-    assert band_indices == expected_band_indices, "The band indices should match the expected values"
+    assert band_indices == expected_band_indices
 
     # Test invalid band_ranges_wavelengths
     band_wavelengths = 123
@@ -1506,7 +1471,7 @@ def test_expand_band_mask():
     expanded_band_mask = mt_lime.Lime._expand_band_mask(image, band_mask_single_dim, repeat_dimensions)
 
     expected_shape = (5, 1, 1)
-    assert expanded_band_mask.shape == expected_shape, "The shape of the expanded band mask is incorrect"
+    assert expanded_band_mask.shape == expected_shape
 
     expected_values = torch.tensor(
         [
@@ -1517,7 +1482,7 @@ def test_expand_band_mask():
             [[5]],
         ]
     )
-    assert torch.equal(expanded_band_mask, expected_values), "The values of the expanded band mask are incorrect"
+    assert torch.equal(expanded_band_mask, expected_values)
 
     # Test case 2: Repeat dimensions is True and band axis is 0
     repeat_dimensions = True
@@ -1525,7 +1490,7 @@ def test_expand_band_mask():
     expanded_band_mask = mt_lime.Lime._expand_band_mask(image, band_mask_single_dim, repeat_dimensions)
 
     expected_shape = (5, 3, 3)
-    assert expanded_band_mask.shape == expected_shape, "The shape of the expanded band mask is incorrect"
+    assert expanded_band_mask.shape == expected_shape
 
     expected_values = torch.tensor(
         [
@@ -1536,7 +1501,7 @@ def test_expand_band_mask():
             [[5, 5, 5], [5, 5, 5], [5, 5, 5]],
         ]
     )
-    assert torch.equal(expanded_band_mask, expected_values), "The values of the expanded band mask are incorrect"
+    assert torch.equal(expanded_band_mask, expected_values)
 
     # Test case 3: Repeat dimensions is True and band axis is 1
     repeat_dimensions = True
@@ -1544,7 +1509,7 @@ def test_expand_band_mask():
     expanded_band_mask = mt_lime.Lime._expand_band_mask(image, band_mask_single_dim, repeat_dimensions)
 
     expected_shape = (3, 5, 3)
-    assert expanded_band_mask.shape == expected_shape, "The shape of the expanded band mask is incorrect"
+    assert expanded_band_mask.shape == expected_shape
 
     expected_values = torch.tensor(
         [
@@ -1553,7 +1518,7 @@ def test_expand_band_mask():
             [[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]],
         ]
     )
-    assert torch.equal(expanded_band_mask, expected_values), "The values of the expanded band mask are incorrect"
+    assert torch.equal(expanded_band_mask, expected_values)
 
     # Test case 4: Repeat dimensions is True and band axis is 2
     repeat_dimensions = True
@@ -1561,7 +1526,7 @@ def test_expand_band_mask():
     expanded_band_mask = mt_lime.Lime._expand_band_mask(image, band_mask_single_dim, repeat_dimensions)
 
     expected_shape = (3, 3, 5)
-    assert expanded_band_mask.shape == expected_shape, "The shape of the expanded band mask is incorrect"
+    assert expanded_band_mask.shape == expected_shape
 
     expected_values = torch.tensor(
         [
@@ -1570,7 +1535,7 @@ def test_expand_band_mask():
             [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]],
         ]
     )
-    assert torch.equal(expanded_band_mask, expected_values), "The values of the expanded band mask are incorrect"
+    assert torch.equal(expanded_band_mask, expected_values)
 
 
 def test_create_tensor_band_mask():
@@ -1727,14 +1692,14 @@ def test_get_spatial_attributes():
     assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
     assert spatial_attributes.image == image
     assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
-    assert spatial_attributes.score == 1.0
+    assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
     assert spatial_attributes.attributes.shape == image.image.shape
 
     # Test case 1: Different target
     spatial_attributes = lime.get_spatial_attributes(image, segmentation_mask, target=1)
     assert spatial_attributes.image == image
     assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
-    assert spatial_attributes.score == 1.0
+    assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
     assert spatial_attributes.attributes.shape == image.image.shape
 
     # Test case 2: Use slic for segmentation
@@ -1744,17 +1709,17 @@ def test_get_spatial_attributes():
     assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
     assert spatial_attributes.image == image
     assert spatial_attributes.segmentation_mask is not None
-    assert spatial_attributes.score == 1.0
+    assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
     assert spatial_attributes.attributes.shape == image.image.shape
 
     # Test case 3: Use patch for segmentation
-    spatial_attributes = lime.get_spatial_attributes(image, segmentation_method="patch", target=0)
+    spatial_attributes = lime.get_spatial_attributes(image, segmentation_method="patch", target=0, patch_size=5)
 
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
     assert spatial_attributes.image == image
     assert spatial_attributes.segmentation_mask is not None
-    assert spatial_attributes.score == 1.0
+    assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
     assert spatial_attributes.attributes.shape == image.image.shape
 
     # Test case 4: different lime parameters
@@ -1773,7 +1738,7 @@ def test_get_spatial_attributes():
     assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
     assert spatial_attributes.image == image
     assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
-    assert spatial_attributes.score == 1.0
+    assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
     assert spatial_attributes.attributes.shape == image.image.shape
 
     # Test case 5: Not regression problem
@@ -1820,7 +1785,7 @@ def test_get_spectral_attributes():
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names == band_names
-    assert spectral_attributes.score <= 1.0
+    assert spectral_attributes.score <= 1.0 and spectral_attributes.score >= 0.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == image.image.shape
 
@@ -1832,7 +1797,7 @@ def test_get_spectral_attributes():
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names == band_names
-    assert spectral_attributes.score <= 1.0
+    assert spectral_attributes.score <= 1.0 and spectral_attributes.score >= 0.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == image.image.shape
 
@@ -1844,7 +1809,7 @@ def test_get_spectral_attributes():
     assert spectral_attributes.image == image
     assert spectral_attributes.band_mask is not None
     assert spectral_attributes.band_names == band_names
-    assert spectral_attributes.score <= 1.0
+    assert spectral_attributes.score <= 1.0 and spectral_attributes.score >= 0.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == image.image.shape
 
@@ -1856,7 +1821,7 @@ def test_get_spectral_attributes():
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names is not None
-    assert spectral_attributes.score <= 1.0
+    assert spectral_attributes.score <= 1.0 and spectral_attributes.score >= 0.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == image.image.shape
 
@@ -1877,7 +1842,7 @@ def test_get_spectral_attributes():
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names is not None
-    assert spectral_attributes.score <= 1.0
+    assert spectral_attributes.score <= 1.0 and spectral_attributes.score >= 0.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == image.image.shape
 

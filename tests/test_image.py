@@ -103,33 +103,33 @@ def test_get_channel_axis():
     expected_result = 0
 
     result = mt_image.get_channel_axis(orientation)
-    assert result == expected_result, "Incorrect channel axis index returned"
+    assert result == expected_result
 
     # Test orientation ("H", "C", "W")
     orientation = ("H", "C", "W")
     expected_result = 1
 
     result = mt_image.get_channel_axis(orientation)
-    assert result == expected_result, "Incorrect channel axis index returned"
+    assert result == expected_result
 
     # Test orientation ("W", "H", "C")
     orientation = ("W", "H", "C")
     expected_result = 2
 
     result = mt_image.get_channel_axis(orientation)
-    assert result == expected_result, "Incorrect channel axis index returned"
+    assert result == expected_result
 
 
 def test_validate_orientation():
     # Test valid orientation
     orientation = ("C", "H", "W")
     result = mt_image.validate_orientation(orientation)
-    assert result == orientation, "Valid orientation should not raise an exception"
+    assert result == orientation
 
     # Test valid orientation with list
     orientation = ["C", "H", "W"]
     result = mt_image.validate_orientation(orientation)
-    assert result == tuple(orientation), "Valid orientation should not raise an exception"
+    assert result == tuple(orientation)
 
     # Test invalid orientation with wrong length
     orientation = ("C", "H")
@@ -146,14 +146,14 @@ def test_ensure_image_tensor():
     # Test ensure_image_tensor as numpy array
     image = np.random.rand(10, 10)
     result = mt_image.ensure_image_tensor(image)
-    assert isinstance(result, torch.Tensor), "Image should be converted to torch tensor"
-    assert result.shape == torch.Size([10, 10]), "Image shape should be preserved"
+    assert isinstance(result, torch.Tensor)
+    assert result.shape == torch.Size([10, 10])
 
     # Test valid image as torch tensor
     image = torch.randn(5, 5)
     result = mt_image.ensure_image_tensor(image)
-    assert isinstance(result, torch.Tensor), "Image should remain as torch tensor"
-    assert result.shape == torch.Size([5, 5]), "Image shape should be preserved"
+    assert isinstance(result, torch.Tensor)
+    assert result.shape == torch.Size([5, 5])
 
     # Test invalid image type
     image = "invalid"
@@ -171,21 +171,21 @@ def test_resolve_inference_device():
     device = "cpu"
     info = ValidationInfoMock(data={"image": torch.randn(5, 5)})
     result = mt_image.resolve_inference_device(device, info)
-    assert isinstance(result, torch.device), "Device should be a torch device"
-    assert str(result) == device, "Device should match the input string"
+    assert isinstance(result, torch.device)
+    assert str(result) == device
 
     # Test device as torch.device
     device = torch.device("cpu")
     result = mt_image.resolve_inference_device(device, info)
-    assert isinstance(result, torch.device), "Device should remain as torch device"
-    assert result == device, "Device should match the input torch device"
+    assert isinstance(result, torch.device)
+    assert result == device
 
     # Test device as None
     device = None
     info = ValidationInfoMock(data={"image": torch.randn(5, 5)})
     result = mt_image.resolve_inference_device(device, info)
-    assert isinstance(result, torch.device), "Device should be a torch device"
-    assert result == info.data["image"].device, "Device should match the device of the input image"
+    assert isinstance(result, torch.device)
+    assert result == info.data["image"].device
 
     # Test invalid device type
     device = 123
@@ -204,26 +204,26 @@ def test_ensure_wavelengths_tensor():
     # Test valid wavelengths as torch tensor
     wavelengths = torch.tensor([400, 500, 600])
     result = mt_image.ensure_wavelengths_tensor(wavelengths)
-    assert isinstance(result, torch.Tensor), "Wavelengths should remain as torch tensor"
-    assert torch.all(torch.eq(result, wavelengths)), "Wavelengths should be preserved"
+    assert isinstance(result, torch.Tensor)
+    assert torch.all(torch.eq(result, wavelengths))
 
     # Test valid wavelengths as numpy array
     wavelengths = np.array([400, 500, 600])
     result = mt_image.ensure_wavelengths_tensor(wavelengths)
-    assert isinstance(result, torch.Tensor), "Wavelengths should be converted to torch tensor"
-    assert torch.all(torch.eq(result, torch.tensor(wavelengths))), "Wavelengths should be preserved"
+    assert isinstance(result, torch.Tensor)
+    assert torch.all(torch.eq(result, torch.tensor(wavelengths)))
 
     # Test valid wavelengths as list of integers
     wavelengths = [400, 500, 600]
     result = mt_image.ensure_wavelengths_tensor(wavelengths)
-    assert isinstance(result, torch.Tensor), "Wavelengths should be converted to torch tensor"
-    assert torch.all(torch.eq(result, torch.tensor(wavelengths))), "Wavelengths should be preserved"
+    assert isinstance(result, torch.Tensor)
+    assert torch.all(torch.eq(result, torch.tensor(wavelengths)))
 
     # Test valid wavelengths as tuple of floats
     wavelengths = (400.0, 500.0, 600.0)
     result = mt_image.ensure_wavelengths_tensor(wavelengths)
-    assert isinstance(result, torch.Tensor), "Wavelengths should be converted to torch tensor"
-    assert torch.all(torch.eq(result, torch.tensor(wavelengths))), "Wavelengths should be preserved"
+    assert isinstance(result, torch.Tensor)
+    assert torch.all(torch.eq(result, torch.tensor(wavelengths)))
 
     # Test invalid wavelengths type
     wavelengths = "invalid"
@@ -264,8 +264,8 @@ def test_process_and_validate_binary_mask():
         data={"image": torch.randn(3, 5, 5), "orientation": ("C", "H", "W"), "device": torch.device("cpu")}
     )
     result = mt_image.process_and_validate_binary_mask(mask, info)
-    assert isinstance(result, torch.Tensor), "Binary mask should be converted to torch tensor"
-    assert result.shape == torch.Size([3, 5, 5]), "Binary mask shape should be preserved"
+    assert isinstance(result, torch.Tensor)
+    assert result.shape == torch.Size([3, 5, 5])
 
     # Test valid binary mask as torch tensor
     mask = torch.randint(0, 2, size=(3, 5, 5))
@@ -273,8 +273,8 @@ def test_process_and_validate_binary_mask():
         data={"image": torch.randn(3, 5, 5), "orientation": ("C", "H", "W"), "device": torch.device("cpu")}
     )
     result = mt_image.process_and_validate_binary_mask(mask, info)
-    assert isinstance(result, torch.Tensor), "Binary mask should remain as torch tensor"
-    assert result.shape == torch.Size([3, 5, 5]), "Binary mask shape should be preserved"
+    assert isinstance(result, torch.Tensor)
+    assert result.shape == torch.Size([3, 5, 5])
 
     # Test valid binary mask as string 'artificial'
     mask = "artificial"
@@ -282,10 +282,9 @@ def test_process_and_validate_binary_mask():
         data={"image": torch.randn(3, 5, 5), "orientation": ("C", "H", "W"), "device": torch.device("cpu")}
     )
     result = mt_image.process_and_validate_binary_mask(mask, info)
-    assert isinstance(result, torch.Tensor), "Binary mask should be converted to torch tensor"
-    assert result.shape == torch.Size([3, 5, 5]), "Binary mask shape should be preserved"
-    assert torch.equal(result, torch.ones_like(info.data["image"])), "The simplest mask with no data should be created"
-    # TODO: Fersoil: Check if the mask is binary
+    assert isinstance(result, torch.Tensor)
+    assert result.shape == torch.Size([3, 5, 5])
+    assert torch.equal(result, torch.ones_like(info.data["image"]))
 
     # Test invalid binary mask type
     mask = 123
@@ -328,19 +327,17 @@ def test_image():
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     valid_image = mt_image.Image(image=sample, wavelengths=wavelengths)
-    assert valid_image.image == sample, "Sample should be preserved"
-    assert valid_image.wavelengths == torch.tensor(wavelengths), "Wavelengths should be preserved"
-    assert valid_image.orientation == ("C", "H", "W"), "Orientation should be set to default"
-    assert (
-        valid_image.binary_mask.shape == sample.shape
-    ), "Binary mask should be created with the same shape as the input image"
+    assert valid_image.image == sample
+    assert valid_image.wavelengths == torch.tensor(wavelengths)
+    assert valid_image.orientation == ("C", "H", "W")
+    assert valid_image.binary_mask.shape == sample.shape
     assert all(
         [
             valid_image.device == sample.device,
             valid_image.binary_mask.device == sample.device,
             valid_image.image.device == sample.device,
         ]
-    ), "Device should be set to the device of the input image"
+    )
 
     # Test valid image with custom parameters
     orientation = ("C", "H", "W")
@@ -349,15 +346,13 @@ def test_image():
     valid_image = mt_image.Image(
         image=sample, wavelengths=wavelengths, orientation=orientation, binary_mask=binary_mask, device=device
     )
-    assert valid_image.image == sample, "Sample should be preserved"
-    assert valid_image.wavelengths == torch.tensor(wavelengths), "Wavelengths should be preserved"
-    assert valid_image.orientation == orientation, "Orientation should be set to the custom value"
-    assert (
-        valid_image.binary_mask.shape == sample.shape
-    ), "Binary mask should be created with the same shape as the input image"
+    assert valid_image.image == sample
+    assert valid_image.wavelengths == torch.tensor(wavelengths)
+    assert valid_image.orientation == orientation
+    assert valid_image.binary_mask.shape == sample.shape
     assert all(
         [valid_image.device == device, valid_image.binary_mask.device == device, valid_image.image.device == device]
-    ), "Device should be set to the custom device"
+    )
 
     # Test invalid image type
     sample = "invalid"
@@ -402,7 +397,7 @@ def test_spectral_axis():
     expected_result = 0
     result = valid_image.spectral_axis
 
-    assert result == expected_result, "Incorrect band axis index returned"
+    assert result == expected_result
 
     orientation = ("C", "H", "W")
     valid_image = mt_image.Image(image=sample, wavelengths=wavelengths, orientation=orientation)
@@ -410,7 +405,7 @@ def test_spectral_axis():
     expected_result = 0
     result = valid_image.spectral_axis
 
-    assert result == expected_result, "Incorrect band axis index returned"
+    assert result == expected_result
 
     # Test case with orientation ("H", "C", "W")
     orientation = ("H", "C", "W")
@@ -419,7 +414,7 @@ def test_spectral_axis():
 
     result = valid_image.spectral_axis
 
-    assert result == expected_result, "Incorrect band axis index returned"
+    assert result == expected_result
 
     # Test case with orientation ("W", "H", "C")
     orientation = ("W", "H", "C")
@@ -428,7 +423,7 @@ def test_spectral_axis():
 
     result = valid_image.spectral_axis
 
-    assert result == expected_result, "Incorrect band axis index returned"
+    assert result == expected_result
 
 
 def test_spatial_mask():
@@ -438,19 +433,19 @@ def test_spatial_mask():
     binary_mask = None
     result = mt_image.Image(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_mask
     expected_result = torch.ones(5, 5, dtype=torch.bool)
-    assert torch.all(torch.eq(result, expected_result)), "Incorrect squeezed binary mask"
+    assert torch.all(torch.eq(result, expected_result))
 
     # Test with binary mask as numpy array
     binary_mask = np.random.randint(0, 2, size=(3, 5, 5))
     result = mt_image.Image(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_mask
     expected_result = torch.as_tensor(binary_mask[0, :, :], dtype=torch.bool)
-    assert torch.all(torch.eq(result, expected_result)), "Incorrect squeezed binary mask"
+    assert torch.all(torch.eq(result, expected_result))
 
     # Test with binary mask as torch tensor
     binary_mask = torch.randint(0, 2, size=(3, 5, 5))
     result = mt_image.Image(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_mask
     expected_result = torch.as_tensor(binary_mask[0, :, :], dtype=torch.bool)
-    assert torch.all(torch.eq(result, expected_result)), "Incorrect squeezed binary mask"
+    assert torch.all(torch.eq(result, expected_result))
 
     # Test with binary mask as string 'artificial'
     binary_mask = "artificial"
@@ -470,7 +465,7 @@ def test_validate_image_data():
         image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask
     )
     result = data.validate_image_data()
-    assert result == data, "Valid image data should not raise an exception"
+    assert result == data
 
     # Test invalid image data with mismatched wavelengths and image shape
     image = torch.randn(3, 5, 5)
@@ -502,26 +497,26 @@ def test_image_to():
     device = torch.device("cpu")
     valid_image = mt_image.Image(image=image, wavelengths=wavelengths)
     result = valid_image.to(device)
-    assert result.image.device == device, "Image should be moved to the specified device"
-    assert result.binary_mask.device == device, "Binary mask should be moved to the specified device"
-    assert result.device == device, "Device attribute should be updated"
+    assert result.image.device == device
+    assert result.binary_mask.device == device
+    assert result.device == device
 
     # Test moving image and binary mask to CUDA device
     if torch.cuda.is_available():
         device = torch.device("cuda")
         valid_image = mt_image.Image(image=image, wavelengths=wavelengths)
         result = valid_image.to(device)
-        assert result.image.device == device, "Image should be moved to the specified device"
-        assert result.binary_mask.device == device, "Binary mask should be moved to the specified device"
-        assert result.device == device, "Device attribute should be updated"
+        assert result.image.device == device
+        assert result.binary_mask.device == device
+        assert result.device == device
 
     # Test moving image and binary mask to a string device
     device = "cpu"
     valid_image = mt_image.Image(image=image, wavelengths=wavelengths)
     result = valid_image.to(device)
-    assert result.image.device == torch.device(device), "Image should be moved to the specified device"
-    assert result.binary_mask.device == torch.device(device), "Binary mask should be moved to the specified device"
-    assert result.device == torch.device(device), "Device attribute should be updated"
+    assert result.image.device == torch.device(device)
+    assert result.binary_mask.device == torch.device(device)
+    assert result.device == torch.device(device)
 
 
 def test__extract_central_slice_from_band():
@@ -539,7 +534,7 @@ def test__extract_central_slice_from_band():
     result = image_obj._extract_central_slice_from_band(
         selected_wavelengths, apply_mask=True, apply_min_cutoff=False, normalize=True
     )
-    assert torch.allclose(result, expected_result), "Incorrect central band with mask and normalization"
+    assert torch.allclose(result, expected_result)
 
     # Test selecting central band without mask and cutoff min
     selected_wavelengths = torch.tensor([7, 8, 9])
@@ -547,7 +542,7 @@ def test__extract_central_slice_from_band():
     result = image_obj._extract_central_slice_from_band(
         selected_wavelengths, apply_mask=False, apply_min_cutoff=True, normalize=False
     )
-    assert torch.allclose(result, expected_result), "Incorrect central band without mask and cutoff min"
+    assert torch.allclose(result, expected_result)
 
     # Test selecting central band with mask and cutoff min
     selected_wavelengths = torch.tensor([1, 2, 3])
@@ -556,7 +551,7 @@ def test__extract_central_slice_from_band():
     result = image_obj._extract_central_slice_from_band(
         selected_wavelengths, apply_mask=True, apply_min_cutoff=True, normalize=True
     )
-    assert torch.allclose(result, expected_result), "Incorrect central band with mask and cutoff min"
+    assert torch.allclose(result, expected_result)
 
     selected_wavelengths = [1, 90]
     with pytest.raises(ValueError):
@@ -579,8 +574,8 @@ def test_extract_band_by_name():
         band_name=band_name, selection_method=method, apply_mask=mask, apply_min_cutoff=cutoff_min, normalize=normalize
     )
 
-    assert result.shape == (5, 5), "Selected band shape should match the image shape"
-    assert isinstance(result, torch.Tensor), "Selected band should be a torch tensor"
+    assert result.shape == (5, 5)
+    assert isinstance(result, torch.Tensor)
 
     # Test selecting an invalid band
     band_name = "InvalidBand"
@@ -619,14 +614,14 @@ def test_get_rgb_image():
 
     result = test_image.get_rgb_image()
 
-    assert result.shape == torch.Size([3, 10, 10]), "RGB image shape should be [3, 10, 10]"
+    assert result.shape == torch.Size([3, 10, 10])
 
     # Test with specific output band axis
     result = test_image.get_rgb_image(output_channel_axis=2)
 
-    assert result.shape == torch.Size([10, 10, 3]), "RGB image shape should be [10, 10, 3]"
+    assert result.shape == torch.Size([10, 10, 3])
 
     # Test without applying a mask
     result = test_image.get_rgb_image(apply_mask=False)
 
-    assert result.shape == torch.Size([3, 10, 10]), "RGB image shape should be [3, 10, 10]"
+    assert result.shape == torch.Size([3, 10, 10])
