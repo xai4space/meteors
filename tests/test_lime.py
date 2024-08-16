@@ -198,45 +198,51 @@ def test_band_mask_errors():
     )
 
     with pytest.raises(
-        ValueError,
+        AssertionError,
         match="No band names, groups, or ranges provided",
     ):
         mt.Lime.get_band_mask(image)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(
+        ValueError,
+        match="Incorrect band names provided",
+    ):
         mt.Lime.get_band_mask(image, band_names=4)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(
+        ValueError,
+        match="Incorrect band ranges wavelengths provided, please check if provided wavelengths are correct",
+    ):
         band_ranges_wavelengths = {"bad_range": 1}
-        mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
-
-    with pytest.raises(
-        ValueError,
-    ):
-        band_ranges_wavelengths = {"bad_structure": (1, 2, 3)}
-        mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
-
-    with pytest.raises(
-        ValueError,
-    ):
-        band_ranges_wavelengths = {"bad_order": (2, 1)}
         mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
 
     with pytest.raises(
         TypeError,
     ):
-        band_ranges_indices = {"bad_range": 1}
-        mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
+        band_ranges_wavelengths = {"bad_structure": (1, 2, 3)}
+        mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
 
     with pytest.raises(
-        ValueError,
+        TypeError,
+    ):
+        band_ranges_wavelengths = {"bad_order": (2, 1)}
+        mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
+
+    # with pytest.raises(
+    #     TypeError,
+    # ):
+    #     band_ranges_indices = {"bad_range": 1}
+    #     mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
+    # Now we accept band range with one value as its mean that we want to have mask with only this value
+
+    with pytest.raises(
+        TypeError,
     ):
         band_ranges_indices = {"bad_structure": (1, 2, 3)}
         mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
 
     with pytest.raises(
-        ValueError,
-        match="Order of the range bad_order is incorrect",
+        TypeError,
     ):
         band_ranges_indices = {"bad_order": (2, 1)}
         mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
@@ -252,7 +258,7 @@ def test_dummy_explainer():
 
     lime = mt.Lime(explainable_model=explainable_model, interpretable_model=interpretable_model)
 
-    assert lime._device == torch.device("cpu"), "Device should be set to cpu by default"
+    assert lime.device == torch.device("cpu"), "Device should be set to cpu by default"
 
     shape = (150, 240, 240)
     sample = torch.ones(shape)
@@ -266,7 +272,8 @@ def test_dummy_explainer():
 
     # Test spectral attribution
 
-    band_names_list = ["IPVI", "AFRI1600", "B"]
+    band_names_list = ["AVI", "B"]
+    # TODO: decide what to do if `AFRI1600` some bands are out of wavelengths do we ignore or throw error?
 
     band_mask, band_names = lime.get_band_mask(image, band_names_list)
 

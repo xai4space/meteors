@@ -57,18 +57,24 @@ dev-dependencies = [
 ignore_missing_imports = true
 files = ["src"]
 plugins = [
-  "pydantic.mypy"
+  "pydantic.mypy",
 ]
 
 [tool.ruff]
 line-length = 120
 extend-include = ["*.ipynb"]
 
-[tool.pytest.ini_options]
-addopts = "--cov=src/meteors --cov-report=xml"
-
 [tool.ruff.format]
 docstring-code-format = true
+docstring-code-line-length = 120
+
+[tool.docformatter]
+wrap-descriptions = 120
+wrap-summaries = 120
+
+
+[tool.pytest.ini_options]
+addopts = "--cov=src/meteors --cov-report=xml"
 
 [tool.hatch.metadata]
 allow-direct-references = true

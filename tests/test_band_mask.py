@@ -199,10 +199,13 @@ def test_band_mask():
     band_mask, band_names = mt.Lime.get_band_mask(image, band_ranges_indices=band_ranges_indices)
 
     band_ranges_wavelengths = {
-        "A": [0, 10],
-        "B": [20, 40],
-        "C": [100, 130],
-        "D": [400, 600],
+        "A": (
+            462.08,
+            468,
+        ),
+        "B": (468, 778.54),
+        "C": (778.54, 800.92),
+        "D": (800.92, 935.17),
     }
 
     mt.Lime.get_band_mask(image, band_ranges_wavelengths=band_ranges_wavelengths)
