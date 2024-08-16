@@ -2,12 +2,15 @@ from .image import Image
 
 from .lime import Lime, ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
 
+from .hyper_noise_tunnel import HyperNoiseTunnel
+
 from . import utils
 from . import visualize
 
 __all__ = [
     "Image",
     "Lime",
+    "HyperNoiseTunnel",
     "ImageAttributes",
     "ImageSpatialAttributes",
     "ImageSpectralAttributes",
