@@ -279,8 +279,11 @@ class LinearModel(nn.Module, InterpretableModel):
         return self.linear.weight.detach()
 
     def bias(self) -> torch.Tensor | None:
-        r"""Returns the bias of the linear model."""
-        if self.linear is None or self.linear.bias is None:
+        r"""Returns the bias of the linear model.
+
+        If no bias is present, it returns None.
+        """
+        if self.linear is None or not hasattr(self.linear, "bias") or self.linear.bias is None:
             return None
         return self.linear.bias.detach()
 
@@ -289,7 +292,7 @@ class LinearModel(nn.Module, InterpretableModel):
 
         In case of regression, it returns None.
         """
-        if self.linear is None or self.linear.classes is None:
+        if self.linear is None or not hasattr(self.linear, "classes") or self.linear.classes is None:
             return None
         return self.linear.classes.detach()
 

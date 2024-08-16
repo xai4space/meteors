@@ -1,8 +1,8 @@
-from .lime_visualise import (
+from .lime_visualize import (
     visualize_spectral_attributes_by_waveband,
     visualize_spectral_attributes_by_magnitude,
 )
-from .lime_visualise import visualize_spectral_attributes, visualize_spatial_attributes
+from .lime_visualize import visualize_spectral_attributes, visualize_spatial_attributes
 
 
 __all__ = [

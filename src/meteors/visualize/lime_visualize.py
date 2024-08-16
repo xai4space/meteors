@@ -31,7 +31,7 @@ def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:
     if isinstance(image, ImageAttributes):
         image = image.image
 
-    rgb = image.get_rgb_image(output_band_index=2)
+    rgb = image.get_rgb_image(output_channel_axis=2)
     ax = ax or plt.gca()
     ax.imshow(rgb)
 
@@ -56,7 +56,7 @@ def visualize_spatial_attributes(  # noqa: C901
     """
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
     fig.suptitle("Spatial Attributes Visualization")
-    ax[0].imshow(spatial_attributes.image.get_rgb_image(output_band_index=2).cpu())
+    ax[0].imshow(spatial_attributes.image.get_rgb_image(output_channel_axis=2).cpu())
     ax[0].set_title("Original image")
 
     viz.visualize_image_attr(
@@ -159,7 +159,7 @@ def validate_consistent_band_and_wavelengths(
     for attr in spectral_attributes:
         if band_names != attr.band_names:
             raise ValueError("Band names are inconsistent among spectral attributes.")
-        if (wavelengths != attr.image.wavelengths).any():
+        if not torch.equal(wavelengths, attr.image.wavelengths):
             raise ValueError("Wavelengths are inconsistent among spectral attributes.")
 
 
@@ -206,6 +206,13 @@ def visualize_spectral_attributes_by_waveband(
     """
     if isinstance(spectral_attributes, ImageSpectralAttributes):
         spectral_attributes = [spectral_attributes]
+    if not (
+        isinstance(spectral_attributes, list)
+        and all(isinstance(attr, ImageSpectralAttributes) for attr in spectral_attributes)
+    ):
+        raise ValueError(
+            "spectral_attributes must be an ImageSpectralAttributes object or a list of ImageSpectralAttributes objects."
+        )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
     band_names = dict(spectral_attributes[0].band_names)
@@ -213,7 +220,6 @@ def visualize_spectral_attributes_by_waveband(
     validate_consistent_band_and_wavelengths(band_names, wavelengths, spectral_attributes)
 
     ax = setup_visualization(ax, "Attributions by Waveband", "Wavelength (nm)", "Correlation with Output")
-    ax.legend(fontsize=10)
 
     if not show_not_included and band_names.get("not_included") is not None:
         band_names.pop("not_included")
@@ -221,12 +227,12 @@ def visualize_spectral_attributes_by_waveband(
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
-    flattened_band_mask = spectral_attributes[0].flattened_band_mask.cpu()
+    spectral_band_mask = spectral_attributes[0].spectral_band_mask.cpu()
     attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
 
     for idx, (band_name, segment_id) in enumerate(band_names.items()):
-        current_wavelengths = wavelengths[flattened_band_mask == segment_id]
-        current_attribution_map = attribution_map[:, flattened_band_mask == segment_id]
+        current_wavelengths = wavelengths[spectral_band_mask == segment_id]
+        current_attribution_map = attribution_map[:, spectral_band_mask == segment_id]
 
         if aggregate_results:
             ax.errorbar(
@@ -250,28 +256,28 @@ def visualize_spectral_attributes_by_waveband(
 
 
 def calculate_average_magnitudes(
-    band_names: dict[str, int], flattened_band_mask: torch.Tensor, attribution_map: torch.Tensor
-) -> list[torch.Tensor]:
+    band_names: dict[str, int], spectral_band_mask: torch.Tensor, attribution_map: torch.Tensor
+) -> torch.Tensor:
     """Calculates the average magnitudes for each segment ID in the attribution map.
 
     Args:
         band_names (dict[str, int]): A dictionary mapping band names to segment IDs.
-        flattened_band_mask (torch.Tensor): A tensor representing the flattened band mask.
+        spectral_band_mask (torch.Tensor): A tensor representing the spectral band mask.
         attribution_map (torch.Tensor): A tensor representing the attribution map.
 
     Returns:
         list[torch.Tensor]:
-            A list of tensors containing the average magnitudes for each segment ID.
+            2D tensor containing the average magnitudes for each segment ID.
     """
     avg_magnitudes = []
     for segment_id in band_names.values():
-        band = attribution_map[:, flattened_band_mask == segment_id]
+        band = attribution_map[:, spectral_band_mask == segment_id]
         if band.numel() != 0:
             avg_magnitude = band.mean(dim=1)
             avg_magnitudes.append(avg_magnitude)
         else:
-            avg_magnitudes.append(0)
-    return avg_magnitudes
+            avg_magnitudes.append(torch.tensor([0]))
+    return torch.stack(avg_magnitudes, dim=-1).squeeze(0)
 
 
 def visualize_spectral_attributes_by_magnitude(
@@ -300,6 +306,13 @@ def visualize_spectral_attributes_by_magnitude(
     """
     if isinstance(spectral_attributes, ImageSpectralAttributes):
         spectral_attributes = [spectral_attributes]
+    if not (
+        isinstance(spectral_attributes, list)
+        and all(isinstance(attr, ImageSpectralAttributes) for attr in spectral_attributes)
+    ):
+        raise ValueError(
+            "spectral_attributes must be an ImageSpectralAttributes object or a list of ImageSpectralAttributes objects."
+        )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
     band_names = dict(spectral_attributes[0].band_names)
@@ -312,13 +325,14 @@ def visualize_spectral_attributes_by_magnitude(
 
     if not show_not_included and band_names.get("not_included") is not None:
         band_names.pop("not_included")
+        labels = list(band_names.keys())
 
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
-    flattened_band_mask = spectral_attributes[0].flattened_band_mask.cpu()
+    spectral_band_mask = spectral_attributes[0].spectral_band_mask.cpu()
     attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
-    avg_magnitudes = calculate_average_magnitudes(band_names, flattened_band_mask, attribution_map)
+    avg_magnitudes = calculate_average_magnitudes(band_names, spectral_band_mask, attribution_map)
 
     if aggregate_results:
         boxplot = ax.boxplot(avg_magnitudes, labels=labels, patch_artist=True)

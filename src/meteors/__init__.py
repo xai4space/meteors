@@ -3,7 +3,7 @@ from .image import Image
 from .lime import Lime, ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
 
 from . import utils
-from . import visualise
+from . import visualize
 
 __all__ = [
     "Image",
@@ -12,7 +12,7 @@ __all__ = [
     "ImageSpatialAttributes",
     "ImageSpectralAttributes",
     "utils",
-    "visualise",
+    "visualize",
 ]
 
 
