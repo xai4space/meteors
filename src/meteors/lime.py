@@ -1277,8 +1277,8 @@ class Lime(Explainer):
                 if image.wavelengths[idx].item() in overlapping_segments.keys():
                     logger.warning(
                         (
-                            f"Bands {overlapping_segments[image.wavelengths[idx].item()]} "
-                            f"and {segment_label} are overlapping"
+                            f"Segments {overlapping_segments[image.wavelengths[idx].item()]} "
+                            f"and {segment_label} are overlapping on wavelength {image.wavelengths[idx].item()}"
                         )
                     )
                 overlapping_segments[image.wavelengths[idx].item()] = segment_label

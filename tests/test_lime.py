@@ -1,4 +1,6 @@
 import pytest
+import warnings
+from loguru import logger
 
 import torch
 import numpy as np
@@ -1329,7 +1331,7 @@ def test_get_band_wavelengths_indices_from_band_names():
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
 
-def test_check_overlapping_segments(caplog):
+def test_check_overlapping_segments():
     # Create a sample image
     wavelengths = torch.tensor([400, 500, 600, 700])
     image = mt.Image(image=torch.ones((4, 4, 4)), wavelengths=wavelengths)
@@ -1341,25 +1343,24 @@ def test_check_overlapping_segments(caplog):
         "segment3": [2, 3],
     }
 
-    # Call the _check_overlapping_segments method
-    mt_lime.Lime._check_overlapping_segments(image, dict_labels_to_indices)
+    # modify the loguru warnings to be captured by pytest
+    def custom_sink(message):
+        warnings.warn(message, UserWarning)
 
-    # No overlapping segments, so no warning should be logged
+    logger.add(custom_sink, level="WARNING")
 
-    # # Create a sample dictionary with overlapping segments
-    # dict_labels_to_indices = {
-    #     "segment1": [0, 1],
-    #     "segment2": [1, 2],
-    # }
+    with pytest.warns(UserWarning):
+        mt_lime.Lime._check_overlapping_segments(image, dict_labels_to_indices)
 
-    # # Call the _check_overlapping_segments method
-    # import logging
-    # with caplog.at_level(logging.WARNING):
-    #     mt_lime.Lime._check_overlapping_segments(image, dict_labels_to_indices)
-    # print(caplog.text)
-    # print(caplog.records)
-    # TODO: @Fersoil
+    non_overlapping_dict_labels_to_indices = {
+        "segment1": [0, 1],
+        "segment2": [2, 3],
+    }
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        mt_lime.Lime._check_overlapping_segments(image, non_overlapping_dict_labels_to_indices)
 
+    logger.remove()
     # Create a sample dictionary with index out of range segments
     dict_labels_to_indices = {
         "segment1": [0, 1],
