@@ -243,7 +243,12 @@ def test_validate_image_attributions():
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
     image_attributes = mt_attr.ImageAttributes(
-        image=image, attributes=attributes, score=score, device=device, model_config=model_config
+        image=image,
+        attributes=attributes,
+        score=score,
+        attribution_method="lime",
+        device=device,
+        model_config=model_config,
     )
 
     # Assert that the attributes tensor has been moved to the specified device
@@ -262,7 +267,23 @@ def test_validate_image_attributions():
     invalid_attributes = torch.ones((1, 4, 4))
     with pytest.raises(ValueError):
         mt_attr.ImageAttributes(
-            image=image, attributes=invalid_attributes, score=score, device=device, model_config=model_config
+            image=image,
+            attributes=invalid_attributes,
+            score=score,
+            device=device,
+            model_config=model_config,
+            attribution_method="lime",
+        )
+
+    # validate invalid attribution method
+    with pytest.raises(ValueError):
+        mt_attr.ImageAttributes(
+            image=image,
+            attributes=attributes,
+            score=score,
+            attribution_method="invalid",
+            device=device,
+            model_config=model_config,
         )
 
     # Not implemented yet functions
@@ -276,14 +297,14 @@ def test_validate_image_attributions():
 
 
 def test_spatial_attributes():
-    # Create a sample ImageSpatialAttributes object
+    # Create a sample ImageLimeSpatialAttributes object
     image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     score = 0.8
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spatial_attributes = mt_attr.ImageSpatialAttributes(
+    spatial_attributes = mt_attr.ImageLimeSpatialAttributes(
         image=image,
         attributes=attributes,
         score=score,
@@ -310,7 +331,7 @@ def test_spatial_attributes():
     # Validate invalid shape
     invalid_attributes = torch.ones((1, 4, 4))
     with pytest.raises(ValueError):
-        mt_attr.ImageSpatialAttributes(
+        mt_attr.ImageLimeSpatialAttributes(
             image=image,
             attributes=invalid_attributes,
             score=score,
@@ -326,8 +347,8 @@ def test_to_image_spatial_attributes():
     attributes = torch.ones((3, 4, 4))
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
 
-    # Create ImageSpatialAttributes object
-    spatial_attributes = mt_attr.ImageSpatialAttributes(
+    # Create ImageLimeSpatialAttributes object
+    spatial_attributes = mt_attr.ImageLimeSpatialAttributes(
         image=image,
         attributes=attributes,
         score=0.8,
@@ -355,14 +376,14 @@ def test_to_image_spatial_attributes():
 
 
 def test_spatial_segmentation_mask_spacial_attributes():
-    # Create a sample ImageSpatialAttributes object
+    # Create a sample ImageLimeSpatialAttributes object
     image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     score = 0.8
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spatial_attributes = mt_attr.ImageSpatialAttributes(
+    spatial_attributes = mt_attr.ImageLimeSpatialAttributes(
         image=image,
         attributes=attributes,
         score=score,
@@ -375,14 +396,14 @@ def test_spatial_segmentation_mask_spacial_attributes():
 
 
 def test_flattened_attributes_spacial_attributes():
-    # Create a sample ImageSpatialAttributes object
+    # Create a sample ImageLimeSpatialAttributes object
     image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     score = 0.8
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spatial_attributes = mt_attr.ImageSpatialAttributes(
+    spatial_attributes = mt_attr.ImageLimeSpatialAttributes(
         image=image,
         attributes=attributes,
         score=score,
@@ -395,7 +416,7 @@ def test_flattened_attributes_spacial_attributes():
 
 
 def test_spectral_attributes():
-    # Create a sample ImageSpectralAttributes object
+    # Create a sample ImageLimeSpectralAttributes object
     image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     score = 0.8
@@ -406,7 +427,7 @@ def test_spectral_attributes():
     band_names = {"R": 0, "G": 1, "B": 2}
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spectral_attributes = mt_attr.ImageSpectralAttributes(
+    spectral_attributes = mt_attr.ImageLimeSpectralAttributes(
         image=image,
         attributes=attributes,
         score=score,
@@ -434,7 +455,7 @@ def test_spectral_attributes():
     # Validate invalid shape
     invalid_attributes = torch.ones((1, 4, 4))
     with pytest.raises(ValueError):
-        mt_attr.ImageSpectralAttributes(
+        mt_attr.ImageLimeSpectralAttributes(
             image=image,
             attributes=invalid_attributes,
             score=score,
@@ -455,8 +476,8 @@ def test_to_image_spectral_attributes():
     band_mask[2] = 2
     band_names = {"R": 0, "G": 1, "B": 2}
 
-    # Create ImageSpectralAttributes object
-    spectral_attributes = mt_attr.ImageSpectralAttributes(
+    # Create ImageLimeSpectralAttributes object
+    spectral_attributes = mt_attr.ImageLimeSpectralAttributes(
         image=image,
         attributes=attributes,
         score=0.8,
@@ -475,7 +496,7 @@ def test_to_image_spectral_attributes():
 
 
 def test_flattened_band_mask_spectral_attributes():
-    # Create a sample ImageSpectralAttributes object
+    # Create a sample ImageLimeSpectralAttributes object
     image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     score = 0.8
@@ -486,7 +507,7 @@ def test_flattened_band_mask_spectral_attributes():
     band_names = {"R": 0, "G": 1, "B": 2}
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spectral_attributes = mt_attr.ImageSpectralAttributes(
+    spectral_attributes = mt_attr.ImageLimeSpectralAttributes(
         image=image,
         attributes=attributes,
         score=score,
@@ -500,7 +521,7 @@ def test_flattened_band_mask_spectral_attributes():
 
 
 def test_flattened_attributes_spectral_attributes():
-    # Create a sample ImageSpectralAttributes object
+    # Create a sample ImageLimeSpectralAttributes object
     image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     score = 0.8
@@ -511,7 +532,7 @@ def test_flattened_attributes_spectral_attributes():
     band_names = {"R": 0, "G": 1, "B": 2}
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spectral_attributes = mt_attr.ImageSpectralAttributes(
+    spectral_attributes = mt_attr.ImageLimeSpectralAttributes(
         image=image,
         attributes=attributes,
         score=score,

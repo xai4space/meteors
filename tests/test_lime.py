@@ -1257,7 +1257,7 @@ def test_get_spatial_attributes():
     spatial_attributes = lime.get_spatial_attributes(image, segmentation_mask, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spatial_attributes, mt.attr.ImageSpatialAttributes)
+    assert isinstance(spatial_attributes, mt.attr.ImageLimeSpatialAttributes)
     assert spatial_attributes.image == image
     assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
     assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
@@ -1274,7 +1274,7 @@ def test_get_spatial_attributes():
     spatial_attributes = lime.get_spatial_attributes(image, segmentation_method="slic", target=0)
 
     # Assert the output type and properties
-    assert isinstance(spatial_attributes, mt.attr.ImageSpatialAttributes)
+    assert isinstance(spatial_attributes, mt.attr.ImageLimeSpatialAttributes)
     assert spatial_attributes.image == image
     assert spatial_attributes.segmentation_mask is not None
     assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
@@ -1284,7 +1284,7 @@ def test_get_spatial_attributes():
     spatial_attributes = lime.get_spatial_attributes(image, segmentation_method="patch", target=0, patch_size=5)
 
     # Assert the output type and properties
-    assert isinstance(spatial_attributes, mt.attr.ImageSpatialAttributes)
+    assert isinstance(spatial_attributes, mt.attr.ImageLimeSpatialAttributes)
     assert spatial_attributes.image == image
     assert spatial_attributes.segmentation_mask is not None
     assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
@@ -1303,7 +1303,7 @@ def test_get_spatial_attributes():
     spatial_attributes = lime.get_spatial_attributes(image, segmentation_mask, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spatial_attributes, mt.attr.ImageSpatialAttributes)
+    assert isinstance(spatial_attributes, mt.attr.ImageLimeSpatialAttributes)
     assert spatial_attributes.image == image
     assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
     assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
@@ -1349,7 +1349,7 @@ def test_get_spectral_attributes():
     spectral_attributes = lime.get_spectral_attributes(image, band_mask, band_names=band_names, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spectral_attributes, mt.attr.ImageSpectralAttributes)
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names == band_names
@@ -1361,7 +1361,7 @@ def test_get_spectral_attributes():
     spectral_attributes = lime.get_spectral_attributes(image, band_mask, band_names=band_names, target=1)
 
     # Assert the output type and properties
-    assert isinstance(spectral_attributes, mt.attr.ImageSpectralAttributes)
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names == band_names
@@ -1373,7 +1373,7 @@ def test_get_spectral_attributes():
     spectral_attributes = lime.get_spectral_attributes(image, band_names=band_names, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spectral_attributes, mt.attr.ImageSpectralAttributes)
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
     assert spectral_attributes.image == image
     assert spectral_attributes.band_mask is not None
     assert spectral_attributes.band_names == band_names
@@ -1385,7 +1385,7 @@ def test_get_spectral_attributes():
     spectral_attributes = lime.get_spectral_attributes(image, band_mask, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spectral_attributes, mt.attr.ImageSpectralAttributes)
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names is not None
@@ -1406,7 +1406,7 @@ def test_get_spectral_attributes():
     spectral_attributes = lime.get_spectral_attributes(image, band_mask, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spectral_attributes, mt.attr.ImageSpectralAttributes)
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names is not None

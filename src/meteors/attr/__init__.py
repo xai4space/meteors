@@ -1,11 +1,11 @@
-from .attributes import ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
+from .attributes import ImageAttributes, ImageLimeSpatialAttributes, ImageLimeSpectralAttributes
 from .explainer import Explainer
 
 
 __all__ = [
     "ImageAttributes",
-    "ImageSpatialAttributes",
-    "ImageSpectralAttributes",
+    "ImageLimeSpatialAttributes",
+    "ImageLimeSpectralAttributes",
     "Explainer",
 ]
 

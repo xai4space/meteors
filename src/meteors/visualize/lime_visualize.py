@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 from captum.attr import visualization as viz
 
 from meteors import Image
-from meteors.attr import ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
+from meteors.attr import ImageAttributes, ImageLimeSpatialAttributes, ImageLimeSpectralAttributes
 
 
 def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:
@@ -35,12 +35,12 @@ def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:
 
 
 def visualize_spatial_attributes(  # noqa: C901
-    spatial_attributes: ImageSpatialAttributes, use_pyplot: bool = False
+    spatial_attributes: ImageLimeSpatialAttributes, use_pyplot: bool = False
 ) -> tuple[Figure, Axes] | None:
     """Visualizes the spatial attributes of an image using Lime attribution.
 
     Args:
-        spatial_attributes (ImageSpatialAttributes):
+        spatial_attributes (ImageLimeSpatialAttributes):
             The spatial attributes of the image object to visualize.
         use_pyplot (bool, optional):
             Whether to use pyplot for visualization. Defaults to False.
@@ -80,7 +80,7 @@ def visualize_spatial_attributes(  # noqa: C901
 
 
 def visualize_spectral_attributes(
-    spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
+    spectral_attributes: ImageLimeSpectralAttributes | list[ImageLimeSpectralAttributes],
     use_pyplot: bool = False,
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
@@ -88,7 +88,7 @@ def visualize_spectral_attributes(
     """Visualizes the spectral attributes of an image or a list of images.
 
     Args:
-        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]):
+        spectral_attributes (ImageLimeSpectralAttributes | list[ImageLimeSpectralAttributes]):
             The spectral attributes of the image object to visualize.
         use_pyplot (bool, optional):
             If True, displays the visualization using pyplot.
@@ -109,7 +109,7 @@ def visualize_spectral_attributes(
     """
     band_names = (
         spectral_attributes.band_names
-        if isinstance(spectral_attributes, ImageSpectralAttributes)
+        if isinstance(spectral_attributes, ImageLimeSpectralAttributes)
         else spectral_attributes[0].band_names
     )
 
@@ -140,14 +140,14 @@ def visualize_spectral_attributes(
 
 
 def validate_consistent_band_and_wavelengths(
-    band_names: dict[str, int], wavelengths: torch.Tensor, spectral_attributes: list[ImageSpectralAttributes]
+    band_names: dict[str, int], wavelengths: torch.Tensor, spectral_attributes: list[ImageLimeSpectralAttributes]
 ) -> None:
     """Validates that all spectral attributes have consistent band names and wavelengths.
 
     Args:
         band_names (dict[str, int]): A dictionary mapping band names to their indices.
         wavelengths (torch.Tensor): A tensor containing the wavelengths of the image.
-        spectral_attributes (list[ImageSpectralAttributes]): A list of spectral attributes.
+        spectral_attributes (list[ImageLimeSpectralAttributes]): A list of spectral attributes.
 
     Raises:
         ValueError: If the band names or wavelengths of any spectral attribute are inconsistent.
@@ -180,7 +180,7 @@ def setup_visualization(ax: Axes | None, title: str, xlabel: str, ylabel: str) -
 
 
 def visualize_spectral_attributes_by_waveband(
-    spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
+    spectral_attributes: ImageLimeSpectralAttributes | list[ImageLimeSpectralAttributes],
     ax: Axes | None,
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
@@ -188,7 +188,7 @@ def visualize_spectral_attributes_by_waveband(
     """Visualizes spectral attributes by waveband.
 
     Args:
-        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]):
+        spectral_attributes (ImageLimeSpectralAttributes | list[ImageLimeSpectralAttributes]):
             The spectral attributes to visualize.
         ax (Axes | None): The matplotlib axes to plot the visualization on.
             If None, a new axes will be created.
@@ -200,14 +200,14 @@ def visualize_spectral_attributes_by_waveband(
     Returns:
         Axes: The matplotlib axes object containing the visualization.
     """
-    if isinstance(spectral_attributes, ImageSpectralAttributes):
+    if isinstance(spectral_attributes, ImageLimeSpectralAttributes):
         spectral_attributes = [spectral_attributes]
     if not (
         isinstance(spectral_attributes, list)
-        and all(isinstance(attr, ImageSpectralAttributes) for attr in spectral_attributes)
+        and all(isinstance(attr, ImageLimeSpectralAttributes) for attr in spectral_attributes)
     ):
         raise ValueError(
-            "spectral_attributes must be an ImageSpectralAttributes object or a list of ImageSpectralAttributes objects."
+            "spectral_attributes must be an ImageLimeSpectralAttributes object or a list of ImageLimeSpectralAttributes objects."
         )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
@@ -277,7 +277,7 @@ def calculate_average_magnitudes(
 
 
 def visualize_spectral_attributes_by_magnitude(
-    spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
+    spectral_attributes: ImageLimeSpectralAttributes | list[ImageLimeSpectralAttributes],
     ax: Axes | None,
     color_palette: list[str] | None = None,
     annotate_bars: bool = True,
@@ -286,7 +286,7 @@ def visualize_spectral_attributes_by_magnitude(
     """Visualizes the spectral attributes by magnitude.
 
     Args:
-        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]):
+        spectral_attributes (ImageLimeSpectralAttributes | list[ImageLimeSpectralAttributes]):
             The spectral attributes to visualize.
         ax (Axes | None): The matplotlib Axes object to plot the visualization on.
             If None, a new Axes object will be created.
@@ -300,14 +300,14 @@ def visualize_spectral_attributes_by_magnitude(
     Returns:
         Axes: The matplotlib Axes object containing the visualization.
     """
-    if isinstance(spectral_attributes, ImageSpectralAttributes):
+    if isinstance(spectral_attributes, ImageLimeSpectralAttributes):
         spectral_attributes = [spectral_attributes]
     if not (
         isinstance(spectral_attributes, list)
-        and all(isinstance(attr, ImageSpectralAttributes) for attr in spectral_attributes)
+        and all(isinstance(attr, ImageLimeSpectralAttributes) for attr in spectral_attributes)
     ):
         raise ValueError(
-            "spectral_attributes must be an ImageSpectralAttributes object or a list of ImageSpectralAttributes objects."
+            "spectral_attributes must be an ImageLimeSpectralAttributes object or a list of ImageLimeSpectralAttributes objects."
         )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True

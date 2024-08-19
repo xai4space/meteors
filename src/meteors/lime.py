@@ -14,7 +14,7 @@ from meteors.lime_base import Lime as LimeBase
 from meteors.utils.models import ExplainableModel, InterpretableModel
 from meteors.utils.utils import torch_dtype_to_python_dtype, change_dtype_of_list
 from meteors.attr import Explainer
-from meteors.attr import ImageSpatialAttributes, ImageSpectralAttributes
+from meteors.attr import ImageLimeSpatialAttributes, ImageLimeSpectralAttributes
 from meteors.attr.attributes import ensure_torch_tensor
 
 try:
@@ -949,7 +949,7 @@ class Lime(Explainer):
         target: int | None = None,
         segmentation_method: Literal["slic", "patch"] = "slic",
         **segmentation_method_params: Any,
-    ) -> ImageSpatialAttributes:
+    ) -> ImageLimeSpatialAttributes:
         """
         Get spatial attributes of an image using the LIME method. Based on the provided image and segmentation mask
         LIME method attributes the `superpixels` provided by the segmentation mask. Please refer to the original paper
@@ -957,7 +957,7 @@ class Lime(Explainer):
         `https://christophm.github.io/interpretable-ml-book/lime.html`.
 
         This function attributes the image using the LIME (Local Interpretable Model-Agnostic Explanations)
-        method for spatial data. It returns an `ImageSpatialAttributes` object that contains the image,
+        method for spatial data. It returns an `ImageLimeSpatialAttributes` object that contains the image,
         the attributions, the segmentation mask, and the score of the interpretable model used for the explanation.
 
         Args:
@@ -973,7 +973,7 @@ class Lime(Explainer):
             **segmentation_method_params (Any): Additional parameters for the segmentation method.
 
         Returns:
-            ImageSpatialAttributes: An `ImageSpatialAttributes` object that contains the image, the attributions,
+            ImageLimeSpatialAttributes: An `ImageLimeSpatialAttributes` object that contains the image, the attributions,
                 the segmentation mask, and the score of the interpretable model used for the explanation.
 
         Raises:
@@ -1025,7 +1025,7 @@ class Lime(Explainer):
             return_input_shape=True,
         )
 
-        spatial_attribution = ImageSpatialAttributes(
+        spatial_attribution = ImageLimeSpatialAttributes(
             image=image,
             attributes=lime_attributes[0],
             segmentation_mask=segmentation_mask,
@@ -1041,14 +1041,14 @@ class Lime(Explainer):
         target=None,
         band_names: list[str | list[str]] | dict[tuple[str, ...] | str, int] | None = None,
         verbose=False,
-    ) -> ImageSpectralAttributes:
+    ) -> ImageLimeSpectralAttributes:
         """
         Attributes the image using LIME method for spectral data. Based on the provided image and band mask, the LIME
         method attributes the image based on `superbands` (clustered bands) provided by the band mask.
         Please refer to the original paper `https://arxiv.org/abs/1602.04938` for more details or to
         Christoph Molnar's book `https://christophm.github.io/interpretable-ml-book/lime.html`.
 
-        The function returns an ImageSpectralAttributes object that contains the image, the attributions, the band mask,
+        The function returns an ImageLimeSpectralAttributes object that contains the image, the attributions, the band mask,
         the band names, and the score of the interpretable model used for the explanation.
 
         Args:
@@ -1061,7 +1061,7 @@ class Lime(Explainer):
             verbose (bool, optional): Specifies whether to show progress during the attribution process. Defaults to False.
 
         Returns:
-            ImageSpectralAttributes: An ImageSpectralAttributes object containing the image, the attributions,
+            ImageLimeSpectralAttributes: An ImageLimeSpectralAttributes object containing the image, the attributions,
                 the band mask, the band names, and the score of the interpretable model used for the explanation.
 
         Examples:
@@ -1121,7 +1121,7 @@ class Lime(Explainer):
             return_input_shape=True,
         )
 
-        spectral_attribution = ImageSpectralAttributes(
+        spectral_attribution = ImageLimeSpectralAttributes(
             image=image,
             attributes=lime_attributes[0],
             band_mask=band_mask,

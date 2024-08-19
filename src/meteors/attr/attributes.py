@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-
+from typing import Literal
 from typing_extensions import Annotated, Self
 import warnings
 from loguru import logger
@@ -18,6 +18,7 @@ from meteors.image import resolve_inference_device
 
 # Constants
 HSI_AXIS_ORDER = [2, 1, 0]  # (bands, rows, columns)
+AVAILABLE_ATTRIBUTION_METHODS = ["lime", "integrated gradients"]
 
 
 def ensure_torch_tensor(value: np.ndarray | torch.Tensor, context: str) -> torch.Tensor:
@@ -167,6 +168,13 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
     return band_names
 
 
+def validate_attribution_method(value: str) -> str:
+    value = value.lower()
+    if value not in AVAILABLE_ATTRIBUTION_METHODS:
+        raise ValueError(f"Attribution method must be one of {AVAILABLE_ATTRIBUTION_METHODS}")
+    return value
+
+
 ######################################################################
 ############################ EXPLANATIONS ############################
 ######################################################################
@@ -178,10 +186,12 @@ class ImageAttributes(BaseModel):
     Attributes:
         image (Image): Hyperspectral image object for which the explanations were created.
         attributes (torch.Tensor): Attributions (explanations) for the image.
-        score (float): R^2 score of interpretable model used for the explanation.
+        score (float): R^2 score of interpretable model used for the explanation. Used only for LIME attributes
+        approximation_error (float): Approximation error of the explanation. Used only for IG attributes
         device (torch.device): Device to be used for inference. If None, the device of the input image will be used.
             Defaults to None.
         model_config (ConfigDict): Configuration dictionary for the model.
+        attribution_method (str): The method used to generate the explanation.
     """
 
     image: Annotated[
@@ -197,13 +207,29 @@ class ImageAttributes(BaseModel):
             description="Attributions (explanations) for the image.",
         ),
     ]
-    score: Annotated[
-        float,
+    attribution_method: Annotated[
+        str,
+        BeforeValidator(validate_attribution_method),
         Field(
-            le=1.0,
-            description="R^2 score of interpretable model used for the explanation.",
+            description="The method used to generate the explanation.",
         ),
     ]
+    score: Annotated[
+        float | None,
+        Field(
+            validate_default=True,
+            le=1.0,
+            ge=-1.0,
+            description="R^2 score of interpretable model used for the explanation. Used only for LIME attributes",
+        ),
+    ] = None
+    approximation_error: Annotated[
+        float | None,
+        Field(
+            ge=1.0,
+            description="Approximation error of the explanation. Also known as convergence delta. Used only for IG attributes",
+        ),
+    ] = None
     device: Annotated[
         torch.device,
         BeforeValidator(resolve_inference_device),
@@ -282,7 +308,7 @@ class ImageAttributes(BaseModel):
         return self
 
 
-class ImageSpatialAttributes(ImageAttributes):
+class ImageLimeSpatialAttributes(ImageAttributes):
     """Represents spatial attributes of an image used for explanation.
 
     Attributes:
@@ -302,6 +328,13 @@ class ImageSpatialAttributes(ImageAttributes):
             description="Spatial (Segmentation) mask used for the explanation.",
         ),
     ]
+    attribution_method: Annotated[
+        str,
+        Literal["lime"],
+        Field(
+            description="The method used to generate the explanation.",
+        ),
+    ] = "lime"
 
     @property
     def spatial_segmentation_mask(self) -> torch.Tensor:
@@ -315,7 +348,7 @@ class ImageSpatialAttributes(ImageAttributes):
 
         Examples:
             >>> segmentation_mask = torch.zeros((3, 2, 2))
-            >>> attrs = ImageSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
+            >>> attrs = ImageLimeSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
             >>> attrs.spatial_segmentation_mask
             tensor([[0., 0.],
                     [0., 0.]])
@@ -331,7 +364,7 @@ class ImageSpatialAttributes(ImageAttributes):
         Returns:
             torch.Tensor: A flattened tensor of attributes.
         >>> segmentation_mask = torch.zeros((3, 2, 2))
-        >>> attrs = ImageSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
+        >>> attrs = ImageLimeSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
         >>> attrs.flattened_attributes
             tensor([[0., 0.],
                     [0., 0.]])
@@ -362,7 +395,7 @@ class ImageSpatialAttributes(ImageAttributes):
             Self: The Lime object itself.
 
         Examples:
-            >>> attrs = ImageSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
+            >>> attrs = ImageLimeSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
             >>> attrs.to("cpu")
             >>> attrs.segmentation_mask.device
             device(type='cpu')
@@ -377,7 +410,7 @@ class ImageSpatialAttributes(ImageAttributes):
         return self
 
 
-class ImageSpectralAttributes(ImageAttributes):
+class ImageLimeSpectralAttributes(ImageAttributes):
     """Represents an image with spectral attributes used for explanation.
 
     Attributes:
@@ -404,6 +437,13 @@ class ImageSpectralAttributes(ImageAttributes):
             description="Dictionary that translates the band names into the band segment ids.",
         ),
     ]
+    attribution_method: Annotated[
+        str,
+        Literal["lime"],
+        Field(
+            description="The method used to generate the explanation.",
+        ),
+    ] = "lime"
 
     @property
     def spectral_band_mask(self) -> torch.Tensor:
@@ -418,7 +458,7 @@ class ImageSpectralAttributes(ImageAttributes):
 
         Examples:
             >>> band_names = {"R": 0, "G": 1, "B": 2}
-            >>> attrs = ImageSpectralAttributes(image, attributes, score=0.5, band_mask=band_mask)
+            >>> attrs = ImageLimeSpectralAttributes(image, attributes, score=0.5, band_mask=band_mask)
             >>> attrs.spectral_band_mask
             torch.tensor([0, 1, 2])
         """
@@ -462,7 +502,7 @@ class ImageSpectralAttributes(ImageAttributes):
             Self: The Lime object itself.
 
         Examples:
-            >>> attrs = ImageSpectralAttributes(image, attributes, score=0.5, band_mask=band_mask)
+            >>> attrs = ImageLimeSpectralAttributes(image, attributes, score=0.5, band_mask=band_mask)
             >>> attrs.to("cpu")
             >>> attrs.band_mask.device
             device(type='cpu')
