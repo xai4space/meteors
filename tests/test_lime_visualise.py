@@ -139,9 +139,6 @@ def test_visualize_image_with_image_attributes_object():
     assert isinstance(ax, plt.Axes)
 
 
-test_visualize_image_with_image_attributes_object()
-
-
 def test_visualize_image_with_image_object_and_ax():
     # Create an Image object
     image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
