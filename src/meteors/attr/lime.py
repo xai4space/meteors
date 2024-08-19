@@ -10,7 +10,7 @@ import numpy as np
 import spyndex
 
 from meteors import Image
-from meteors.lime_base import Lime as LimeBase
+from meteors.attr.lime_base import Lime as LimeBase
 from meteors.utils.models import ExplainableModel, InterpretableModel
 from meteors.utils.utils import torch_dtype_to_python_dtype, change_dtype_of_list
 from meteors.attr import Explainer
@@ -353,10 +353,10 @@ class Lime(Explainer):
 
         Examples:
             >>> image = mt.Image(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
-            >>> segmentation_mask = mt_lime.Lime.get_segmentation_mask(image, segmentation_method="slic")
+            >>> segmentation_mask = meteors.attr.Lime.get_segmentation_mask(image, segmentation_method="slic")
             >>> segmentation_mask.shape
             torch.Size([1, 240, 240])
-            >>> segmentation_mask = mt_lime.Lime.get_segmentation_mask(image, segmentation_method="patch", patch_size=2)
+            >>> segmentation_mask = meteors.attr.Lime.get_segmentation_mask(image, segmentation_method="patch", patch_size=2)
             >>> segmentation_mask.shape
             torch.Size([1, 240, 240])
             >>> segmentation_mask[0, :2, :2]
@@ -985,7 +985,7 @@ class Lime(Explainer):
             >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
             >>> image = mt.Image(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
             >>> segmentation_mask = torch.randint(1, 4, (1, 240, 240))
-            >>> lime = mt_lime.Lime(
+            >>> lime = meteors.attr.Lime(
                     explainable_model=ExplainableModel(simple_model, "regression"), interpretable_model=SkLearnLasso(alpha=0.1)
                 )
             >>> spatial_attribution = lime.get_spatial_attributes(image, segmentation_mask=segmentation_mask, target=0)
@@ -1069,7 +1069,7 @@ class Lime(Explainer):
             >>> image = mt.Image(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
             >>> band_mask = torch.randint(1, 4, (4, 1, 1)).repeat(1, 240, 240)
             >>> band_names = ["R", "G", "B"]
-            >>> lime = mt_lime.Lime(
+            >>> lime = meteors.attr.Lime(
                     explainable_model=ExplainableModel(simple_model, "regression"), interpretable_model=SkLearnLasso(alpha=0.1)
                 )
             >>> spectral_attribution = lime.get_spectral_attributes(image, band_mask=band_mask, band_names=band_names, target=0)

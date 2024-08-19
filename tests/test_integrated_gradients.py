@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from meteors.utils.models import ExplainableModel
-from meteors.integrated_gradients import IntegratedGradients
+from meteors.attr.integrated_gradients import IntegratedGradients
 from meteors import Image
 
 

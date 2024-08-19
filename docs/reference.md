@@ -12,7 +12,7 @@ Structure:
 
 ### Lime
 
-::: src.meteors.lime
+::: src.meteors.attr.lime
 
 ### Lime Base
 
@@ -21,3 +21,7 @@ The Lime Base class was adapted from the Captum Lime implementation. This adapta
 ### Image
 
 ::: src.meteors.image
+
+### Integrated Gradients
+
+::: src.meteors.attr.integrated_gradients

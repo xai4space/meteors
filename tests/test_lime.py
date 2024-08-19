@@ -5,8 +5,8 @@ from loguru import logger
 import torch
 
 import meteors as mt
-import meteors.lime as mt_lime
-import meteors.lime_base as mt_lime_base
+import meteors.attr.lime as mt_lime
+import meteors.attr.lime_base as mt_lime_base
 from meteors.utils.models import ExplainableModel, SkLearnLasso
 
 # Temporary solution for wavelengths

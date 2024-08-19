@@ -1,12 +1,17 @@
 from .attributes import ImageAttributes, ImageLimeSpatialAttributes, ImageLimeSpectralAttributes
 from .explainer import Explainer
 
+from .lime import Lime
+from .integrated_gradients import IntegratedGradients
+
 
 __all__ = [
     "ImageAttributes",
     "ImageLimeSpatialAttributes",
     "ImageLimeSpectralAttributes",
     "Explainer",
+    "IntegratedGradients",
+    "Lime",
 ]
 
 

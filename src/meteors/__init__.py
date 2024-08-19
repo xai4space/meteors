@@ -1,14 +1,14 @@
 from .image import Image
 
-from .lime import Lime
 from . import utils
 from . import visualize
+from . import attr
 
 __all__ = [
     "Image",
-    "Lime",
     "utils",
     "visualize",
+    "attr",
 ]
 
 
