@@ -280,6 +280,23 @@ class ImageAttributes(BaseModel):
         self._validate_image_attributions()
         return self
 
+    @model_validator(mode="after")
+    def validate_score_and_error(self) -> Self:
+        """Validates the score and error attributes.
+
+        This method validates the score and error attributes based on the attribution method.
+
+        Returns:
+            Self: The current instance of the class.
+        """
+        if self.attribution_method != "lime" and self.score is not None:
+            raise ValueError("Score should not be provided for non-LIME attributes")
+        if self.attribution_method == "lime" and self.score is None:
+            raise ValueError("Score must be provided for LIME attributes")
+        if self.attribution_method != "integrated gradients" and self.approximation_error is not None:
+            raise ValueError("Approximation error should only be provided for IG attributes")
+        return self
+
     def to(self, device: str | torch.device) -> Self:
         """Move the image and attributes tensors to the specified device.
 
