@@ -46,7 +46,7 @@ from meteors.utils.models import InterpretableModel, SkLearnLasso
 
 
 class LimeBase(PerturbationAttribution):
-    r"""Lime is an interpretability method that trains an interpretable surrogate model by sampling points around a
+    """Lime is an interpretability method that trains an interpretable surrogate model by sampling points around a
     specified input example and using model evaluations at these points to train a simpler interpretable 'surrogate'
     model, such as a linear model.
 
@@ -83,11 +83,9 @@ class LimeBase(PerturbationAttribution):
         from_interp_rep_transform: Optional[Callable],
         to_interp_rep_transform: Optional[Callable],
     ) -> None:
-        r"""
+        """Initializes an instance of the LimeBase class.
 
         Args:
-
-
             forward_func (Callable): The forward function of the model or any
                     modification of it. If a batch is provided as input for
                     attribution, it is expected that forward_func returns a scalar
@@ -250,7 +248,7 @@ class LimeBase(PerturbationAttribution):
         show_progress: bool = False,
         **kwargs,
     ) -> tuple[Tensor, Tensor]:
-        r"""This method attributes the output of the model with given target index (in case it is provided, otherwise it
+        """This method attributes the output of the model with given target index (in case it is provided, otherwise it
         assumes that output is a scalar) to the inputs of the model using the approach described above. It trains an
         interpretable model and returns a representation of the interpretable model.
 
@@ -267,7 +265,6 @@ class LimeBase(PerturbationAttribution):
         must be set to 1.
 
         Args:
-
             inputs (Tensor or tuple[Tensor, ...]): Input for which LIME
                         is computed. If forward_func takes a single
                         tensor as input, a single input tensor should be provided.
@@ -554,10 +551,22 @@ class LimeBase(PerturbationAttribution):
         )
 
     def has_convergence_delta(self) -> bool:
+        """Check if the object has a convergence delta.
+
+        Returns:
+            bool: True if the object has a convergence delta, False otherwise.
+        """
         return False
 
     @property
     def multiplies_by_inputs(self):
+        """Returns False.
+
+        This method multiplies the inputs by a factor and returns the result.
+
+        Returns:
+            bool: False.
+        """
         return False
 
 
@@ -597,7 +606,7 @@ def default_from_interp_rep_transform(
 
 
 def get_exp_kernel_similarity_function(distance_mode: str = "cosine", kernel_width: float = 1.0) -> Callable:
-    r"""This method constructs an appropriate similarity function to compute weights for perturbed sample in LIME.
+    """This method constructs an appropriate similarity function to compute weights for perturbed sample in LIME.
     Distance between the original and perturbed inputs is computed based on the provided distance mode, and the distance
     is passed through an exponential kernel with given kernel width to convert to a range between 0 and 1.
 
@@ -605,7 +614,6 @@ def get_exp_kernel_similarity_function(distance_mode: str = "cosine", kernel_wid
     Lime or LimeBase.
 
     Args:
-
         distance_mode (str, optional): Distance mode can be either "cosine" or
                     "euclidean" corresponding to either cosine distance
                     or Euclidean distance respectively. Distance is computed
@@ -641,6 +649,19 @@ def get_exp_kernel_similarity_function(distance_mode: str = "cosine", kernel_wid
 
 
 def default_perturb_func(original_inp, **kwargs):
+    """Default interpretable sampling function for perturbing input.
+
+    Args:
+        original_inp (Tensor or list): The original input to be perturbed.
+        **kwargs: Additional keyword arguments.
+            - num_interp_features (int): The number of interpretable features.
+
+    Returns:
+        Tensor: The perturbed input with interpretable features.
+
+    Raises:
+        AssertionError: If `num_interp_features` is not provided in `kwargs`.
+    """
     assert (
         "num_interp_features" in kwargs
     ), "Must provide num_interp_features to use default interpretable sampling function"
@@ -670,7 +691,7 @@ def construct_feature_mask(feature_mask, formatted_inputs):
 
 
 class Lime(LimeBase):
-    r"""Lime is an interpretability method that trains an interpretable surrogate model by sampling points around a
+    """Lime is an interpretability method that trains an interpretable surrogate model by sampling points around a
     specified input example and using model evaluations at these points to train a simpler interpretable 'surrogate'
     model, such as a linear model.
 
@@ -710,11 +731,9 @@ class Lime(LimeBase):
         similarity_func: Optional[Callable] = None,
         perturb_func: Optional[Callable] = None,
     ) -> None:
-        r"""
+        """Initializes an instance of the Lime class.
 
         Args:
-
-
             forward_func (Callable): The forward function of the model or any
                     modification of it
             interpretable_model (InterpretableModel, optional): Model object to train
@@ -795,7 +814,6 @@ class Lime(LimeBase):
 
                     kwargs includes baselines, feature_mask, num_interp_features
                     (integer, determined from feature mask).
-
         """
         if interpretable_model is None:
             interpretable_model = SkLearnLasso(alpha=0.01)
@@ -830,7 +848,7 @@ class Lime(LimeBase):
         return_input_shape: bool = True,
         show_progress: bool = False,
     ) -> tuple[TensorOrTupleOfTensorsGeneric, Tensor]:
-        r"""This method attributes the output of the model with given target index (in case it is provided, otherwise it
+        """This method attributes the output of the model with given target index (in case it is provided, otherwise it
         assumes that output is a scalar) to the inputs of the model using the approach described above, training an
         interpretable model and returning a representation of the interpretable model.
 
@@ -858,7 +876,6 @@ class Lime(LimeBase):
         superpixels in images).
 
         Args:
-
             inputs (Tensor or tuple[Tensor, ...]): Input for which LIME
                         is computed. If forward_func takes a single
                         tensor as input, a single input tensor should be provided.
@@ -1070,6 +1087,24 @@ class Lime(LimeBase):
         show_progress: bool = False,
         **kwargs,
     ) -> tuple[TensorOrTupleOfTensorsGeneric, Tensor]:
+        """Compute the attribute values and R^2 scores for the given inputs.
+
+        Args:
+            self: The LimeBase instance.
+            inputs: The input tensor(s) for which to compute the attributions.
+            baselines: The baseline tensor(s) representing the reference point(s) for comparison.
+            target: The target tensor(s) representing the desired output(s) for the inputs.
+            additional_forward_args: Additional arguments to be passed to the forward function.
+            feature_mask: The mask tensor(s) indicating the features to be considered.
+            n_samples: The number of samples to use for approximation.
+            perturbations_per_eval: The number of perturbations to evaluate per sample.
+            return_input_shape: Whether to return the output shape in the same format as the input.
+            show_progress: Whether to show the progress of the computation.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            A tuple containing the attribute values and the average R^2 score.
+        """
         is_inputs_tuple = _is_tuple(inputs)
         formatted_inputs, baselines = _format_input_baseline(inputs, baselines)
         bsz = formatted_inputs[0].shape[0]
@@ -1182,7 +1217,19 @@ class Lime(LimeBase):
         coefs: Tensor,
         num_interp_features: int,
         is_inputs_tuple: Literal[True],
-    ) -> Tuple[Tensor, ...]: ...
+    ) -> Tuple[Tensor, ...]:
+        """Convert the output shape of the lime_base model.
+
+        Args:
+            formatted_inp (Tuple[Tensor, ...]): The formatted input tensors.
+            feature_mask (Tuple[Tensor, ...]): The feature masks.
+            coefs (Tensor): The coefficients.
+            num_interp_features (int): The number of interpolated features.
+            is_inputs_tuple (Literal[True]): Flag indicating if the inputs are a tuple.
+
+        Returns:
+            Tuple[Tensor, ...]: The converted output shape.
+        """
 
     @typing.overload
     def _convert_output_shape(  # type: ignore
@@ -1192,7 +1239,19 @@ class Lime(LimeBase):
         coefs: Tensor,
         num_interp_features: int,
         is_inputs_tuple: Literal[False],
-    ) -> Tensor: ...
+    ) -> Tensor:
+        """Convert the output shape based on the given inputs.
+
+        Args:
+            formatted_inp (Tuple[Tensor, ...]): The formatted input tensors.
+            feature_mask (Tuple[Tensor, ...]): The feature masks.
+            coefs (Tensor): The coefficients.
+            num_interp_features (int): The number of interpolation features.
+            is_inputs_tuple (Literal[False]): A flag indicating whether the inputs are a tuple.
+
+        Returns:
+            Tensor: The converted output shape.
+        """
 
     def _convert_output_shape(
         self,

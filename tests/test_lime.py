@@ -847,7 +847,7 @@ def test_lime_explainer():
     assert lime._lime is not None
 
 
-def test_get_slick_segmentation_mask():
+def test__get_slick_segmentation_mask():
     # Create a sample image
     image = mt.Image(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47])
 
@@ -861,7 +861,7 @@ def test_get_slick_segmentation_mask():
     assert torch.all(segmentation_mask < 10)
 
 
-def test_get_patch_segmentation_mask():
+def test__get_patch_segmentation_mask():
     # Create a sample image
     image = mt.Image(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
 
@@ -922,7 +922,7 @@ def test_get_segmentation_mask():
         mt_lime.Lime.get_segmentation_mask(image, segmentation_method="slic")
 
 
-def test_make_band_names_indexable():
+def test__make_band_names_indexable():
     # Test case 1: List of strings
     segment_name_list = ["R", "G", "B"]
     result_list = mt_lime.Lime._make_band_names_indexable(segment_name_list)
@@ -957,7 +957,7 @@ def test_make_band_names_indexable():
         mt_lime.Lime._make_band_names_indexable(segment_name_invalid)
 
 
-def test_extract_bands_from_spyndex():
+def test__extract_bands_from_spyndex():
     # Test case 1: Single band name
     segment_name = "R"
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
@@ -1039,7 +1039,7 @@ def test__convert_wavelengths_to_indices():
     assert single_indices == expected_single_indices
 
 
-def test_get_indices_from_wavelength_indices_range():
+def test__get_indices_from_wavelength_indices_range():
     # Test case 1: Single range
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     ranges = [(1, 4)]
@@ -1082,7 +1082,7 @@ def test_get_indices_from_wavelength_indices_range():
     assert indices == expected_indices
 
 
-def test_convert_wavelengths_list_to_indices():
+def test__convert_wavelengths_list_to_indices():
     # Working example
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     ranges = [450, 550, 650]
@@ -1114,7 +1114,7 @@ def test_convert_wavelengths_list_to_indices():
         mt_lime.Lime._convert_wavelengths_list_to_indices(wavelengths, ranges)
 
 
-def test_get_band_indices_from_input_band_indices():
+def test__get_band_indices_from_input_band_indices():
     # Test lists
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     band_indices = {
@@ -1187,7 +1187,7 @@ def test_get_band_indices_from_input_band_indices():
         mt_lime.Lime._get_band_indices_from_input_band_indices(wavelengths, band_indices)
 
 
-def test_get_band_indices_from_band_wavelengths():
+def test__get_band_indices_from_band_wavelengths():
     # Test case 1: Ranges
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     band_wavelengths = {
@@ -1259,7 +1259,7 @@ def test_get_band_indices_from_band_wavelengths():
         mt_lime.Lime._get_band_indices_from_band_wavelengths(wavelengths, band_wavelengths)
 
 
-def test_get_band_wavelengths_indices_from_band_names():
+def test__get_band_wavelengths_indices_from_band_names():
     # Test bands
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700, 750, 800])
     band_names = ["R", "G", "B"]
@@ -1331,7 +1331,7 @@ def test_get_band_wavelengths_indices_from_band_names():
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
 
-def test_check_overlapping_segments():
+def test__check_overlapping_segments(caplog):
     # Create a sample image
     wavelengths = torch.tensor([400, 500, 600, 700])
     image = mt.Image(image=torch.ones((4, 4, 4)), wavelengths=wavelengths)
@@ -1421,7 +1421,7 @@ def test__validate_and_create_dict_labels_to_segment_ids():
         mt_lime.Lime._validate_and_create_dict_labels_to_segment_ids(dict_labels_to_segment_ids, segment_labels)
 
 
-def test_create_single_dim_band_mask():
+def test__create_single_dim_band_mask():
     # Create a sample image
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     image = mt.Image(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths)
@@ -1459,7 +1459,7 @@ def test_create_single_dim_band_mask():
         mt_lime.Lime._create_single_dim_band_mask(image, dict_labels_to_indices, dict_labels_to_segment_ids, "cpu")
 
 
-def test_expand_band_mask():
+def test__expand_band_mask():
     # Create a sample image
     wavelengths = torch.tensor([400, 450, 500, 550, 600])
     image = mt.Image(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths, orientation=("C", "H", "W"))
@@ -1539,7 +1539,7 @@ def test_expand_band_mask():
     assert torch.equal(expanded_band_mask, expected_values)
 
 
-def test_create_tensor_band_mask():
+def test__create_tensor_band_mask():
     # Test case 1: Default parameters
     image = mt.Image(image=torch.ones((3, 240, 240)), wavelengths=[400, 500, 600])
     dict_labels_to_indices = {"label1": [0], "label2": [1, 2]}
