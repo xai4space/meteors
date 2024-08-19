@@ -48,7 +48,7 @@ class IntegratedGradients:
         logger.debug("Initializing IntegratedGradients explainer on model {explainable_model}")
 
         self.model = explainable_model
-        self._ig = CaptumIntegratedGradients(explainable_model, multiply_by_inputs=multiply_by_inputs)
+        self._ig = CaptumIntegratedGradients(explainable_model.forward_func, multiply_by_inputs=multiply_by_inputs)
 
     def attribute(
         self,

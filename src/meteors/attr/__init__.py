@@ -3,6 +3,7 @@ from .explainer import Explainer
 
 from .lime import Lime
 from .integrated_gradients import IntegratedGradients
+from .saliency import Saliency
 
 
 __all__ = [
@@ -12,6 +13,7 @@ __all__ = [
     "Explainer",
     "IntegratedGradients",
     "Lime",
+    "Saliency",
 ]
 
 

@@ -18,7 +18,14 @@ from meteors.image import resolve_inference_device
 
 # Constants
 HSI_AXIS_ORDER = [2, 1, 0]  # (bands, rows, columns)
-AVAILABLE_ATTRIBUTION_METHODS = ["lime", "integrated gradients"]
+AVAILABLE_ATTRIBUTION_METHODS = [
+    "lime",
+    "integrated gradients",
+    "saliency",
+    "input x gradients",
+    "occlusion",
+    "noise tunnel",
+]
 
 
 def ensure_torch_tensor(value: np.ndarray | torch.Tensor, context: str) -> torch.Tensor:
