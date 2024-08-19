@@ -7,12 +7,8 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from captum.attr import visualization as viz
 
-from meteors import (
-    Image,
-    ImageAttributes,
-    ImageSpectralAttributes,
-    ImageSpatialAttributes,
-)
+from meteors import Image
+from meteors.attr import ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
 
 
 def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:

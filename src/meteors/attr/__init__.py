@@ -1,14 +1,12 @@
-from .image import Image
+from .attributes import ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
+from .explainer import Explainer
 
-from .lime import Lime
-from . import utils
-from . import visualize
 
 __all__ = [
-    "Image",
-    "Lime",
-    "utils",
-    "visualize",
+    "ImageAttributes",
+    "ImageSpatialAttributes",
+    "ImageSpectralAttributes",
+    "Explainer",
 ]
 
 
