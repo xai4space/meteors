@@ -357,3 +357,95 @@ class SkLearnLasso(SkLearnLinearModel):
             None
         """
         return super().fit(train_data=train_data, **kwargs)
+
+
+class SkLearnRidge(SkLearnLinearModel):
+    def __init__(self, **kwargs) -> None:
+        r"""Factory class.
+
+        Trains a `LinearModel` model with
+        `sklearn.linear_model.Ridge`. You will need sklearn version >= 0.23 to
+        support sample weights.
+        """
+        super().__init__(sklearn_module="linear_model.Ridge", **kwargs)
+
+    def fit(self, train_data: torch.utils.data.DataLoader, **kwargs) -> None:
+        """Fits the `SkLearnRidge` model to the provided training data.
+
+        Args:
+            train_data (torch.utils.data.DataLoader): The training data.
+            **kwargs: Additional keyword arguments to be passed to the `fit` method.
+
+        Returns:
+            None
+        """
+        return super().fit(train_data=train_data, **kwargs)
+
+
+class SkLearnLinearRegression(SkLearnLinearModel):
+    def __init__(self, **kwargs) -> None:
+        r"""Factory class.
+
+        Trains a `LinearModel` model with
+        `sklearn.linear_model.LinearRegression`. You will need sklearn version >= 0.23 to
+        support sample weights.
+        """
+        super().__init__(sklearn_module="linear_model.LinearRegression", **kwargs)
+
+    def fit(self, train_data: torch.utils.data.DataLoader, **kwargs) -> None:
+        """Fits the `SkLearnLinearRegression` model to the provided training data.
+
+        Args:
+            train_data (torch.utils.data.DataLoader): The training data.
+            **kwargs: Additional keyword arguments to be passed to the `fit` method.
+
+        Returns:
+            None
+        """
+        return super().fit(train_data=train_data, **kwargs)
+
+
+class SkLearnLogisticRegression(SkLearnLinearModel):
+    def __init__(self, **kwargs) -> None:
+        r"""Factory class.
+
+        Trains a `LinearModel` model with
+        `sklearn.linear_model.LogisticRegression`. You will need sklearn version >= 0.23 to
+        support sample weights.
+        """
+        super().__init__(sklearn_module="linear_model.LogisticRegression", **kwargs)
+
+    def fit(self, train_data: torch.utils.data.DataLoader, **kwargs) -> None:
+        """Fits the `SkLearnLogisticRegression` model to the provided training data.
+
+        Args:
+            train_data (torch.utils.data.DataLoader): The training data.
+            **kwargs: Additional keyword arguments to be passed to the `fit` method.
+
+        Returns:
+            None
+        """
+        return super().fit(train_data=train_data, **kwargs)
+
+
+class SkLearnSGDClassifier(SkLearnLinearModel):
+    def __init__(self, **kwargs) -> None:
+        r"""Factory class.
+
+        Trains a `LinearModel` model with
+        `sklearn.linear_model.SGDClassifier`. You will need sklearn version >= 0.23 to
+        support sample weights.
+        """
+        super().__init__(sklearn_module="linear_model.SGDClassifier", **kwargs)
+
+    def fit(self, train_data: torch.utils.data.DataLoader, **kwargs) -> None:
+        """Fits the `SkLearnSGDClassifier` model to the provided training data.
+
+        Args:
+            train_data (torch.utils.data.DataLoader): The training data.
+            **kwargs: Additional keyword arguments to be passed to the `fit` method.
+
+        Returns:
+            None
+        """
+        return super().fit(train_data=train_data, **kwargs)

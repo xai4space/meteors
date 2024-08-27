@@ -16,7 +16,7 @@ from pydantic.functional_validators import BeforeValidator
 from meteors import Image
 from meteors.image import resolve_inference_device
 from meteors.lime_base import Lime as LimeBase
-from meteors.utils.models import ExplainableModel, InterpretableModel
+from meteors.utils.models import ExplainableModel, InterpretableModel, SkLearnLasso
 from meteors.utils.utils import torch_dtype_to_python_dtype, change_dtype_of_list
 
 try:
@@ -752,6 +752,10 @@ class Explainer(ABC):
     Args:
         explainable_model (ExplainableModel): The explainable model to be explained.
         interpretable_model (InterpretableModel): The interpretable model used to approximate the black-box model
+
+    Notes:
+        - Current supported interpretable models are `LinearModel`, `SkLearnLinearModel`,
+            `SkLearnLasso` and `SkLearnRidge`.
     """
 
     def __init__(self, explainable_model: ExplainableModel, interpretable_model: InterpretableModel):
@@ -794,6 +798,7 @@ class Lime(Explainer):
     Args:
         explainable_model (ExplainableModel): The explainable model to be explained.
         interpretable_model (InterpretableModel): The interpretable model used to approximate the black-box model.
+            Defaults to `SkLearnLasso` with alpha parameter set to 0.08.
         similarity_func (Callable[[torch.Tensor], torch.Tensor] | None, optional): The similarity function used by Lime.
             Defaults to None.
         perturb_func (Callable[[torch.Tensor], torch.Tensor] | None, optional): The perturbation function used by Lime.
@@ -803,7 +808,7 @@ class Lime(Explainer):
     def __init__(
         self,
         explainable_model: ExplainableModel,
-        interpretable_model: InterpretableModel,
+        interpretable_model: InterpretableModel = SkLearnLasso(alpha=0.08),
         similarity_func: Callable[[torch.Tensor], torch.Tensor] | None = None,
         perturb_func: Callable[[torch.Tensor], torch.Tensor] | None = None,
     ):
@@ -1485,7 +1490,7 @@ class Lime(Explainer):
 
         Raises:
             ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
-            ValueError: If the problem type of the explainable model is not "regression".
+            ValueError: If the explainable model problem type is not supported.
             AssertionError: If the image is not an instance of the Image class.
 
         Examples:
@@ -1508,8 +1513,8 @@ class Lime(Explainer):
         if self._lime is None or not isinstance(self._lime, LimeBase):
             raise ValueError("Lime object not initialized")
 
-        if self.explainable_model.problem_type != "regression":
-            raise ValueError("For now only the regression problem is supported")
+        if self.explainable_model.problem_type not in ["regression", "classification"]:
+            raise ValueError("For now only the `regression` and `classification` problem is supported")
 
         assert isinstance(image, Image), "Image should be an instance of Image class"
 
@@ -1571,6 +1576,11 @@ class Lime(Explainer):
             ImageSpectralAttributes: An ImageSpectralAttributes object containing the image, the attributions,
                 the band mask, the band names, and the score of the interpretable model used for the explanation.
 
+        Raises:
+            ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
+            ValueError: If the explainable model problem type is not supported.
+            AssertionError: If the image is not an instance of the Image class.
+
         Examples:
             >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
             >>> image = mt.Image(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
@@ -1595,8 +1605,8 @@ class Lime(Explainer):
         if self._lime is None or not isinstance(self._lime, LimeBase):
             raise ValueError("Lime object not initialized")
 
-        if self.explainable_model.problem_type != "regression":
-            raise ValueError("For now only the regression problem is supported")
+        if self.explainable_model.problem_type not in ["regression", "classification"]:
+            raise ValueError("For now only the `regression` and `classification` problem is supported")
 
         assert isinstance(image, Image), "Image should be an instance of Image class"
 
