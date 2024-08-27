@@ -3,12 +3,25 @@ import pytest
 import torch
 
 
-from meteors.utils.models import ExplainableModel, SkLearnLasso
+from meteors.utils.models import (
+    ExplainableModel,
+    SkLearnLasso,
+    SkLearnRidge,
+    SkLearnLinearRegression,
+    SkLearnLogisticRegression,
+    SkLearnSGDClassifier,
+)
 from meteors.utils.models.models import SkLearnLinearModel, LinearModel
 
 
 def test_explainable_model():
     explainable_model = ExplainableModel(problem_type="regression", forward_func=lambda x: x.mean(dim=(1, 2, 3)))
+    assert explainable_model is not None
+
+    explainable_model = ExplainableModel(problem_type="classification", forward_func=lambda x: x.mean(dim=(1, 2, 3)))
+    assert explainable_model is not None
+
+    explainable_model = ExplainableModel(problem_type="segmentation", forward_func=lambda x: x.mean(dim=(1, 2, 3)))
     assert explainable_model is not None
 
     explainable_model.to("cpu")
@@ -49,6 +62,7 @@ def test_linear_model_forward():
     X = torch.rand(10, 10)
     y = torch.bernoulli(X)
     data_loader = torch.utils.data.DataLoader(dataset=[X, y], batch_size=10)
+    print(next(iter(data_loader)))
 
     model.fit(data_loader)
 
@@ -65,7 +79,8 @@ def test_linear_model_get_representation():
 
     X = torch.rand(10, 10)
     y = torch.bernoulli(X)
-    data_loader = torch.utils.data.DataLoader(dataset=[X, y], batch_size=10)
+    dataset = torch.utils.data.TensorDataset(X, y)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=10)
 
     model.fit(data_loader)
 
@@ -88,16 +103,109 @@ def test_sklearn_lasso():
     sklearn_lasso = SkLearnLasso()
 
     X = torch.rand(10, 10)
-    y = torch.bernoulli(X)
+    y = torch.rand(10, 5)
 
-    data_loader = torch.utils.data.DataLoader(dataset=[X, y], batch_size=10)
+    dataset = torch.utils.data.TensorDataset(X, y)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=10)
     sklearn_lasso.fit(train_data=data_loader)
 
     assert sklearn_lasso.classes() is None
     assert sklearn_lasso.bias() is not None
     assert sklearn_lasso.linear.in_features == 10
-    assert sklearn_lasso.linear.out_features == 10
+    assert sklearn_lasso.linear.out_features == 5
     assert isinstance(sklearn_lasso.get_representation(), torch.Tensor)
+
+
+def test_sklearn_ridge():
+    sklearn_ridge = SkLearnRidge()
+
+    # return empty values
+    assert sklearn_ridge.classes() is None
+    assert sklearn_ridge.bias() is None
+
+    sklearn_ridge = SkLearnRidge()
+
+    X = torch.rand(10, 10)
+    y = torch.rand(10, 5)
+
+    dataset = torch.utils.data.TensorDataset(X, y)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=10)
+    sklearn_ridge.fit(train_data=data_loader)
+
+    assert sklearn_ridge.classes() is None
+    assert sklearn_ridge.bias() is not None
+    assert sklearn_ridge.linear.in_features == 10
+    assert sklearn_ridge.linear.out_features == 5
+    assert isinstance(sklearn_ridge.get_representation(), torch.Tensor)
+
+
+def test_sklearn_linear_regression():
+    sklearn_linear_regression = SkLearnLinearRegression()
+
+    # return empty values
+    assert sklearn_linear_regression.classes() is None
+    assert sklearn_linear_regression.bias() is None
+
+    sklearn_linear_regression = SkLearnLinearRegression()
+
+    X = torch.rand(10, 10)
+    y = torch.rand(10, 5)
+
+    dataset = torch.utils.data.TensorDataset(X, y)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=10)
+    sklearn_linear_regression.fit(train_data=data_loader)
+
+    assert sklearn_linear_regression.classes() is None
+    assert sklearn_linear_regression.bias() is not None
+    assert sklearn_linear_regression.linear.in_features == 10
+    assert sklearn_linear_regression.linear.out_features == 5
+    assert isinstance(sklearn_linear_regression.get_representation(), torch.Tensor)
+
+
+def test_sklearn_logistic_regression():
+    sklearn_logistic_regression = SkLearnLogisticRegression()
+
+    # return empty values
+    assert sklearn_logistic_regression.classes() is None
+    assert sklearn_logistic_regression.bias() is None
+
+    sklearn_logistic_regression = SkLearnLogisticRegression()
+
+    X = torch.rand(10, 10)
+    y = torch.bernoulli(torch.rand(10, 1)).reshape(-1)
+
+    dataset = torch.utils.data.TensorDataset(X, y)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=10)
+    sklearn_logistic_regression.fit(train_data=data_loader)
+
+    assert sklearn_logistic_regression.classes() is not None
+    assert sklearn_logistic_regression.bias() is not None
+    assert sklearn_logistic_regression.linear.in_features == 10
+    assert sklearn_logistic_regression.linear.out_features == 1
+    assert isinstance(sklearn_logistic_regression.get_representation(), torch.Tensor)
+
+
+def test_sklearn_sgd_classifier():
+    sklearn_sgd_classifier = SkLearnSGDClassifier()
+
+    # return empty values
+    assert sklearn_sgd_classifier.classes() is None
+    assert sklearn_sgd_classifier.bias() is None
+
+    sklearn_sgd_classifier = SkLearnSGDClassifier()
+
+    X = torch.rand(10, 10)
+    y = torch.bernoulli(torch.rand(10, 1)).reshape(-1)
+
+    dataset = torch.utils.data.TensorDataset(X, y)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=10)
+    sklearn_sgd_classifier.fit(train_data=data_loader)
+
+    assert sklearn_sgd_classifier.classes() is not None
+    assert sklearn_sgd_classifier.bias() is not None
+    assert sklearn_sgd_classifier.linear.in_features == 10
+    assert sklearn_sgd_classifier.linear.out_features == 1
+    assert isinstance(sklearn_sgd_classifier.get_representation(), torch.Tensor)
 
 
 def test_linear_model_invalid_norm_type():
