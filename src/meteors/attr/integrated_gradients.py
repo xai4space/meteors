@@ -8,7 +8,7 @@ from captum.attr import IntegratedGradients as CaptumIntegratedGradients
 
 from meteors.utils.models import ExplainableModel
 from meteors import Image
-from meteors.attr import ImageAttributes
+from meteors.attr import ImageAttributes, Explainer
 
 ## VALIDATORS
 
@@ -40,14 +40,9 @@ def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None,
     return baseline
 
 
-class IntegratedGradients:
+class IntegratedGradients(Explainer):
     def __init__(self, explainable_model: ExplainableModel, multiply_by_inputs: bool = True):
-        if not isinstance(explainable_model, ExplainableModel):
-            raise TypeError(f"Expected ExplainableModel, but got {type(explainable_model)}")
-
-        logger.debug("Initializing IntegratedGradients explainer on model {explainable_model}")
-
-        self.model = explainable_model
+        super().__init__(explainable_model)
         self._ig = CaptumIntegratedGradients(explainable_model.forward_func, multiply_by_inputs=multiply_by_inputs)
 
     def attribute(

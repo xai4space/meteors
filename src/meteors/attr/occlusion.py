@@ -9,20 +9,16 @@ from captum.attr import Occlusion as CaptumOcclusion
 from meteors.utils.models import ExplainableModel
 from meteors import Image
 from meteors.attr import ImageAttributes
+from meteors.attr import Explainer
 
 from .integrated_gradients import validate_and_transform_baseline
 
 ## VALIDATORS
 
 
-class Occlusion:
+class Occlusion(Explainer):
     def __init__(self, explainable_model: ExplainableModel, multiply_by_inputs: bool = True):
-        if not isinstance(explainable_model, ExplainableModel):
-            raise TypeError(f"Expected ExplainableModel, but got {type(explainable_model)}")
-
-        logger.debug("Initializing Occlusion explainer on model {explainable_model}")
-
-        self.model = explainable_model
+        super().__init__(explainable_model)
         self._occlusion = CaptumOcclusion(explainable_model.forward_func)
 
     def attribute(

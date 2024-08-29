@@ -9,17 +9,15 @@ from meteors.utils.models import ExplainableModel
 from meteors import Image
 from meteors.attr import ImageAttributes
 
+from meteors.attr import Explainer
+
 ## VALIDATORS
 
 
-class Saliency:
+class Saliency(Explainer):
     def __init__(self, explainable_model: ExplainableModel, multiply_by_inputs: bool = True):
-        if not isinstance(explainable_model, ExplainableModel):
-            raise TypeError(f"Expected ExplainableModel, but got {type(explainable_model)}")
+        super().__init__(explainable_model)
 
-        logger.debug("Initializing Saliency explainer on model {explainable_model}")
-
-        self.model = explainable_model
         self._saliency = CaptumSaliency(explainable_model.forward_func, multiply_by_inputs)
 
     def attribute(

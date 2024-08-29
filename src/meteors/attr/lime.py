@@ -300,7 +300,8 @@ class Lime(Explainer):
         similarity_func: Callable[[torch.Tensor], torch.Tensor] | None = None,
         perturb_func: Callable[[torch.Tensor], torch.Tensor] | None = None,
     ):
-        super().__init__(explainable_model, interpretable_model)
+        super().__init__(explainable_model)
+        self.interpretable_model = interpretable_model
         self._lime = self._construct_lime(
             self.explainable_model.forward_func, interpretable_model, similarity_func, perturb_func
         )
