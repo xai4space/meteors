@@ -17,10 +17,10 @@ class Saliency:
         if not isinstance(explainable_model, ExplainableModel):
             raise TypeError(f"Expected ExplainableModel, but got {type(explainable_model)}")
 
-        logger.debug("Initializing IntegratedGradients explainer on model {explainable_model}")
+        logger.debug("Initializing Saliency explainer on model {explainable_model}")
 
         self.model = explainable_model
-        self._saliency = CaptumSaliency(explainable_model.forward_func)
+        self._saliency = CaptumSaliency(explainable_model.forward_func, multiply_by_inputs)
 
     def attribute(
         self,
