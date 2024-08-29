@@ -1460,6 +1460,7 @@ class Lime(Explainer):
         segmentation_mask: np.ndarray | torch.Tensor | None = None,
         target: int | None = None,
         segmentation_method: Literal["slic", "patch"] = "slic",
+        model_segmentation_postprocessing_for_segmentation_problem_type:  Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
         **segmentation_method_params: Any,
     ) -> ImageSpatialAttributes:
         """
@@ -1482,6 +1483,11 @@ class Lime(Explainer):
                 Defaults to None.
             segmentation_method (Literal["slic", "patch"], optional):
                 Segmentation method used only if `segmentation_mask` is None. Defaults to "slic".
+            model_segmentation_postprocessing_for_segmentation_problem_type (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
+                A segmentation postprocessing function for segmentation problem type. This is required for segmentation problem type as
+                lime surrogate model needs to be optimized on the 1d output, and the model should be able to modify the model output with
+                inner lime active region mask as input and return the 1d output (for example number of pixel for each class) and not class mask.
+                    Defaults to None.
             **segmentation_method_params (Any): Additional parameters for the segmentation method.
 
         Returns:
@@ -1490,7 +1496,6 @@ class Lime(Explainer):
 
         Raises:
             ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
-            ValueError: If the explainable model problem type is not supported.
             AssertionError: If the image is not an instance of the Image class.
 
         Examples:
@@ -1513,10 +1518,19 @@ class Lime(Explainer):
         if self._lime is None or not isinstance(self._lime, LimeBase):
             raise ValueError("Lime object not initialized")
 
-        if self.explainable_model.problem_type not in ["regression", "classification"]:
-            raise ValueError("For now only the `regression` and `classification` problem is supported")
-
         assert isinstance(image, Image), "Image should be an instance of Image class"
+        
+        if self.explainable_model.problem_type == "segmentation":
+            assert model_segmentation_postprocessing_for_segmentation_problem_type, (
+                "model_segmentation_postprocessing_for_segmentation_problem_type is required for segmentation problem type, "
+                "please provide the model_segmentation_postprocessing_for_segmentation_problem_type."
+                "For a reference we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
+            )
+        elif model_segmentation_postprocessing_for_segmentation_problem_type is not None:
+            logger.warning(
+                "model_segmentation_postprocessing_for_segmentation_problem_type is provided but the problem is not segmentation, will be ignored"
+            )
+            model_segmentation_postprocessing_for_segmentation_problem_type = None
 
         if segmentation_mask is None:
             segmentation_mask = self.get_segmentation_mask(image, segmentation_method, **segmentation_method_params)
@@ -1533,6 +1547,7 @@ class Lime(Explainer):
             feature_mask=segmentation_mask.unsqueeze(0),
             n_samples=10,
             perturbations_per_eval=4,
+            model_postprocessing=model_segmentation_postprocessing_for_segmentation_problem_type,
             show_progress=True,
             return_input_shape=True,
         )
@@ -1552,6 +1567,7 @@ class Lime(Explainer):
         band_mask: np.ndarray | torch.Tensor | None = None,
         target=None,
         band_names: list[str | list[str]] | dict[tuple[str, ...] | str, int] | None = None,
+        model_segmentation_postprocessing_for_segmentation_problem_type: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
         verbose=False,
     ) -> ImageSpectralAttributes:
         """
@@ -1570,6 +1586,11 @@ class Lime(Explainer):
             target (int, optional): If the model creates more than one output, it analyzes the given target.
                 Defaults to None.
             band_names (list[str] | dict[str | tuple[str, ...], int] | None, optional): Band names. Defaults to None.
+            model_segmentation_postprocessing_for_segmentation_problem_type: (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
+                A segmentation postprocessing function for segmentation problem type. This is required for segmentation problem type as
+                lime surrogate model needs to be optimized on the 1d output, and the model should be able to modify the model output with
+                inner lime active region mask as input and return the 1d output (for example number of pixel for each class) and not class mask.
+                Defaults to None.
             verbose (bool, optional): Specifies whether to show progress during the attribution process. Defaults to False.
 
         Returns:
@@ -1605,8 +1626,17 @@ class Lime(Explainer):
         if self._lime is None or not isinstance(self._lime, LimeBase):
             raise ValueError("Lime object not initialized")
 
-        if self.explainable_model.problem_type not in ["regression", "classification"]:
-            raise ValueError("For now only the `regression` and `classification` problem is supported")
+        if self.explainable_model.problem_type == "segmentation":
+            assert model_segmentation_postprocessing_for_segmentation_problem_type, (
+                "model_segmentation_postprocessing_for_segmentation_problem_type is required for segmentation problem type, "
+                "please provide the model_segmentation_postprocessing_for_segmentation_problem_type."
+                "For a reference we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
+            )
+        elif model_segmentation_postprocessing_for_segmentation_problem_type is not None:
+            logger.warning(
+                "model_segmentation_postprocessing_for_segmentation_problem_type is provided but the problem is not segmentation, will be ignored"
+            )
+            model_segmentation_postprocessing_for_segmentation_problem_type = None
 
         assert isinstance(image, Image), "Image should be an instance of Image class"
 
@@ -1634,6 +1664,7 @@ class Lime(Explainer):
             feature_mask=band_mask.unsqueeze(0),
             n_samples=10,
             perturbations_per_eval=4,
+            model_postprocessing=model_segmentation_postprocessing_for_segmentation_problem_type,
             show_progress=verbose,
             return_input_shape=True,
         )
