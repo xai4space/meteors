@@ -15,10 +15,13 @@ from meteors.attr import Explainer
 
 
 class Saliency(Explainer):
-    def __init__(self, explainable_model: ExplainableModel, multiply_by_inputs: bool = True):
+    def __init__(
+        self,
+        explainable_model: ExplainableModel,
+    ):
         super().__init__(explainable_model)
 
-        self._saliency = CaptumSaliency(explainable_model.forward_func, multiply_by_inputs)
+        self._attribution_method = CaptumSaliency(explainable_model.forward_func)
 
     def attribute(
         self,
@@ -26,14 +29,14 @@ class Saliency(Explainer):
         target: int | None = None,
         abs: bool = True,
         additional_forward_args: Any = None,
-    ):
-        if self._saliency is None:
+    ) -> ImageAttributes:
+        if self._attribution_method is None:
             raise ValueError("Saliency explainer is not initialized")
 
         logger.debug("Applying Saliency on the image")
 
-        saliency_attributions = self._saliency.attribute(
-            image, target=target, abs=abs, additional_forward_args=additional_forward_args
+        saliency_attributions = self._attribution_method.attribute(
+            image.image, target=target, abs=abs, additional_forward_args=additional_forward_args
         )
         attributes = ImageAttributes(image=image, attributes=saliency_attributions, attribution_method="saliency")
 

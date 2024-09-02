@@ -43,7 +43,9 @@ def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None,
 class IntegratedGradients(Explainer):
     def __init__(self, explainable_model: ExplainableModel, multiply_by_inputs: bool = True):
         super().__init__(explainable_model)
-        self._ig = CaptumIntegratedGradients(explainable_model.forward_func, multiply_by_inputs=multiply_by_inputs)
+        self._attribution_method = CaptumIntegratedGradients(
+            explainable_model.forward_func, multiply_by_inputs=multiply_by_inputs
+        )
 
     def attribute(
         self,
@@ -54,16 +56,20 @@ class IntegratedGradients(Explainer):
             "riemann_right", "riemann_left", "riemann_middle", "riemann_trapezoid", "gausslegendre"
         ] = "gausslegendre",
         return_convergence_delta: bool = False,
-    ):
-        if self._ig is None:
+    ) -> ImageAttributes:
+        if self._attribution_method is None:
             raise ValueError("IntegratedGradients explainer is not initialized")
 
         baseline = validate_and_transform_baseline(baseline, image)
 
         logger.debug("Applying IntegratedGradients on the image")
 
-        ig_attributions = self._ig.attribute(
-            image, baselines=baseline, target=target, method=method, return_convergence_delta=return_convergence_delta
+        ig_attributions = self._attribution_method.attribute(
+            image.image,
+            baselines=baseline,
+            target=target,
+            method=method,
+            return_convergence_delta=return_convergence_delta,
         )
         if return_convergence_delta:
             attributions, approximation_error = ig_attributions
@@ -78,8 +84,3 @@ class IntegratedGradients(Explainer):
         )
 
         return attributes
-
-    def has_convergence_delta(self):
-        if self._ig is None:
-            raise ValueError("IntegratedGradients explainer is not initialized")
-        return self._ig.has_convergence_delta()

@@ -19,7 +19,7 @@ from .integrated_gradients import validate_and_transform_baseline
 class Occlusion(Explainer):
     def __init__(self, explainable_model: ExplainableModel, multiply_by_inputs: bool = True):
         super().__init__(explainable_model)
-        self._occlusion = CaptumOcclusion(explainable_model.forward_func)
+        self._attribution_method = CaptumOcclusion(explainable_model.forward_func)
 
     def attribute(
         self,
@@ -32,16 +32,16 @@ class Occlusion(Explainer):
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-    ):
-        if self._occlusion is None:
+    ) -> ImageAttributes:
+        if self._attribution_method is None:
             raise ValueError("Occlusion explainer is not initialized")
 
         baseline = validate_and_transform_baseline(baseline, image)
 
         logger.debug("Applying Occlusion on the image")
 
-        occlusion_attributions = self._occlusion.attribute(
-            image,
+        occlusion_attributions = self._attribution_method.attribute(
+            image.image,
             sliding_window_shapes=sliding_window_shapes,
             strides=strides,
             baseline=baseline,

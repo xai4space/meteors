@@ -943,6 +943,27 @@ class Lime(Explainer):
             return band_mask, dict_labels_to_segment_ids
         return band_mask
 
+    def attribute(
+        self, attribution_type: Literal["spatial", "spectral"], image: Image, target: int | None = None, **kwargs
+    ) -> ImageLimeSpectralAttributes | ImageLimeSpatialAttributes:
+        """A wrapper function to attribute the image using the LIME method. It executes either the
+        `get_spatial_attributes` or `get_spectral_attributes` method based on the provided `attribution_type`. For more
+        detailed description of the methods, please refer to the respective method documentation.
+
+        Args:
+            attribution_type (Literal["spatial", "spectral"]): An attribution type to be executed.
+            image (Image): an image on which the explanation is performed.
+            target (int | None, optional): Target output index for the explanation. Defaults to None.
+
+        Returns:
+            torch.Tensor: _description_
+        """
+        if attribution_type == "spatial":
+            return self.get_spatial_attributes(image, target=target, **kwargs)
+        elif attribution_type == "spectral":
+            return self.get_spectral_attributes(image, target=target, **kwargs)
+        raise ValueError(f"Unsupported attribution type: {attribution_type}")
+
     def get_spatial_attributes(
         self,
         image: Image,

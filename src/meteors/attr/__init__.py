@@ -5,7 +5,8 @@ from .lime import Lime
 from .integrated_gradients import IntegratedGradients
 from .saliency import Saliency
 from .occlusion import Occlusion
-
+from .input_x_gradients import InputXGradient
+from .noise_tunnel import NoiseTunnel
 
 __all__ = [
     "ImageAttributes",
@@ -13,9 +14,11 @@ __all__ = [
     "ImageLimeSpectralAttributes",
     "Explainer",
     "IntegratedGradients",
+    "InputXGradient",
     "Lime",
     "Saliency",
     "Occlusion",
+    "NoiseTunnel",
 ]
 
 

@@ -330,44 +330,6 @@ def test_adjust_and_validate_segment_ranges():
 ###################################################################
 
 
-def test_explainer():
-    # Create mock objects for ExplainableModel and InterpretableModel
-    explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(1, 2, 3)), problem_type="regression")
-    interpretable_model = SkLearnLasso()
-
-    # Create a Explainer object
-    explainer = mt_lime.Explainer(explainable_model, interpretable_model)
-
-    # Assert that the explainable_model and interpretable_model attributes are set correctly
-    assert explainer.explainable_model == explainable_model
-    assert explainer.interpretable_model == interpretable_model
-
-    # Test case 1: Valid input
-    def dumb_model(image: torch.Tensor) -> torch.Tensor:
-        output = torch.empty((image.shape[0], 2))
-        output[:, 0] = 0
-        output[:, 1] = 1
-        return output
-
-    explainable_model = ExplainableModel(forward_func=dumb_model, problem_type="regression")
-    interpretable_model = SkLearnLasso(alpha=0.1)
-    # Create a sample Lime object
-    lime = mt_lime.Explainer(explainable_model, interpretable_model)
-
-    # Assert that the explainable_model and interpretable_model attributes are set correctly
-    assert lime.explainable_model == explainable_model
-    assert lime.interpretable_model == interpretable_model
-
-    # Test case 2: different device
-    device = torch.device("cpu")
-    explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(1, 2, 3)), problem_type="regression")
-    interpretable_model = SkLearnLasso()
-    explainer = mt_lime.Explainer(explainable_model, interpretable_model)
-
-    # Call the to method
-    explainer.to(device)
-
-
 def test_lime_explainer():
     # Create mock objects for ExplainableModel and InterpretableModel
     explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(1, 2, 3)), problem_type="regression")
