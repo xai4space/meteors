@@ -232,7 +232,7 @@ def visualize_spectral_attributes_by_waveband(
 
         if aggregate_results:
             ax.errorbar(
-                current_wavelengths,
+                current_wavelengths.numpy(),
                 current_attribution_map.mean(dim=0),
                 yerr=current_attribution_map.std(dim=0),
                 label=band_name,
@@ -241,7 +241,7 @@ def visualize_spectral_attributes_by_waveband(
             )
         else:
             ax.scatter(
-                current_wavelengths,
+                current_wavelengths.numpy(),
                 current_attribution_map.mean(dim=0),
                 label=band_name,
                 s=50,
