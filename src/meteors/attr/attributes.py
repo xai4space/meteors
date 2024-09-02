@@ -19,12 +19,12 @@ from meteors.image import resolve_inference_device
 # Constants
 HSI_AXIS_ORDER = [2, 1, 0]  # (bands, rows, columns)
 AVAILABLE_ATTRIBUTION_METHODS = [
-    "lime",
-    "integrated gradients",
-    "saliency",
-    "input x gradients",
-    "occlusion",
-    "noise tunnel",
+    "Hyper Lime",
+    "Hyper Integrated Gradients",
+    "Hyper Saliency",
+    "Hyper Input X Gradient",
+    "Hyper Occlusion",
+    "Hyper Noise Tunnel",
 ]
 
 
@@ -176,9 +176,9 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
 
 
 def validate_attribution_method(value: str) -> str:
-    value = value.lower()
+    value = value.title()
     if value not in AVAILABLE_ATTRIBUTION_METHODS:
-        raise ValueError(f"Attribution method must be one of {AVAILABLE_ATTRIBUTION_METHODS}")
+        raise ValueError(f"Attribution method must be one of {AVAILABLE_ATTRIBUTION_METHODS}, got {value} instead")
     return value
 
 
@@ -296,11 +296,11 @@ class ImageAttributes(BaseModel):
         Returns:
             Self: The current instance of the class.
         """
-        if self.attribution_method != "lime" and self.score is not None:
+        if self.attribution_method.title() != "Hyper Lime" and self.score is not None:
             raise ValueError("Score should not be provided for non-LIME attributes")
-        if self.attribution_method == "lime" and self.score is None:
+        if self.attribution_method.title() == "Hyper Lime" and self.score is None:
             raise ValueError("Score must be provided for LIME attributes")
-        if self.attribution_method != "integrated gradients" and self.approximation_error is not None:
+        if self.attribution_method.title() != "Hyper Integrated Gradients" and self.approximation_error is not None:
             raise ValueError("Approximation error should only be provided for IG attributes")
         return self
 
@@ -354,11 +354,11 @@ class ImageLimeSpatialAttributes(ImageAttributes):
     ]
     attribution_method: Annotated[
         str,
-        Literal["lime"],
+        Literal["Hyper Lime"],
         Field(
             description="The method used to generate the explanation.",
         ),
-    ] = "lime"
+    ] = "Hyper Lime"
 
     @property
     def spatial_segmentation_mask(self) -> torch.Tensor:
@@ -463,11 +463,11 @@ class ImageLimeSpectralAttributes(ImageAttributes):
     ]
     attribution_method: Annotated[
         str,
-        Literal["lime"],
+        Literal["Hyper Lime"],
         Field(
             description="The method used to generate the explanation.",
         ),
-    ] = "lime"
+    ] = "Hyper Lime"
 
     @property
     def spectral_band_mask(self) -> torch.Tensor:

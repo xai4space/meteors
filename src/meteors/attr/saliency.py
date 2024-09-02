@@ -38,6 +38,6 @@ class Saliency(Explainer):
         saliency_attributions = self._attribution_method.attribute(
             image.image, target=target, abs=abs, additional_forward_args=additional_forward_args
         )
-        attributes = ImageAttributes(image=image, attributes=saliency_attributions, attribution_method="saliency")
+        attributes = ImageAttributes(image=image, attributes=saliency_attributions, attribution_method=self.get_name())
 
         return attributes

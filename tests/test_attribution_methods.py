@@ -46,10 +46,6 @@ def test_explainer():
     # Call the to method
     explainer.to(device)
 
-    # not implemented
-    with pytest.raises(NotImplementedError):
-        explainer.attribute(image=Image(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200]))
-
     # chained explainer - similar to the NoiseTunnel class
     chained_explainer = Explainer(explainer)
 
@@ -63,7 +59,7 @@ def test_integrated_gradients():
     ig = IntegratedGradients(toy_model)
 
     assert ig is not None
-    assert ig._ig is not None
+    assert ig._attribution_method is not None
 
     image = Image(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
     attributions = ig.attribute(image)
@@ -110,9 +106,9 @@ def test_occlusion():
 
     assert occlusion is not None
 
-    image = Image(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
-    attributions = occlusion.attribute(image)
+    image = Image(image=torch.rand(3, 10, 10), wavelengths=[0, 100, 200])
+    attributions = occlusion.attribute(image, sliding_window_shapes=(2, 2), strides=(2, 2))
     assert attributions.attributes.shape == image.image.shape
 
 
-test_noise_tunnel()
+test_occlusion()

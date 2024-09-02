@@ -10,10 +10,7 @@ from meteors.utils.models import ExplainableModel
 from meteors import Image
 from meteors.attr import ImageAttributes
 from meteors.attr import Explainer
-
 from .integrated_gradients import validate_and_transform_baseline
-
-## VALIDATORS
 
 
 class Occlusion(Explainer):
@@ -26,9 +23,8 @@ class Occlusion(Explainer):
         image: Image,
         sliding_window_shapes,
         strides=None,  # TODO add default value
-        baseline: int | float | torch.Tensor = None,
         target: int | None = None,
-        abs: bool = True,
+        baseline: int | float | torch.Tensor = None,
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
@@ -36,21 +32,21 @@ class Occlusion(Explainer):
         if self._attribution_method is None:
             raise ValueError("Occlusion explainer is not initialized")
 
-        baseline = validate_and_transform_baseline(baseline, image)
-
         logger.debug("Applying Occlusion on the image")
+
+        baseline = validate_and_transform_baseline(baseline, image)
 
         occlusion_attributions = self._attribution_method.attribute(
             image.image,
             sliding_window_shapes=sliding_window_shapes,
             strides=strides,
-            baseline=baseline,
             target=target,
-            abs=abs,
+            baselines=baseline,
             additional_forward_args=additional_forward_args,
             perturbations_per_eval=perturbations_per_eval,
             show_progress=show_progress,
         )
-        attributes = ImageAttributes(image=image, attributes=occlusion_attributions, attribution_method="occlusion")
+        occlusion_attributions = occlusion_attributions.repeat(image.image.shape[0], 1, 1)
+        attributes = ImageAttributes(image=image, attributes=occlusion_attributions, attribution_method=self.get_name())
 
         return attributes

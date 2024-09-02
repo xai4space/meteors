@@ -46,6 +46,8 @@ class NoiseTunnel(Explainer):
             draw_baseline_from_distrib=draw_baseline_from_distrib,
         )
 
-        attributes = ImageAttributes(image=image, attributes=noise_tunnel_attributes, attribution_method="noise tunnel")
+        attributes = ImageAttributes(
+            image=image, attributes=noise_tunnel_attributes, attribution_method=self.get_name()
+        )
 
         return attributes

@@ -105,7 +105,7 @@ def test_visualize_image_with_image_attributes_object():
     image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
     attributes = torch.ones_like(image.image)
     score = 0.5
-    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="lime")
+    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="hyper lime")
     # Call the visualize_image function
     ax = visualize.visualize_image(image_attributes, None)
 
@@ -158,7 +158,7 @@ def test_visualize_image_with_image_attributes_object_and_ax():
     image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
     attributes = torch.ones_like(image.image)
     score = 0.5
-    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="lime")
+    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="hyper lime")
 
     # Create an Axes object
     ax = plt.gca()
@@ -683,3 +683,6 @@ def test_visualize_spectral_attributes():
     assert ax[1].get_title() == "Attributions by Magnitude"
     assert ax[1].get_xlabel() == "Group"
     assert ax[1].get_ylabel() == "Average Attribution Magnitude"
+
+
+test_visualize_spectral_attributes()

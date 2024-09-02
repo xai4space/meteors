@@ -80,7 +80,7 @@ class IntegratedGradients(Explainer):
             image=image,
             attributes=attributions,
             approximation_error=approximation_error,
-            attribution_method="integrated gradients",
+            attribution_method=self.get_name(),
         )
 
         return attributes
