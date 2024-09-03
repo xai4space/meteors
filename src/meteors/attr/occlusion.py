@@ -37,16 +37,17 @@ class Occlusion(Explainer):
         baseline = validate_and_transform_baseline(baseline, image)
 
         occlusion_attributions = self._attribution_method.attribute(
-            image.image,
-            sliding_window_shapes=sliding_window_shapes,
-            strides=strides,
+            image.image.unsqueeze(0),
+            sliding_window_shapes=(1,)
+            + sliding_window_shapes,  # I'am not sure about this scaling method - need to check how exactly occlusion modifies the image shape
+            strides=(1,) + strides,
             target=target,
             baselines=baseline,
             additional_forward_args=additional_forward_args,
             perturbations_per_eval=perturbations_per_eval,
             show_progress=show_progress,
         )
-        occlusion_attributions = occlusion_attributions.repeat(image.image.shape[0], 1, 1)
+        occlusion_attributions = occlusion_attributions.squeeze(0)
         attributes = ImageAttributes(image=image, attributes=occlusion_attributions, attribution_method=self.get_name())
 
         return attributes
