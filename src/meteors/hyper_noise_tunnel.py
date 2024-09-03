@@ -11,7 +11,7 @@ from torch import Tensor
 from captum.attr._utils.attribution import GradientAttribution
 
 
-class HyperNoiseTunnel:
+class BaseHyperNoiseTunnel:
     def __init__(self, model: GradientAttribution):
         self.attribute_main = model.attribute
         sig = inspect.signature(self.attribute_main)
@@ -64,7 +64,7 @@ class HyperNoiseTunnel:
 
         for batch in range(0, inputs.shape[0]):
             input = inputs[batch]
-            perturbed_input = HyperNoiseTunnel.perturb_input(input, baselines, n_samples)
+            perturbed_input = BaseHyperNoiseTunnel.perturb_input(input, baselines, n_samples)
             for i in range(0, n_samples, steps_per_batch):
                 perturbed_batch = perturbed_input[i : i + steps_per_batch]
                 attributions[i : i + steps_per_batch, batch] = self.attribute_main(
@@ -84,3 +84,11 @@ class HyperNoiseTunnel:
             return (attributions**2).mean(dim=0)
         else:
             return (attributions**2 - attributions.mean(dim=0) ** 2).mean(dim=0)
+
+
+class HyperNoiseTunnel:
+    def __init__(self, attribution_method):
+        self._attribution_method = BaseHyperNoiseTunnel(attribution_method._attribution_method)
+
+    def attribute(self, image, target):
+        return self._attribution_method.attribute(image, target=target)
