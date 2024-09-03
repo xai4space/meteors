@@ -7,6 +7,8 @@ from .lime_visualize import (
 
 from .image_visualize import visualize_image
 
+from .attr_visualize import visualize_attributes
+
 
 __all__ = [
     "visualize_spectral_attributes_by_waveband",
@@ -14,6 +16,7 @@ __all__ = [
     "visualize_spectral_attributes",
     "visualize_spatial_attributes",
     "visualize_image",
+    "visualize_attributes",
 ]
 
 
