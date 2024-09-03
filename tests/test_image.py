@@ -126,6 +126,11 @@ def test_validate_orientation():
     result = mt_image.validate_orientation(orientation)
     assert result == orientation
 
+    # test conversion of string to tuple
+    orientation = "CHW"
+    result = mt_image.validate_orientation(orientation)
+    assert result == ("C", "H", "W")
+
     # Test valid orientation with list
     orientation = ["C", "H", "W"]
     result = mt_image.validate_orientation(orientation)
@@ -140,6 +145,32 @@ def test_validate_orientation():
     orientation = ("C", "H", "A")
     with pytest.raises(ValueError):
         mt_image.validate_orientation(orientation)
+
+    # test invalid orientation with repeated elements
+    orientation = "HHH"
+    with pytest.raises(ValueError):
+        mt_image.validate_orientation(orientation)
+
+
+def test_orientation_change():
+    tensor_image = torch.rand((4, 3, 2))
+    image = mt_image.Image(image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"))
+
+    assert image.orientation == ("C", "H", "W")
+
+    # change of orientation with copy
+    new_orientation = ("H", "W", "C")
+    new_image = image.change_orientation(new_orientation, inplace=False)
+
+    assert new_image.orientation == new_orientation
+    assert new_image.image.shape == torch.Size([3, 2, 4])
+    assert image.orientation == ("C", "H", "W")
+
+    # change of orientation inplace
+    new_orientation = ("H", "C", "W")
+    image.change_orientation(new_orientation, inplace=True)
+    assert image.orientation == new_orientation
+    assert image.image.shape == torch.Size([3, 4, 2])
 
 
 def test_ensure_image_tensor():
