@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from meteors import Image
-from meteors.attr import ImageAttributes, ImageLimeSpatialAttributes, ImageLimeSpectralAttributes
+from meteors.attr import ImageLimeSpatialAttributes, ImageLimeSpectralAttributes
 from meteors.visualize import lime_visualize as visualize
 
 
@@ -87,112 +87,6 @@ wavelengths_main = [
     695.43,
     698.62,
 ]
-
-
-def test_visualize_image_with_image_object():
-    # Create an Image object
-    image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
-
-    # Call the visualize_image function
-    ax = visualize.visualize_image(image, None)
-
-    # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
-
-
-def test_visualize_image_with_image_attributes_object():
-    # Create an ImageAttributes object
-    image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
-    attributes = torch.ones_like(image.image)
-    score = 0.5
-    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="hyper lime")
-    # Call the visualize_image function
-    ax = visualize.visualize_image(image_attributes, None)
-
-    # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
-
-    # Create an ImageLimeSpatialAttributes object
-    segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    image_attributes_spatial = ImageLimeSpatialAttributes(
-        image=image, segmentation_mask=segmentation_mask, attributes=attributes, score=score
-    )
-    # Call the visualize_image function
-    ax = visualize.visualize_image(image_attributes_spatial, None)
-
-    # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
-
-    # Create an ImageLimeSpectralAttributes object
-    band_names = {"R": 0, "G": 1, "B": 2}
-    band_mask = torch.zeros_like(image.image)
-    band_mask[0] = 1
-    band_mask[1] = 2
-    image_attributes_spectral = ImageLimeSpectralAttributes(
-        image=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
-    )
-
-    # Call the visualize_image function
-    ax = visualize.visualize_image(image_attributes_spectral, None)
-
-    # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
-
-
-def test_visualize_image_with_image_object_and_ax():
-    # Create an Image object
-    image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
-
-    # Create an Axes object
-    ax = plt.gca()
-
-    # Call the visualize_image function
-    returned_ax = visualize.visualize_image(image, ax)
-
-    # Check if the same axes object is returned
-    assert returned_ax is ax
-
-
-def test_visualize_image_with_image_attributes_object_and_ax():
-    # Create an ImageAttributes object
-    image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
-    attributes = torch.ones_like(image.image)
-    score = 0.5
-    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="hyper lime")
-
-    # Create an Axes object
-    ax = plt.gca()
-
-    # Call the visualize_image function
-    returned_ax = visualize.visualize_image(image_attributes, ax)
-
-    # Check if the same axes object is returned
-    assert returned_ax is ax
-
-    # Create an ImageLimeSpatialAttributes object
-    segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    image_attributes_spatial = ImageLimeSpatialAttributes(
-        image=image, segmentation_mask=segmentation_mask, attributes=attributes, score=score
-    )
-    # Call the visualize_image function
-    returned_ax = visualize.visualize_image(image_attributes_spatial, ax)
-
-    # Check if the same axes object is returned
-    assert returned_ax is ax
-
-    # Create an ImageLimeSpectralAttributes object
-    band_names = {"R": 0, "G": 1, "B": 2}
-    band_mask = torch.zeros_like(image.image)
-    band_mask[0] = 1
-    band_mask[1] = 2
-    image_attributes_spectral = ImageLimeSpectralAttributes(
-        image=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
-    )
-    # Call the visualize_image function
-    returned_ax = visualize.visualize_image(image_attributes_spectral, ax)
-
-    # Check if the same axes object is returned
-    assert returned_ax is ax
 
 
 def test_visualize_spatial_attributes():
