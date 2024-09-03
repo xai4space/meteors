@@ -172,6 +172,24 @@ def test_orientation_change():
     assert image.orientation == new_orientation
     assert image.image.shape == torch.Size([3, 4, 2])
 
+    # test the case where the orientation is the same
+    new_orientation = ("H", "C", "W")
+    image.change_orientation(new_orientation, inplace=True)
+    assert image.orientation == new_orientation
+
+    # test case with binary mask
+    tensor_image = torch.rand((4, 3, 2))
+    binary_mask = torch.ones((4, 3, 2), dtype=torch.bool)
+    image = mt_image.Image(
+        image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"), binary_mask=binary_mask
+    )
+
+    assert image.orientation == ("C", "H", "W")
+
+    image.change_orientation(new_orientation, inplace=True)
+    assert image.orientation == new_orientation
+    assert image.binary_mask.shape == torch.Size([3, 4, 2])
+
 
 def test_ensure_image_tensor():
     # Test ensure_image_tensor as numpy array
