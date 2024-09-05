@@ -1385,3 +1385,74 @@ def test_get_spectral_attributes():
     # Call the get_spectral_attributes method
     with pytest.raises(ValueError):
         spectral_attributes = lime.get_spectral_attributes(image, band_mask, band_names=band_names, target=0)
+
+
+def test_attribute_wrapper():
+    def dumb_model(image: torch.Tensor) -> torch.Tensor:
+        output = torch.empty((image.shape[0], 2))
+        output[:, 0] = 0
+        output[:, 1] = 1
+        return output
+
+    # Create a sample image
+    wavelengths = [400, 450, 500, 550, 600, 650, 700]
+    image = mt.Image(image=torch.randn(len(wavelengths), 240, 240), wavelengths=wavelengths)
+
+    # Create a sample band mask
+    band_mask = torch.zeros_like(image.image, dtype=int)
+    band_mask[0] = 1
+    band_mask[1] = 2
+
+    # Create a sample band names dictionary
+    band_names = {"R": 0, "G": 1, "B": 2}
+
+    # Create a sample Lime object
+    lime = mt_lime.Lime(
+        explainable_model=ExplainableModel(dumb_model, "regression"), interpretable_model=SkLearnLasso(alpha=0.9)
+    )
+
+    # Call the get_spectral_attributes method
+    spectral_attributes = lime.attribute("spectral", image, band_mask=band_mask, band_names=band_names, target=0)
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
+    assert spectral_attributes.image == image
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names == band_names
+    assert spectral_attributes.score <= 1.0 and spectral_attributes.score >= 0.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == image.image.shape
+
+    spectral_attributes_get_method = lime.get_spectral_attributes(image, band_mask, band_names=band_names, target=0)
+    assert torch.equal(spectral_attributes.attributes, spectral_attributes_get_method.attributes)
+    assert spectral_attributes.score == spectral_attributes_get_method.score
+    assert torch.equal(spectral_attributes.band_mask, spectral_attributes_get_method.band_mask)
+    assert spectral_attributes.band_names == spectral_attributes_get_method.band_names
+
+    # Test case 2: Spatial attributes
+    def dumb_model(image: torch.Tensor) -> torch.Tensor:
+        output = torch.empty((image.shape[0], 2))
+        output[:, 0] = 0
+        output[:, 1] = 1
+        return output
+
+    # Create a sample image
+    wavelengths = torch.tensor([400, 450, 500, 550, 600])
+    image = mt.Image(image=torch.randn(5, 10, 10), wavelengths=wavelengths)
+
+    # Create a sample segmentation mask
+    segmentation_mask = torch.randint(1, 4, (1, 10, 10))
+
+    spatial_attributes = lime.attribute("spatial", image, segmentation_mask=segmentation_mask, target=0)
+
+    # Assert the output type and properties
+    assert isinstance(spatial_attributes, mt.attr.ImageLimeSpatialAttributes)
+    assert spatial_attributes.image == image
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
+    assert spatial_attributes.attributes.shape == image.image.shape
+
+    spatial_attributes_get_method = lime.get_spatial_attributes(image, segmentation_mask, target=0)
+    assert torch.equal(spatial_attributes.attributes, spatial_attributes_get_method.attributes)
+    assert spatial_attributes.score == spatial_attributes_get_method.score
+    assert torch.equal(spatial_attributes.segmentation_mask, spatial_attributes_get_method.segmentation_mask)

@@ -950,19 +950,21 @@ class Lime(Explainer):
         `get_spatial_attributes` or `get_spectral_attributes` method based on the provided `attribution_type`. For more
         detailed description of the methods, please refer to the respective method documentation.
 
+        Additional, nondefault parameters, should be passed as keyword arguments to avoid misalignment of the arguments.
+
         Args:
             attribution_type (Literal["spatial", "spectral"]): An attribution type to be executed.
             image (Image): an image on which the explanation is performed.
             target (int | None, optional): Target output index for the explanation. Defaults to None.
 
         Returns:
-            torch.Tensor: _description_
+            ImageLimeSpectralAttributes | ImageLimeSpatialAttributes: An object containing the image, the attributions and additional information. In case the `attribution_type` is `spatial`, the object is of type `ImageLimeSpatialAttributes`, otherwise it is of type `ImageLimeSpectralAttributes`.
         """
         if attribution_type == "spatial":
             return self.get_spatial_attributes(image, target=target, **kwargs)
         elif attribution_type == "spectral":
             return self.get_spectral_attributes(image, target=target, **kwargs)
-        raise ValueError(f"Unsupported attribution type: {attribution_type}")
+        raise ValueError(f"Unsupported attribution type: {attribution_type}. Use 'spatial' or 'spectral'")
 
     def get_spatial_attributes(
         self,
