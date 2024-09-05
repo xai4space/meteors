@@ -6,6 +6,8 @@ from abc import ABC
 from loguru import logger
 from functools import cached_property
 
+from captum.attr import Attribution
+
 
 import torch
 
@@ -39,7 +41,9 @@ class Explainer(ABC):
         if not isinstance(callable, ExplainableModel) and not isinstance(callable, Explainer):
             raise TypeError(f"Expected ExplainableModel or Explainer as callable, but got {type(callable)}")
         self.chained_explainer = None
-        self._attribution_method = None  # the inner attribution method coming from the captum library
+        self._attribution_method: Attribution | None = (
+            None  # the inner attribution method coming from the captum library
+        )
 
         self._is_final_explainer = (
             True  # flag to check whether there is a situation: Explainer(Explainer(Explainer(ExplainableModel)))

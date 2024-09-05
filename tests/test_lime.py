@@ -341,7 +341,7 @@ def test_lime_explainer():
     # Assert that the explainable_model and interpretable_model attributes are set correctly
     assert lime.explainable_model == explainable_model
     assert lime.interpretable_model == interpretable_model
-    assert lime._lime is not None
+    assert lime._attribution_method is not None
 
     # Test case 1: Valid input
     def dumb_model(image: torch.Tensor) -> torch.Tensor:
@@ -358,7 +358,7 @@ def test_lime_explainer():
     # Assert that the explainable_model and interpretable_model attributes are set correctly
     assert lime.explainable_model == explainable_model
     assert lime.interpretable_model == interpretable_model
-    assert lime._lime is not None
+    assert lime._attribution_method is not None
 
     # Test case 2: different lime parameters
     similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
@@ -373,7 +373,7 @@ def test_lime_explainer():
     # Assert that the explainable_model and interpretable_model attributes are set correctly
     assert lime.explainable_model == explainable_model
     assert lime.interpretable_model == interpretable_model
-    assert lime._lime is not None
+    assert lime._attribution_method is not None
 
 
 def test__get_slick_segmentation_mask():

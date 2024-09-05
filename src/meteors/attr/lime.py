@@ -302,7 +302,7 @@ class Lime(Explainer):
     ):
         super().__init__(explainable_model)
         self.interpretable_model = interpretable_model
-        self._lime = self._construct_lime(
+        self._attribution_method: LimeBase = self._construct_lime(
             self.explainable_model.forward_func, interpretable_model, similarity_func, perturb_func
         )
 
@@ -1022,7 +1022,7 @@ class Lime(Explainer):
             >>> spatial_attribution.score
             1.0
         """
-        if self._lime is None or not isinstance(self._lime, LimeBase):
+        if self._attribution_method is None or not isinstance(self._attribution_method, LimeBase):
             raise ValueError("Lime object not initialized")
 
         if self.explainable_model.problem_type != "regression":
@@ -1039,7 +1039,7 @@ class Lime(Explainer):
         image = image.to(self.device)
         segmentation_mask = segmentation_mask.to(self.device)
 
-        lime_attributes, score = self._lime.attribute(
+        lime_attributes, score = self._attribution_method.attribute(
             inputs=image.image.unsqueeze(0),
             target=target,
             feature_mask=segmentation_mask.unsqueeze(0),
@@ -1109,7 +1109,7 @@ class Lime(Explainer):
             1.0
         """
 
-        if self._lime is None or not isinstance(self._lime, LimeBase):
+        if self._attribution_method is None or not isinstance(self._attribution_method, LimeBase):
             raise ValueError("Lime object not initialized")
 
         if self.explainable_model.problem_type != "regression":
@@ -1135,7 +1135,7 @@ class Lime(Explainer):
         image = image.to(self.device)
         band_mask = band_mask.to(self.device)
 
-        lime_attributes, score = self._lime.attribute(
+        lime_attributes, score = self._attribution_method.attribute(
             inputs=image.image.unsqueeze(0),
             target=target,
             feature_mask=band_mask.unsqueeze(0),
