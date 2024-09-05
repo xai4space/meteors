@@ -9,9 +9,10 @@ import torch
 from torch import Tensor
 
 from captum.attr._utils.attribution import GradientAttribution
+from captum.attr import Attribution
 
 
-class BaseHyperNoiseTunnel:
+class BaseHyperNoiseTunnel(Attribution):
     def __init__(self, model: GradientAttribution):
         self.attribute_main = model.attribute
         sig = inspect.signature(self.attribute_main)
