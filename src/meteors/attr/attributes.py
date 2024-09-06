@@ -25,6 +25,7 @@ AVAILABLE_ATTRIBUTION_METHODS = [
     "Hyper Input X Gradient",
     "Hyper Occlusion",
     "Hyper Noise Tunnel",
+    "Hyper Hyper Noise Tunnel",
 ]
 
 

@@ -3,7 +3,10 @@ from __future__ import annotations
 from functools import partial
 import inspect
 
-from typing import Any, Union
+from typing import Any, Union, Literal
+
+from meteors.attr import Explainer, ImageAttributes
+from meteors.attr.explainer import validate_and_transform_baseline
 
 import torch
 from torch import Tensor
@@ -87,9 +90,35 @@ class BaseHyperNoiseTunnel(Attribution):
             return (attributions**2 - attributions.mean(dim=0) ** 2).mean(dim=0)
 
 
-class HyperNoiseTunnel:
+class HyperNoiseTunnel(Explainer):
     def __init__(self, attribution_method):
-        self._attribution_method = BaseHyperNoiseTunnel(attribution_method._attribution_method)
+        super().__init__(attribution_method)
+        if not isinstance(attribution_method, Explainer):
+            raise TypeError(f"Expected Explainer as attribution_method, but got {type(attribution_method)}")
+        if not attribution_method._attribution_method:
+            raise ValueError("Attribution method is not initialized")
+        self._attribution_method: Attribution = BaseHyperNoiseTunnel(attribution_method._attribution_method)
 
-    def attribute(self, image, target):
-        return self._attribution_method.attribute(image, target=target)
+    def attribute(
+        self,
+        image,
+        baselines=None,
+        target=None,
+        n_samples: int = 5,
+        steps_per_batch: int = 1,
+        method: Literal["smoothgrad", "smoothgrad_sq", "vargrad"] = "smoothgrad",
+    ):
+        baselines = validate_and_transform_baseline(baselines, image)
+
+        attributes = self._attribution_method.attribute(
+            image.image,
+            baselines=baselines,
+            target=target,
+            n_samples=n_samples,
+            steps_per_batch=steps_per_batch,
+            method=method,
+        )
+        attributes = attributes.squeeze(0)
+
+        image_attributes = ImageAttributes(image=image, attributes=attributes, attribution_method=self.get_name())
+        return image_attributes
