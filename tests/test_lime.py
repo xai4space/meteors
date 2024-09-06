@@ -1456,3 +1456,54 @@ def test_attribute_wrapper():
     assert torch.equal(spatial_attributes.attributes, spatial_attributes_get_method.attributes)
     assert spatial_attributes.score == spatial_attributes_get_method.score
     assert torch.equal(spatial_attributes.segmentation_mask, spatial_attributes_get_method.segmentation_mask)
+
+
+def test_validate_mask_shape():
+    def dumb_model(image: torch.Tensor) -> torch.Tensor:
+        output = torch.empty((image.shape[0], 2))
+        output[:, 0] = 0
+        output[:, 1] = 1
+        return output
+
+    # Create a sample image
+    wavelengths = [400, 450, 500, 550, 600, 650, 700]
+    image = mt.Image(image=torch.randn(len(wavelengths), 240, 240), wavelengths=wavelengths)
+
+    lime = mt_lime.Lime(
+        explainable_model=ExplainableModel(dumb_model, "regression"), interpretable_model=SkLearnLasso(alpha=0.9)
+    )
+
+    band_mask = torch.zeros((len(wavelengths), 240, 240), dtype=int)
+
+    from meteors.attr.lime import validate_mask_shape
+
+    validate_mask_shape("spectral", image, band_mask)  # correct shapes
+    broadcastable_band_mask = torch.zeros((len(wavelengths), 1, 1), dtype=int)
+    validate_mask_shape("spectral", image, broadcastable_band_mask)  # correct shapes
+
+    with pytest.raises(ValueError):
+        validate_mask_shape("spectral", image, torch.zeros((len(wavelengths), 241, 241), dtype=int))
+
+    with pytest.raises(ValueError):
+        validate_mask_shape("spectral", image, torch.zeros((1, 240, 1), dtype=int))
+
+    # spatial case
+    segmentation_mask = torch.zeros((len(wavelengths), 240, 240), dtype=int)
+    validate_mask_shape("spatial", image, segmentation_mask)  # correct shapes
+    broadcastable_segmentation_mask = torch.zeros((1, 240, 240), dtype=int)
+    validate_mask_shape("spatial", image, broadcastable_segmentation_mask)  # correct shapes
+
+    with pytest.raises(ValueError):
+        validate_mask_shape("spatial", image, torch.zeros((len(wavelengths), 241, 241), dtype=int))
+
+    with pytest.raises(ValueError):
+        validate_mask_shape("spatial", image, torch.zeros((1, 240, 1), dtype=int))  # to much to broadcast
+
+    validate_mask_shape("spectral", image, torch.zeros(len(wavelengths)))
+    validate_mask_shape("spatial", image, torch.zeros(240, 240))
+    # pass the validation
+    lime.attribute("spectral", image, band_mask=band_mask, target=0)
+    lime.attribute("spatial", image, segmentation_mask=segmentation_mask, target=0)
+
+
+test_validate_mask_shape()

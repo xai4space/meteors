@@ -279,6 +279,59 @@ def validate_segment_range(wavelengths: torch.Tensor, segment_range: list[tuple[
     return out_segment_range  # type: ignore
 
 
+def validate_mask_shape(problem_type: Literal["spatial", "spectral"], image: Image, mask: torch.Tensor) -> torch.Tensor:
+    """Validate mask (segmentation or band mask) shape against the image. The problem_type specifies whether the mask is
+    segmentation or band mask.
+
+    Args:
+        problem_type (Literal[&quot;spatial&quot;, &quot;spectral&quot;]): _description_
+        image (Image): An original image for which the mask is created
+        mask (torch.Tensor): A segmentation or band mask to be validated.
+
+    Raises:
+        ValueError: In case the shapes cannot be broadcasted, or the image and band mask orientation is invalid
+    Returns:
+        torch.Tensor: The validated mask
+    """
+
+    if problem_type not in ["spatial", "spectral"]:
+        raise ValueError(f"Unsupported problem type: {problem_type}")
+
+    image_shape = image.image.shape
+    mask_shape = mask.shape
+
+    if len(mask_shape) != 3:
+        raise ValueError(f"Mask should be a 3D tensor, but got shape: {mask_shape}")
+
+    try:
+        broadcasted_shape = torch.broadcast_shapes(image_shape, mask_shape)
+    except RuntimeError as e:
+        raise ValueError(
+            f"Cannot broadcast image and mask of shapes {image_shape} and {mask_shape} respectively: {e}"
+        ) from e
+
+    if broadcasted_shape != image_shape:
+        raise ValueError(f"Image and mask shapes are not compatible: {image_shape} and {mask_shape}")
+
+    # check on which dims the shapes match - the segmentation mask can differ only in the band dimension, band mask can differ in the height and width dimensions
+    shape_matches = [broadcasted_shape[i] == mask_shape[i] for i in range(3)]
+    orientation_mismatches = {image.orientation[i] for i in range(3) if not shape_matches[i]}
+
+    if problem_type == "spatial" and ("H" in orientation_mismatches or "W" in orientation_mismatches):
+        raise ValueError(
+            f"Image and mask orientation mismatch: {image.orientation} and {mask_shape}."
+            + "Segmentation mask should differ only in the band dimension"
+        )
+
+    if problem_type == "spectral" and "C" in orientation_mismatches:
+        raise ValueError(
+            f"Image and mask orientation mismatch: {image.orientation} and {mask_shape}."
+            + "Band mask should differ only in the height and width dimensions"
+        )
+
+    return mask
+
+
 class Lime(Explainer):
     """Lime class is a subclass of Explainer and represents the Lime explainer. Lime is an interpretable model-agnostic
     explanation method that explains the predictions of a black-box model by approximating it with a simpler
@@ -988,6 +1041,8 @@ class Lime(Explainer):
             image (Image): An `Image` object for which the attribution is performed.
             segmentation_mask (np.ndarray | torch.Tensor | None, optional):
                 A segmentation mask according to which the attribution should be performed.
+                The segmentation mask should have a 3D shape, which can be broadcastable to the shape of the input image.
+                The only dimension on which the image and the mask shapes can differ is the spectral dimension, marked with letter `C` in the `image.orientation` parameter.
                 If None, a new segmentation mask is created using the `segmentation_method`.
                     Additional parameters for the segmentation method may be passed as kwargs. Defaults to None.
             target (int, optional): If the model creates more than one output, it analyzes the given target.
@@ -1036,6 +1091,8 @@ class Lime(Explainer):
             segmentation_mask, "Segmentation mask should be None, numpy array, or torch tensor"
         )
 
+        segmentation_mask = validate_mask_shape("spatial", image, segmentation_mask)
+
         image = image.to(self.device)
         segmentation_mask = segmentation_mask.to(self.device)
 
@@ -1078,6 +1135,8 @@ class Lime(Explainer):
         Args:
             image (Image): An Image for which the attribution is performed.
             band_mask (np.ndarray | torch.Tensor | None, optional): Band mask that is used for the spectral attribution.
+                The band mask should have a 3D shape, which can be broadcastable to the shape of the input image.
+                The only dimensions on which the image and the mask shapes can differ is the height and width dimensions, marked with letters `H` and `W` in the `image.orientation` parameter.
                 If equals to None, the band mask is created within the function. Defaults to None.
             target (int, optional): If the model creates more than one output, it analyzes the given target.
                 Defaults to None.
@@ -1131,6 +1190,8 @@ class Lime(Explainer):
             # if isinstance(band_names, dict):
             #     assert set(unique_segments).issubset(set(band_names.values())), "Incorrect band names"
             logger.debug("Band names are provided, using them. In future it there should be an option to validate them")
+
+        band_mask = validate_mask_shape("spectral", image, band_mask)
 
         image = image.to(self.device)
         band_mask = band_mask.to(self.device)
