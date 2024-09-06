@@ -1499,8 +1499,12 @@ def test_validate_mask_shape():
     with pytest.raises(ValueError):
         validate_mask_shape("spatial", image, torch.zeros((1, 240, 1), dtype=int))  # to much to broadcast
 
-    validate_mask_shape("spectral", image, torch.zeros(len(wavelengths)))
-    validate_mask_shape("spatial", image, torch.zeros(240, 240))
+    # only 3D masks are allowed
+    with pytest.raises(ValueError):
+        validate_mask_shape("spectral", image, torch.zeros(len(wavelengths)))
+    with pytest.raises(ValueError):
+        validate_mask_shape("spatial", image, torch.zeros(240, 240))
+
     # pass the validation
     lime.attribute("spectral", image, band_mask=band_mask, target=0)
     lime.attribute("spatial", image, segmentation_mask=segmentation_mask, target=0)

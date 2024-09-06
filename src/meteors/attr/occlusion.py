@@ -10,7 +10,7 @@ from meteors.utils.models import ExplainableModel
 from meteors import Image
 from meteors.attr import ImageAttributes
 from meteors.attr import Explainer
-from .integrated_gradients import validate_and_transform_baseline
+from meteors.attr.explainer import validate_and_transform_baseline
 
 
 class Occlusion(Explainer):

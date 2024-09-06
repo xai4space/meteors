@@ -12,6 +12,7 @@ from captum.attr import Attribution
 import torch
 
 from meteors.utils.models import ExplainableModel
+from meteors import Image
 
 
 def validate_attribution_method_initialization(attribution_method: Explainer):
@@ -23,6 +24,33 @@ def validate_attribution_method_initialization(attribution_method: Explainer):
         )
     if attribution_method.explainable_model is None:
         raise ValueError(f"The attribution method {attribution_method.__class__.__name__} is not properly initialized")
+
+
+# @lru_cache(maxsize=32)
+def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None, image: Image) -> torch.Tensor:
+    """Function validates the baseline and transforms it to the same device as the image tensor.
+
+    Args:
+        baseline (int | float | torch.Tensor): _description_
+        image (Image): an Image object for which the baseline is being validated
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        torch.Tensor: _description_
+    """
+
+    if baseline is None:
+        baseline = 0
+    if isinstance(baseline, (int, float)):
+        baseline = torch.zeros_like(image.image) + baseline
+    elif isinstance(baseline, torch.Tensor):
+        if baseline.shape != image.image.shape:
+            raise ValueError(f"Baseline shape {baseline.shape} does not match image shape {image.image.shape}")
+
+    baseline = baseline.to(image.image.device)  # cast the baseline to the same device as the image tensor
+    return baseline
 
 
 ###################################################################
