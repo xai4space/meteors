@@ -1,21 +1,14 @@
 from .image import Image
 
-from .lime import Lime, ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
-
-from .hyper_noise_tunnel import HyperNoiseTunnel
-
 from . import utils
 from . import visualize
+from . import attr
 
 __all__ = [
     "Image",
-    "Lime",
-    "HyperNoiseTunnel",
-    "ImageAttributes",
-    "ImageSpatialAttributes",
-    "ImageSpectralAttributes",
     "utils",
     "visualize",
+    "attr",
 ]
 
 

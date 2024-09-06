@@ -3,11 +3,10 @@ import warnings
 from loguru import logger
 
 import torch
-import numpy as np
 
 import meteors as mt
-import meteors.lime as mt_lime
-import meteors.lime_base as mt_lime_base
+import meteors.attr.lime as mt_lime
+import meteors.attr.lime_base as mt_lime_base
 from meteors.utils.models import ExplainableModel, SkLearnLasso
 
 # Temporary solution for wavelengths
@@ -92,149 +91,6 @@ wavelengths = [
 #####################################################################
 ############################ VALIDATIONS ############################
 #####################################################################
-
-
-def test_ensure_torch_tensor():
-    # Test with numpy array
-    np_array = np.array([1, 2, 3])
-    result = mt_lime.ensure_torch_tensor(np_array, "Input must be a numpy array or torch tensor")
-    assert isinstance(result, torch.Tensor)
-    assert torch.all(torch.eq(result, torch.tensor([1, 2, 3])))
-
-    # Test with torch tensor
-    torch_tensor = torch.tensor([4, 5, 6])
-    result = mt_lime.ensure_torch_tensor(torch_tensor, "Input must be a numpy array or torch tensor")
-    assert isinstance(result, torch.Tensor)
-    assert torch.all(torch.eq(result, torch.tensor([4, 5, 6])))
-
-    # Test with invalid input type
-    with pytest.raises(TypeError):
-        mt_lime.ensure_torch_tensor("invalid", "Input must be a numpy array or torch tensor")
-
-
-def test_validate_and_convert_attributes():
-    # Test with numpy array
-    attributes_np = np.ones((3, 4))
-    attributes_torch = mt_lime.validate_and_convert_attributes(attributes_np)
-    assert isinstance(attributes_torch, torch.Tensor)
-    assert torch.all(attributes_torch.eq(torch.tensor(attributes_np)))
-
-    # Test with torch tensor
-    attributes_torch = torch.ones((3, 4))
-    attributes_torch_validated = mt_lime.validate_and_convert_attributes(attributes_torch)
-    assert isinstance(attributes_torch_validated, torch.Tensor)
-    assert torch.all(attributes_torch_validated.eq(attributes_torch))
-
-    # Test with invalid type
-    with pytest.raises(TypeError):
-        mt_lime.validate_and_convert_attributes(123)
-
-
-def test_validate_and_convert_segmentation_mask():
-    # Test case 1: Valid segmentation mask (numpy array)
-    segmentation_mask_np = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-    result_np = mt_lime.validate_and_convert_segmentation_mask(segmentation_mask_np)
-    assert isinstance(result_np, torch.Tensor)
-    assert torch.all(torch.eq(result_np, torch.tensor(segmentation_mask_np)))
-
-    # Test case 2: Valid segmentation mask (torch tensor)
-    segmentation_mask_tensor = torch.tensor([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-    result_tensor = mt_lime.validate_and_convert_segmentation_mask(segmentation_mask_tensor)
-    assert isinstance(result_tensor, torch.Tensor)
-    assert torch.all(torch.eq(result_tensor, segmentation_mask_tensor))
-
-    # Test case 3: Invalid segmentation mask (wrong type)
-    invalid_segmentation_mask = "invalid"
-    with pytest.raises(TypeError):
-        mt_lime.validate_and_convert_segmentation_mask(invalid_segmentation_mask)
-
-    # Test case 4: Invalid segmentation mask (wrong type)
-    invalid_segmentation_mask = 123
-    with pytest.raises(TypeError):
-        mt_lime.validate_and_convert_segmentation_mask(invalid_segmentation_mask)
-
-
-def test_validate_and_convert_band_mask():
-    # Test case 1: Valid band mask (numpy array)
-    band_mask_np = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-    result_np = mt_lime.validate_and_convert_band_mask(band_mask_np)
-    assert isinstance(result_np, torch.Tensor)
-    assert torch.all(torch.eq(result_np, torch.tensor(band_mask_np)))
-
-    # Test case 2: Valid band mask (torch tensor)
-    band_mask_tensor = torch.tensor([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-    result_tensor = mt_lime.validate_and_convert_band_mask(band_mask_tensor)
-    assert isinstance(result_tensor, torch.Tensor)
-    assert torch.all(torch.eq(result_tensor, band_mask_tensor))
-
-    # Test case 3: Invalid band mask (wrong type)
-    invalid_band_mask = "invalid"
-    with pytest.raises(TypeError):
-        mt_lime.validate_and_convert_band_mask(invalid_band_mask)
-
-    # Test case 4: Invalid band mask (wrong type)
-    invalid_band_mask = 123
-    with pytest.raises(TypeError):
-        mt_lime.validate_and_convert_band_mask(invalid_band_mask)
-
-
-def test_validate_shapes():
-    shape = (len(wavelengths), 240, 240)
-    attributes = torch.ones(shape)
-    image = mt.Image(image=torch.ones(shape), wavelengths=wavelengths)
-
-    # Test case 1: Valid shapes
-    mt_lime.validate_shapes(attributes, image)  # No exception should be raised
-
-    # Test case 2: Invalid shapes
-    invalid_attributes = torch.ones((150, 240, 241))
-    with pytest.raises(ValueError):
-        mt_lime.validate_shapes(invalid_attributes, image)
-
-    invalid_image = mt.Image(image=torch.ones((len(wavelengths), 240, 241)), wavelengths=wavelengths)
-    with pytest.raises(ValueError):
-        mt_lime.validate_shapes(attributes, invalid_image)
-
-
-def test_align_band_names_with_mask():
-    # Test case 1: Changed band names
-    band_names = {"R": 1, "G": 2, "B": 3}
-    band_mask = torch.tensor([[0, 1, 0], [1, 2, 1], [0, 1, 3]])
-
-    with pytest.warns(UserWarning):
-        updated_band_names = mt_lime.align_band_names_with_mask(band_names, band_mask)
-
-    assert updated_band_names == {
-        "R": 1,
-        "G": 2,
-        "B": 3,
-        "not_included": 0,
-    }
-
-    # Test case 2: Not changed band names
-    band_names = {"R": 0, "G": 1, "B": 2}
-    band_mask = torch.tensor([[1, 0, 1], [1, 2, 1], [1, 0, 1]])
-
-    not_updated_band_names = mt_lime.align_band_names_with_mask(band_names, band_mask)
-
-    assert not_updated_band_names == {
-        "R": 0,
-        "G": 1,
-        "B": 2,
-    }
-
-    band_names = {"R": 0}
-    band_mask = torch.tensor([[0], [0], [0]])
-
-    not_updated_band_names = mt_lime.align_band_names_with_mask(band_names, band_mask)
-
-    assert not_updated_band_names == {"R": 0}
-
-    # Test case 3: Invalid band names
-    band_names = {"R": 1, "G": 2, "B": 3}
-    invalid_band_mask = torch.tensor([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
-    with pytest.raises(ValueError):
-        mt_lime.align_band_names_with_mask(band_names, invalid_band_mask)
 
 
 def test_validate_band_names():
@@ -469,336 +325,9 @@ def test_adjust_and_validate_segment_ranges():
         mt_lime.adjust_and_validate_segment_ranges(wavelengths, segment_range)
 
 
-######################################################################
-############################ EXPLANATIONS ############################
-######################################################################
-
-
-def test_validate_image_attributions():
-    # Create a sample ImageAttributes object
-    image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
-    attributes = torch.ones((3, 4, 4))
-    score = 0.8
-    device = torch.device("cpu")
-    model_config = {"param1": 1, "param2": 2}
-    image_attributes = mt.ImageAttributes(
-        image=image, attributes=attributes, score=score, device=device, model_config=model_config
-    )
-
-    # Assert that the attributes tensor has been moved to the specified device
-    assert image_attributes.attributes.device == device
-
-    # Assert that the image tensor has been moved to the specified device
-    assert image_attributes.image.device == device
-
-    # Assert that the shapes of the attributes and image tensors match
-    assert image_attributes.attributes.shape == image_attributes.image.image.shape
-
-    # Assert that the device of the image object has been updated
-    assert image_attributes.image.device == device
-
-    # Validate invalid shape
-    invalid_attributes = torch.ones((1, 4, 4))
-    with pytest.raises(ValueError):
-        mt.ImageAttributes(
-            image=image, attributes=invalid_attributes, score=score, device=device, model_config=model_config
-        )
-
-    # Not implemented yet functions
-    with pytest.raises(NotImplementedError):
-        image_attributes.flattened_attributes
-
-
-def test_spatial_attributes():
-    # Create a sample ImageSpatialAttributes object
-    image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
-    attributes = torch.ones((3, 4, 4))
-    score = 0.8
-    segmentation_mask = torch.randint(0, 2, (3, 4, 4))
-    device = torch.device("cpu")
-    model_config = {"param1": 1, "param2": 2}
-    spatial_attributes = mt.ImageSpatialAttributes(
-        image=image,
-        attributes=attributes,
-        score=score,
-        segmentation_mask=segmentation_mask,
-        device=device,
-        model_config=model_config,
-    )
-
-    # Assert that the attributes tensor has been moved to the specified device
-    assert spatial_attributes.attributes.device == device
-
-    # Assert that the image tensor has been moved to the specified device
-    assert spatial_attributes.image.device == device
-
-    # Assert that the segmentation mask tensor has been moved to the specified device
-    assert spatial_attributes.segmentation_mask.device == device
-
-    # Assert that the shapes of the attributes and image tensors match
-    assert spatial_attributes.attributes.shape == spatial_attributes.image.image.shape
-
-    # Assert that the device of the image object has been updated
-    assert spatial_attributes.image.device == device
-
-    # Validate invalid shape
-    invalid_attributes = torch.ones((1, 4, 4))
-    with pytest.raises(ValueError):
-        mt.ImageSpatialAttributes(
-            image=image,
-            attributes=invalid_attributes,
-            score=score,
-            segmentation_mask=segmentation_mask,
-            device=device,
-            model_config=model_config,
-        )
-
-
-def test_to_image_spatial_attributes():
-    # Create dummy data
-    image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
-    attributes = torch.ones((3, 4, 4))
-    segmentation_mask = torch.randint(0, 2, (3, 4, 4))
-
-    # Create ImageSpatialAttributes object
-    spatial_attributes = mt.ImageSpatialAttributes(
-        image=image,
-        attributes=attributes,
-        score=0.8,
-        segmentation_mask=segmentation_mask,
-    )
-
-    # Move to a different device
-    device = torch.device("cpu")
-    spatial_attributes.to(device)
-
-    # Check if the image, attributes, and segmentation mask are moved to the new device
-    assert spatial_attributes.image.device == device
-    assert spatial_attributes.attributes.device == device
-    assert spatial_attributes.segmentation_mask.device == device
-
-    if torch.cuda.is_available():
-        # Move back to the original device
-        device = torch.device("cuda")
-        spatial_attributes.to(device)
-
-        # Check if the image, attributes, and segmentation mask are moved to the original device
-        assert spatial_attributes.image.device == device
-        assert spatial_attributes.attributes.device == device
-        assert spatial_attributes.segmentation_mask.device == device
-
-
-def test_spatial_segmentation_mask_spacial_attributes():
-    # Create a sample ImageSpatialAttributes object
-    image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
-    attributes = torch.ones((3, 4, 4))
-    score = 0.8
-    segmentation_mask = torch.randint(0, 2, (3, 4, 4))
-    device = torch.device("cpu")
-    model_config = {"param1": 1, "param2": 2}
-    spatial_attributes = mt.ImageSpatialAttributes(
-        image=image,
-        attributes=attributes,
-        score=score,
-        segmentation_mask=segmentation_mask,
-        device=device,
-        model_config=model_config,
-    )
-
-    assert spatial_attributes.spatial_segmentation_mask.shape == segmentation_mask.shape[1:]
-
-
-def test_flattened_attributes_spacial_attributes():
-    # Create a sample ImageSpatialAttributes object
-    image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
-    attributes = torch.ones((3, 4, 4))
-    score = 0.8
-    segmentation_mask = torch.randint(0, 2, (3, 4, 4))
-    device = torch.device("cpu")
-    model_config = {"param1": 1, "param2": 2}
-    spatial_attributes = mt.ImageSpatialAttributes(
-        image=image,
-        attributes=attributes,
-        score=score,
-        segmentation_mask=segmentation_mask,
-        device=device,
-        model_config=model_config,
-    )
-
-    assert spatial_attributes.flattened_attributes.shape == segmentation_mask.shape[1:]
-
-
-def test_spectral_attributes():
-    # Create a sample ImageSpectralAttributes object
-    image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
-    attributes = torch.ones((3, 4, 4))
-    score = 0.8
-    band_mask = torch.empty_like(attributes)
-    band_mask[0] = 0
-    band_mask[1] = 1
-    band_mask[2] = 2
-    band_names = {"R": 0, "G": 1, "B": 2}
-    device = torch.device("cpu")
-    model_config = {"param1": 1, "param2": 2}
-    spectral_attributes = mt.ImageSpectralAttributes(
-        image=image,
-        attributes=attributes,
-        score=score,
-        band_names=band_names,
-        band_mask=band_mask,
-        device=device,
-        model_config=model_config,
-    )
-
-    # Assert that the attributes tensor has been moved to the specified device
-    assert spectral_attributes.attributes.device == device
-
-    # Assert that the image tensor has been moved to the specified device
-    assert spectral_attributes.image.device == device
-
-    # Assert that the segmentation mask tensor has been moved to the specified device
-    assert spectral_attributes.band_mask.device == device
-
-    # Assert that the shapes of the attributes and image tensors match
-    assert spectral_attributes.attributes.shape == spectral_attributes.image.image.shape
-
-    # Assert that the device of the image object has been updated
-    assert spectral_attributes.image.device == device
-
-    # Validate invalid shape
-    invalid_attributes = torch.ones((1, 4, 4))
-    with pytest.raises(ValueError):
-        mt.ImageSpectralAttributes(
-            image=image,
-            attributes=invalid_attributes,
-            score=score,
-            band_names=band_names,
-            band_mask=band_mask,
-            device=device,
-            model_config=model_config,
-        )
-
-
-def test_to_image_spectral_attributes():
-    # Create dummy data
-    image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
-    attributes = torch.ones((3, 4, 4))
-    band_mask = torch.empty_like(attributes)
-    band_mask[0] = 0
-    band_mask[1] = 1
-    band_mask[2] = 2
-    band_names = {"R": 0, "G": 1, "B": 2}
-
-    # Create ImageSpectralAttributes object
-    spectral_attributes = mt.ImageSpectralAttributes(
-        image=image,
-        attributes=attributes,
-        score=0.8,
-        band_mask=band_mask,
-        band_names=band_names,
-    )
-
-    # Move to a different device
-    device = torch.device("cpu")
-    spectral_attributes.to(device)
-
-    # Check if the image, attributes, band mask, and band names are moved to the new device
-    assert spectral_attributes.image.device == device
-    assert spectral_attributes.attributes.device == device
-    assert spectral_attributes.band_mask.device == device
-
-
-def test_flattened_band_mask_spectral_attributes():
-    # Create a sample ImageSpectralAttributes object
-    image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
-    attributes = torch.ones((3, 4, 4))
-    score = 0.8
-    band_mask = torch.empty_like(attributes)
-    band_mask[0] = 0
-    band_mask[1] = 1
-    band_mask[2] = 2
-    band_names = {"R": 0, "G": 1, "B": 2}
-    device = torch.device("cpu")
-    model_config = {"param1": 1, "param2": 2}
-    spectral_attributes = mt.ImageSpectralAttributes(
-        image=image,
-        attributes=attributes,
-        score=score,
-        band_names=band_names,
-        band_mask=band_mask,
-        device=device,
-        model_config=model_config,
-    )
-
-    assert torch.equal(spectral_attributes.spectral_band_mask, torch.tensor([0, 1, 2]))
-
-
-def test_flattened_attributes_spectral_attributes():
-    # Create a sample ImageSpectralAttributes object
-    image = mt.Image(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
-    attributes = torch.ones((3, 4, 4))
-    score = 0.8
-    band_mask = torch.empty_like(attributes)
-    band_mask[0] = 0
-    band_mask[1] = 1
-    band_mask[2] = 2
-    band_names = {"R": 0, "G": 1, "B": 2}
-    device = torch.device("cpu")
-    model_config = {"param1": 1, "param2": 2}
-    spectral_attributes = mt.ImageSpectralAttributes(
-        image=image,
-        attributes=attributes,
-        score=score,
-        band_names=band_names,
-        band_mask=band_mask,
-        device=device,
-        model_config=model_config,
-    )
-
-    assert torch.equal(spectral_attributes.flattened_attributes, torch.tensor([0, 1, 2]))
-
-
 ###################################################################
 ############################ EXPLAINER ############################
 ###################################################################
-
-
-def test_explainer():
-    # Create mock objects for ExplainableModel and InterpretableModel
-    explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(1, 2, 3)), problem_type="regression")
-    interpretable_model = SkLearnLasso()
-
-    # Create a Explainer object
-    explainer = mt_lime.Explainer(explainable_model, interpretable_model)
-
-    # Assert that the explainable_model and interpretable_model attributes are set correctly
-    assert explainer.explainable_model == explainable_model
-    assert explainer.interpretable_model == interpretable_model
-
-    # Test case 1: Valid input
-    def dumb_model(image: torch.Tensor) -> torch.Tensor:
-        output = torch.empty((image.shape[0], 2))
-        output[:, 0] = 0
-        output[:, 1] = 1
-        return output
-
-    explainable_model = ExplainableModel(forward_func=dumb_model, problem_type="regression")
-    interpretable_model = SkLearnLasso(alpha=0.1)
-    # Create a sample Lime object
-    lime = mt_lime.Explainer(explainable_model, interpretable_model)
-
-    # Assert that the explainable_model and interpretable_model attributes are set correctly
-    assert lime.explainable_model == explainable_model
-    assert lime.interpretable_model == interpretable_model
-
-    # Test case 2: different device
-    device = torch.device("cpu")
-    explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(1, 2, 3)), problem_type="regression")
-    interpretable_model = SkLearnLasso()
-    explainer = mt_lime.Explainer(explainable_model, interpretable_model)
-
-    # Call the to method
-    explainer.to(device)
 
 
 def test_lime_explainer():
@@ -812,7 +341,7 @@ def test_lime_explainer():
     # Assert that the explainable_model and interpretable_model attributes are set correctly
     assert lime.explainable_model == explainable_model
     assert lime.interpretable_model == interpretable_model
-    assert lime._lime is not None
+    assert lime._attribution_method is not None
 
     # Test case 1: Valid input
     def dumb_model(image: torch.Tensor) -> torch.Tensor:
@@ -829,7 +358,7 @@ def test_lime_explainer():
     # Assert that the explainable_model and interpretable_model attributes are set correctly
     assert lime.explainable_model == explainable_model
     assert lime.interpretable_model == interpretable_model
-    assert lime._lime is not None
+    assert lime._attribution_method is not None
 
     # Test case 2: different lime parameters
     similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
@@ -844,10 +373,10 @@ def test_lime_explainer():
     # Assert that the explainable_model and interpretable_model attributes are set correctly
     assert lime.explainable_model == explainable_model
     assert lime.interpretable_model == interpretable_model
-    assert lime._lime is not None
+    assert lime._attribution_method is not None
 
 
-def test_get_slick_segmentation_mask():
+def test__get_slick_segmentation_mask():
     # Create a sample image
     image = mt.Image(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47])
 
@@ -861,7 +390,7 @@ def test_get_slick_segmentation_mask():
     assert torch.all(segmentation_mask < 10)
 
 
-def test_get_patch_segmentation_mask():
+def test__get_patch_segmentation_mask():
     # Create a sample image
     image = mt.Image(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
 
@@ -922,7 +451,7 @@ def test_get_segmentation_mask():
         mt_lime.Lime.get_segmentation_mask(image, segmentation_method="slic")
 
 
-def test_make_band_names_indexable():
+def test__make_band_names_indexable():
     # Test case 1: List of strings
     segment_name_list = ["R", "G", "B"]
     result_list = mt_lime.Lime._make_band_names_indexable(segment_name_list)
@@ -957,7 +486,7 @@ def test_make_band_names_indexable():
         mt_lime.Lime._make_band_names_indexable(segment_name_invalid)
 
 
-def test_extract_bands_from_spyndex():
+def test__extract_bands_from_spyndex():
     # Test case 1: Single band name
     segment_name = "R"
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
@@ -1039,7 +568,7 @@ def test__convert_wavelengths_to_indices():
     assert single_indices == expected_single_indices
 
 
-def test_get_indices_from_wavelength_indices_range():
+def test__get_indices_from_wavelength_indices_range():
     # Test case 1: Single range
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     ranges = [(1, 4)]
@@ -1082,7 +611,7 @@ def test_get_indices_from_wavelength_indices_range():
     assert indices == expected_indices
 
 
-def test_convert_wavelengths_list_to_indices():
+def test__convert_wavelengths_list_to_indices():
     # Working example
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     ranges = [450, 550, 650]
@@ -1114,7 +643,7 @@ def test_convert_wavelengths_list_to_indices():
         mt_lime.Lime._convert_wavelengths_list_to_indices(wavelengths, ranges)
 
 
-def test_get_band_indices_from_input_band_indices():
+def test__get_band_indices_from_input_band_indices():
     # Test lists
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     band_indices = {
@@ -1187,7 +716,7 @@ def test_get_band_indices_from_input_band_indices():
         mt_lime.Lime._get_band_indices_from_input_band_indices(wavelengths, band_indices)
 
 
-def test_get_band_indices_from_band_wavelengths():
+def test__get_band_indices_from_band_wavelengths():
     # Test case 1: Ranges
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     band_wavelengths = {
@@ -1259,7 +788,7 @@ def test_get_band_indices_from_band_wavelengths():
         mt_lime.Lime._get_band_indices_from_band_wavelengths(wavelengths, band_wavelengths)
 
 
-def test_get_band_wavelengths_indices_from_band_names():
+def test__get_band_wavelengths_indices_from_band_names():
     # Test bands
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700, 750, 800])
     band_names = ["R", "G", "B"]
@@ -1331,7 +860,7 @@ def test_get_band_wavelengths_indices_from_band_names():
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
 
-def test_check_overlapping_segments():
+def test__check_overlapping_segments(caplog):
     # Create a sample image
     wavelengths = torch.tensor([400, 500, 600, 700])
     image = mt.Image(image=torch.ones((4, 4, 4)), wavelengths=wavelengths)
@@ -1421,7 +950,7 @@ def test__validate_and_create_dict_labels_to_segment_ids():
         mt_lime.Lime._validate_and_create_dict_labels_to_segment_ids(dict_labels_to_segment_ids, segment_labels)
 
 
-def test_create_single_dim_band_mask():
+def test__create_single_dim_band_mask():
     # Create a sample image
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     image = mt.Image(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths)
@@ -1459,7 +988,7 @@ def test_create_single_dim_band_mask():
         mt_lime.Lime._create_single_dim_band_mask(image, dict_labels_to_indices, dict_labels_to_segment_ids, "cpu")
 
 
-def test_expand_band_mask():
+def test__expand_band_mask():
     # Create a sample image
     wavelengths = torch.tensor([400, 450, 500, 550, 600])
     image = mt.Image(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths, orientation=("C", "H", "W"))
@@ -1539,7 +1068,7 @@ def test_expand_band_mask():
     assert torch.equal(expanded_band_mask, expected_values)
 
 
-def test_create_tensor_band_mask():
+def test__create_tensor_band_mask():
     # Test case 1: Default parameters
     image = mt.Image(image=torch.ones((3, 240, 240)), wavelengths=[400, 500, 600])
     dict_labels_to_indices = {"label1": [0], "label2": [1, 2]}
@@ -1690,7 +1219,7 @@ def test_get_spatial_attributes():
     spatial_attributes = lime.get_spatial_attributes(image, segmentation_mask, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
+    assert isinstance(spatial_attributes, mt.attr.ImageLimeSpatialAttributes)
     assert spatial_attributes.image == image
     assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
     assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
@@ -1707,7 +1236,7 @@ def test_get_spatial_attributes():
     spatial_attributes = lime.get_spatial_attributes(image, segmentation_method="slic", target=0)
 
     # Assert the output type and properties
-    assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
+    assert isinstance(spatial_attributes, mt.attr.ImageLimeSpatialAttributes)
     assert spatial_attributes.image == image
     assert spatial_attributes.segmentation_mask is not None
     assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
@@ -1717,7 +1246,7 @@ def test_get_spatial_attributes():
     spatial_attributes = lime.get_spatial_attributes(image, segmentation_method="patch", target=0, patch_size=5)
 
     # Assert the output type and properties
-    assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
+    assert isinstance(spatial_attributes, mt.attr.ImageLimeSpatialAttributes)
     assert spatial_attributes.image == image
     assert spatial_attributes.segmentation_mask is not None
     assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
@@ -1736,7 +1265,7 @@ def test_get_spatial_attributes():
     spatial_attributes = lime.get_spatial_attributes(image, segmentation_mask, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
+    assert isinstance(spatial_attributes, mt.attr.ImageLimeSpatialAttributes)
     assert spatial_attributes.image == image
     assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
     assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
@@ -1782,7 +1311,7 @@ def test_get_spectral_attributes():
     spectral_attributes = lime.get_spectral_attributes(image, band_mask, band_names=band_names, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spectral_attributes, mt.ImageSpectralAttributes)
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names == band_names
@@ -1794,7 +1323,7 @@ def test_get_spectral_attributes():
     spectral_attributes = lime.get_spectral_attributes(image, band_mask, band_names=band_names, target=1)
 
     # Assert the output type and properties
-    assert isinstance(spectral_attributes, mt.ImageSpectralAttributes)
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names == band_names
@@ -1806,7 +1335,7 @@ def test_get_spectral_attributes():
     spectral_attributes = lime.get_spectral_attributes(image, band_names=band_names, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spectral_attributes, mt.ImageSpectralAttributes)
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
     assert spectral_attributes.image == image
     assert spectral_attributes.band_mask is not None
     assert spectral_attributes.band_names == band_names
@@ -1818,7 +1347,7 @@ def test_get_spectral_attributes():
     spectral_attributes = lime.get_spectral_attributes(image, band_mask, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spectral_attributes, mt.ImageSpectralAttributes)
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names is not None
@@ -1839,7 +1368,7 @@ def test_get_spectral_attributes():
     spectral_attributes = lime.get_spectral_attributes(image, band_mask, target=0)
 
     # Assert the output type and properties
-    assert isinstance(spectral_attributes, mt.ImageSpectralAttributes)
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
     assert spectral_attributes.image == image
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names is not None
@@ -1856,3 +1385,125 @@ def test_get_spectral_attributes():
     # Call the get_spectral_attributes method
     with pytest.raises(ValueError):
         spectral_attributes = lime.get_spectral_attributes(image, band_mask, band_names=band_names, target=0)
+
+
+def test_attribute_wrapper():
+    def dumb_model(image: torch.Tensor) -> torch.Tensor:
+        output = torch.empty((image.shape[0], 2))
+        output[:, 0] = 0
+        output[:, 1] = 1
+        return output
+
+    # Create a sample image
+    wavelengths = [400, 450, 500, 550, 600, 650, 700]
+    image = mt.Image(image=torch.randn(len(wavelengths), 240, 240), wavelengths=wavelengths)
+
+    # Create a sample band mask
+    band_mask = torch.zeros_like(image.image, dtype=int)
+    band_mask[0] = 1
+    band_mask[1] = 2
+
+    # Create a sample band names dictionary
+    band_names = {"R": 0, "G": 1, "B": 2}
+
+    # Create a sample Lime object
+    lime = mt_lime.Lime(
+        explainable_model=ExplainableModel(dumb_model, "regression"), interpretable_model=SkLearnLasso(alpha=0.9)
+    )
+
+    # Call the get_spectral_attributes method
+    spectral_attributes = lime.attribute("spectral", image, band_mask=band_mask, band_names=band_names, target=0)
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.attr.ImageLimeSpectralAttributes)
+    assert spectral_attributes.image == image
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names == band_names
+    assert spectral_attributes.score <= 1.0 and spectral_attributes.score >= 0.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == image.image.shape
+
+    spectral_attributes_get_method = lime.get_spectral_attributes(image, band_mask, band_names=band_names, target=0)
+    assert torch.equal(spectral_attributes.attributes, spectral_attributes_get_method.attributes)
+    assert spectral_attributes.score == spectral_attributes_get_method.score
+    assert torch.equal(spectral_attributes.band_mask, spectral_attributes_get_method.band_mask)
+    assert spectral_attributes.band_names == spectral_attributes_get_method.band_names
+
+    # Test case 2: Spatial attributes
+    def dumb_model(image: torch.Tensor) -> torch.Tensor:
+        output = torch.empty((image.shape[0], 2))
+        output[:, 0] = 0
+        output[:, 1] = 1
+        return output
+
+    # Create a sample image
+    wavelengths = torch.tensor([400, 450, 500, 550, 600])
+    image = mt.Image(image=torch.randn(5, 10, 10), wavelengths=wavelengths)
+
+    # Create a sample segmentation mask
+    segmentation_mask = torch.randint(1, 4, (1, 10, 10))
+
+    spatial_attributes = lime.attribute("spatial", image, segmentation_mask=segmentation_mask, target=0)
+
+    # Assert the output type and properties
+    assert isinstance(spatial_attributes, mt.attr.ImageLimeSpatialAttributes)
+    assert spatial_attributes.image == image
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
+    assert spatial_attributes.attributes.shape == image.image.shape
+
+    spatial_attributes_get_method = lime.get_spatial_attributes(image, segmentation_mask, target=0)
+    assert torch.equal(spatial_attributes.attributes, spatial_attributes_get_method.attributes)
+    assert spatial_attributes.score == spatial_attributes_get_method.score
+    assert torch.equal(spatial_attributes.segmentation_mask, spatial_attributes_get_method.segmentation_mask)
+
+
+def test_validate_mask_shape():
+    def dumb_model(image: torch.Tensor) -> torch.Tensor:
+        output = torch.empty((image.shape[0], 2))
+        output[:, 0] = 0
+        output[:, 1] = 1
+        return output
+
+    # Create a sample image
+    wavelengths = [400, 450, 500, 550, 600, 650, 700]
+    image = mt.Image(image=torch.randn(len(wavelengths), 240, 240), wavelengths=wavelengths)
+
+    lime = mt_lime.Lime(
+        explainable_model=ExplainableModel(dumb_model, "regression"), interpretable_model=SkLearnLasso(alpha=0.9)
+    )
+
+    band_mask = torch.zeros((len(wavelengths), 240, 240), dtype=int)
+
+    from meteors.attr.lime import validate_mask_shape
+
+    validate_mask_shape("spectral", image, band_mask)  # correct shapes
+    broadcastable_band_mask = torch.zeros((len(wavelengths), 1, 1), dtype=int)
+    validate_mask_shape("spectral", image, broadcastable_band_mask)  # correct shapes
+
+    with pytest.raises(ValueError):
+        validate_mask_shape("spectral", image, torch.zeros((len(wavelengths), 241, 241), dtype=int))
+
+    with pytest.raises(ValueError):
+        validate_mask_shape("spectral", image, torch.zeros((1, 240, 1), dtype=int))
+
+    # spatial case
+    segmentation_mask = torch.zeros((len(wavelengths), 240, 240), dtype=int)
+    validate_mask_shape("spatial", image, segmentation_mask)  # correct shapes
+    broadcastable_segmentation_mask = torch.zeros((1, 240, 240), dtype=int)
+    validate_mask_shape("spatial", image, broadcastable_segmentation_mask)  # correct shapes
+
+    with pytest.raises(ValueError):
+        validate_mask_shape("spatial", image, torch.zeros((len(wavelengths), 241, 241), dtype=int))
+
+    with pytest.raises(ValueError):
+        validate_mask_shape("spatial", image, torch.zeros((1, 240, 1), dtype=int))  # to much to broadcast
+
+    validate_mask_shape("spectral", image, torch.zeros(len(wavelengths)))
+    validate_mask_shape("spatial", image, torch.zeros(240, 240))
+    # pass the validation
+    lime.attribute("spectral", image, band_mask=band_mask, target=0)
+    lime.attribute("spatial", image, segmentation_mask=segmentation_mask, target=0)
+
+
+test_validate_mask_shape()

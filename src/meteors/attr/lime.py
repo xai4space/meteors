@@ -1,31 +1,27 @@
 from __future__ import annotations
 
-from typing_extensions import Annotated, Self, Literal, Callable, Any, TypeVar, Type
+from typing_extensions import Literal, Callable, Any, TypeVar, Type
 import warnings
-from abc import ABC
 from loguru import logger
-from functools import cached_property
 from itertools import chain
 
 import torch
 import numpy as np
 import spyndex
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-from pydantic.functional_validators import BeforeValidator
 
 from meteors import Image
-from meteors.image import resolve_inference_device
-from meteors.lime_base import Lime as LimeBase
+from meteors.attr.lime_base import Lime as LimeBase
 from meteors.utils.models import ExplainableModel, InterpretableModel
 from meteors.utils.utils import torch_dtype_to_python_dtype, change_dtype_of_list
+from meteors.attr import Explainer
+from meteors.attr import ImageLimeSpatialAttributes, ImageLimeSpectralAttributes
+from meteors.attr.attributes import ensure_torch_tensor
 
 try:
     from fast_slic import Slic as slic
 except ImportError:
     from skimage.segmentation import slic
 
-# Constants
-HSI_AXIS_ORDER = [2, 1, 0]  # (bands, rows, columns)
 
 # Types
 IntOrFloat = TypeVar("IntOrFloat", int, float)
@@ -57,153 +53,6 @@ BandType = TypeVar(
 #####################################################################
 ############################ VALIDATIONS ############################
 #####################################################################
-
-
-def ensure_torch_tensor(value: np.ndarray | torch.Tensor, context: str) -> torch.Tensor:
-    """Ensures the input is a PyTorch tensor, converting it if necessary.
-
-    This function validates that the input is either a NumPy array or a PyTorch tensor,
-    and converts NumPy arrays to PyTorch tensors. It's useful for standardizing inputs
-    in functions that require PyTorch tensors.
-
-    Args:
-        value (np.ndarray | torch.Tensor): The input value to be validated and potentially converted.
-        context (str): A string describing the context of the conversion, used in error and debug messages.
-
-    Returns:
-        torch.Tensor: The input value as a PyTorch tensor.
-
-    Raises:
-        TypeError: If the input is neither a NumPy array nor a PyTorch tensor.
-    """
-    if isinstance(value, torch.Tensor):
-        return value
-
-    if isinstance(value, np.ndarray):
-        logger.debug(f"Converting {context} from NumPy array to PyTorch tensor")
-        return torch.from_numpy(value)
-
-    raise TypeError(f"{context} must be a NumPy array or PyTorch tensor")
-
-
-def validate_and_convert_attributes(value: np.ndarray | torch.Tensor) -> torch.Tensor:
-    """Validates and converts the attributes to a PyTorch tensor.
-
-    This function ensures that the input attributes are in the correct format
-    (either a NumPy array or a PyTorch tensor) and converts them to a PyTorch
-    tensor if necessary.
-
-    Args:
-        value (np.ndarray | torch.Tensor): The attributes to be validated and potentially converted.
-            This can be either a NumPy array or a PyTorch tensor.
-
-    Returns:
-        torch.Tensor: The attributes as a PyTorch tensor.
-
-    Raises:
-        TypeError: If the input is neither a NumPy array nor a PyTorch tensor.
-    """
-    return ensure_torch_tensor(value, "Attributes")
-
-
-def validate_and_convert_segmentation_mask(value: np.ndarray | torch.Tensor) -> torch.Tensor:
-    """Ensures the segmentation mask is a PyTorch tensor, converting it if necessary.
-
-    This function validates that the input segmentation mask is either a NumPy array
-    or a PyTorch tensor, and converts it to a PyTorch tensor if it's a NumPy array.
-
-    Args:
-        value (np.ndarray | torch.Tensor): The segmentation mask to be validated and potentially converted.
-
-    Returns:
-        torch.Tensor: The segmentation mask as a PyTorch tensor.
-
-    Raises:
-        TypeError: If the input is neither a NumPy array nor a PyTorch tensor.
-    """
-    return ensure_torch_tensor(value, "Segmentation mask")
-
-
-def validate_and_convert_band_mask(value: np.ndarray | torch.Tensor) -> torch.Tensor:
-    """Ensures the band mask is a PyTorch tensor, converting it if necessary.
-
-    This function validates that the input band mask is either a NumPy array
-    or a PyTorch tensor, and converts it to a PyTorch tensor if it's a NumPy array.
-
-    Args:
-        value (np.ndarray | torch.Tensor): The band mask to be validated and potentially converted.
-
-    Returns:
-        torch.Tensor: The band mask as a PyTorch tensor.
-
-    Raises:
-        TypeError: If the input is neither a NumPy array nor a PyTorch tensor.
-    """
-    return ensure_torch_tensor(value, "Band mask")
-
-
-def validate_shapes(attributes: torch.Tensor, image: Image) -> None:
-    """Validates that the shape of the attributes tensor matches the shape of the image.
-
-    Args:
-        attributes (torch.Tensor): The attributes tensor to validate.
-        image (Image): The image object to compare the shape with.
-
-    Raises:
-        ValueError: If the shape of the attributes tensor does not match the shape of the image.
-    """
-    if attributes.shape != image.image.shape:
-        raise ValueError("Attributes must have the same shape as the image")
-
-
-def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tensor) -> dict[str, int]:
-    """Aligns the band names dictionary with the unique values in the band mask.
-
-    This function ensures that the band_names dictionary correctly represents all unique
-    values in the band_mask. It adds a 'not_included' category if necessary and validates
-    that all mask values are accounted for in the band names.
-
-    Args:
-        band_names (dict[str, int]): A dictionary mapping band names to their corresponding
-                                     integer values in the mask.
-        band_mask (torch.Tensor): A tensor representing the band mask, where each unique
-                                  integer corresponds to a different band or category.
-
-    Returns:
-        dict[str, int]: The updated band_names dictionary, potentially including a
-                        'not_included' category if 0 is present in the mask but not in
-                        the original band_names.
-
-    Raises:
-        ValueError: If the set of values in band_names doesn't match the unique values
-                    in the band_mask after accounting for the 'not_included' category.
-
-    Warns:
-        UserWarning: If a 'not_included' category (0) is added to the band_names.
-
-    Notes:
-        - The function assumes that 0 in the mask represents 'not_included' areas if
-          not explicitly defined in the input band_names.
-        - All unique values in the mask must be present in the band_names dictionary
-          after the alignment process.
-    """
-    unique_mask_values = set(band_mask.unique().tolist())
-    band_name_values = set(band_names.values())
-
-    # Check if 0 is in the mask but not in band_names
-    if 0 in unique_mask_values and 0 not in band_name_values:
-        warnings.warn(
-            "Band mask contains `0` values which are not covered by the provided band names. "
-            "Adding 'not_included' to band names."
-        )
-        band_names["not_included"] = 0
-        band_name_values.add(0)
-
-    # Validate that all mask values are in band_names
-    if unique_mask_values != band_name_values:
-        raise ValueError("Band names should have all unique values in mask")
-
-    return band_names
 
 
 def validate_band_names(band_names: list[str | list[str]] | dict[tuple[str, ...] | str, int]) -> None:
@@ -430,360 +279,57 @@ def validate_segment_range(wavelengths: torch.Tensor, segment_range: list[tuple[
     return out_segment_range  # type: ignore
 
 
-######################################################################
-############################ EXPLANATIONS ############################
-######################################################################
-
-
-class ImageAttributes(BaseModel):
-    """Represents an object that contains image attributes and explanations.
-
-    Attributes:
-        image (Image): Hyperspectral image object for which the explanations were created.
-        attributes (torch.Tensor): Attributions (explanations) for the image.
-        score (float): R^2 score of interpretable model used for the explanation.
-        device (torch.device): Device to be used for inference. If None, the device of the input image will be used.
-            Defaults to None.
-        model_config (ConfigDict): Configuration dictionary for the model.
-    """
-
-    image: Annotated[
-        Image,
-        Field(
-            description="Hyperspectral image object for which the explanations were created.",
-        ),
-    ]
-    attributes: Annotated[
-        torch.Tensor,
-        BeforeValidator(validate_and_convert_attributes),
-        Field(
-            description="Attributions (explanations) for the image.",
-        ),
-    ]
-    score: Annotated[
-        float,
-        Field(
-            le=1.0,
-            description="R^2 score of interpretable model used for the explanation.",
-        ),
-    ]
-    device: Annotated[
-        torch.device,
-        BeforeValidator(resolve_inference_device),
-        Field(
-            validate_default=True,
-            exclude=True,
-            description=(
-                "Device to be used for inference. If None, the device of the input image will be used. "
-                "Defaults to None."
-            ),
-        ),
-    ] = None
-
-    @property
-    def flattened_attributes(self) -> torch.Tensor:
-        """Returns a flattened tensor of attributes.
-
-        This method should be implemented in the subclass.
-
-        Returns:
-            torch.Tensor: A flattened tensor of attributes.
-        """
-        raise NotImplementedError("This method should be implemented in the subclass")
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    def _validate_image_attributions(self) -> None:
-        """Validates the image attributions and performs necessary operations to ensure compatibility with the device.
-
-        Raises:
-            ValueError: If the shapes of the attributes and image tensors do not match.
-        """
-        validate_shapes(self.attributes, self.image)
-
-        self.attributes = self.attributes.to(self.device)
-        if self.device != self.image.device:
-            self.image.to(self.device)
-
-    @model_validator(mode="after")
-    def validate_image_attributions(self) -> Self:
-        """Validates the image attributions.
-
-        This method performs validation on the image attributions to ensure they are correct.
-
-        Returns:
-            Self: The current instance of the class.
-        """
-        self._validate_image_attributions()
-        return self
-
-    def to(self, device: str | torch.device) -> Self:
-        """Move the image and attributes tensors to the specified device.
-
-        Args:
-            device (str or torch.device): The device to move the tensors to.
-
-        Returns:
-            Self: The modified object with tensors moved to the specified device.
-
-        Examples:
-            >>> attrs = ImageAttributes(image, attributes, score=0.5)
-            >>> attrs.to("cpu")
-            >>> attrs.image.device
-            device(type='cpu')
-            >>> attrs.attributes.device
-            device(type='cpu')
-            >>> attrs.to("cuda")
-            >>> attrs.image.device
-            device(type='cuda')
-            >>> attrs.attributes.device
-            device(type='cuda')
-        """
-        self.image = self.image.to(device)
-        self.attributes = self.attributes.to(device)
-        self.device = self.image.device
-        return self
-
-
-class ImageSpatialAttributes(ImageAttributes):
-    """Represents spatial attributes of an image used for explanation.
-
-    Attributes:
-        image (Image): Hyperspectral image object for which the explanations were created.
-        attributes (torch.Tensor): Attributions (explanations) for the image.
-        score (float): R^2 score of interpretable model used for the explanation.
-        device (torch.device): Device to be used for inference. If None, the device of the input image will be used.
-            Defaults to None.
-        model_config (ConfigDict): Configuration dictionary for the model.
-        segmentation_mask (torch.Tensor): Spatial (Segmentation) mask used for the explanation.
-    """
-
-    segmentation_mask: Annotated[
-        torch.Tensor,
-        BeforeValidator(validate_and_convert_segmentation_mask),
-        Field(
-            description="Spatial (Segmentation) mask used for the explanation.",
-        ),
-    ]
-
-    @property
-    def spatial_segmentation_mask(self) -> torch.Tensor:
-        """Returns the spatial segmentation mask.
-
-        This method selects the segmentation mask along the specified dimension
-        and returns the first index.
-
-        Returns:
-            torch.Tensor: The spatial segmentation mask.
-
-        Examples:
-            >>> segmentation_mask = torch.zeros((3, 2, 2))
-            >>> attrs = ImageSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
-            >>> attrs.spatial_segmentation_mask
-            tensor([[0., 0.],
-                    [0., 0.]])
-        """
-        return self.segmentation_mask.select(dim=self.image.spectral_axis, index=0)
-
-    @property
-    def flattened_attributes(self) -> torch.Tensor:
-        """Returns a flattened tensor of attributes.
-
-        In the case of spatial attributes, the flattened attributes are the same as the `spatial_segmentation_mask`
-
-        Returns:
-            torch.Tensor: A flattened tensor of attributes.
-        >>> segmentation_mask = torch.zeros((3, 2, 2))
-        >>> attrs = ImageSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
-        >>> attrs.flattened_attributes
-            tensor([[0., 0.],
-                    [0., 0.]])
-        """
-        return self.spatial_segmentation_mask
-
-    @model_validator(mode="after")
-    def validate_image_attributions(self) -> Self:
-        """Validates the image attributions.
-
-        This method is responsible for validating the image attributions
-        and performing any necessary operations on the segmentation mask.
-
-        Returns:
-            Self: The current instance of the class.
-        """
-        super()._validate_image_attributions()
-        self.segmentation_mask = self.segmentation_mask.to(self.device)
-        return self
-
-    def to(self, device: str | torch.device) -> Self:
-        """Move the Lime object and its segmentation mask to the specified device.
-
-        Args:
-            device (str or torch.device): The device to move the object and mask to.
-
-        Returns:
-            Self: The Lime object itself.
-
-        Examples:
-            >>> attrs = ImageSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
-            >>> attrs.to("cpu")
-            >>> attrs.segmentation_mask.device
-            device(type='cpu')
-            >>> attrs.image.device
-            device(type='cpu')
-            >>> attrs.to("cuda")
-            >>> attrs.segmentation_mask.device
-            device(type='cuda')
-        """
-        super().to(device)
-        self.segmentation_mask = self.segmentation_mask.to(device)
-        return self
-
-
-class ImageSpectralAttributes(ImageAttributes):
-    """Represents an image with spectral attributes used for explanation.
-
-    Attributes:
-        image (Image): Hyperspectral image object for which the explanations were created.
-        attributes (torch.Tensor): Attributions (explanations) for the image.
-        score (float): R^2 score of interpretable model used for the explanation.
-        device (torch.device): Device to be used for inference. If None, the device of the input image will be used.
-            Defaults to None.
-        model_config (ConfigDict): Configuration dictionary for the model.
-        band_mask (torch.Tensor): Band mask used for the explanation.
-        band_names (dict[str, int]): Dictionary that translates the band names into the band segment ids.
-    """
-
-    band_mask: Annotated[
-        torch.Tensor,
-        BeforeValidator(validate_and_convert_band_mask),
-        Field(
-            description="Band mask used for the explanation.",
-        ),
-    ]
-    band_names: Annotated[
-        dict[str, int],
-        Field(
-            description="Dictionary that translates the band names into the band segment ids.",
-        ),
-    ]
-
-    @property
-    def spectral_band_mask(self) -> torch.Tensor:
-        """Returns a spectral band mask.
-
-        The method selects the appropriate dimensions from the `band_mask` tensor
-        based on the `axis_to_select` and returns a flattened version of the selected
-        tensor.
-
-        Returns:
-            torch.Tensor: The flattened band mask tensor.
-
-        Examples:
-            >>> band_names = {"R": 0, "G": 1, "B": 2}
-            >>> attrs = ImageSpectralAttributes(image, attributes, score=0.5, band_mask=band_mask)
-            >>> attrs.spectral_band_mask
-            torch.tensor([0, 1, 2])
-        """
-        axis_to_select = HSI_AXIS_ORDER.copy()
-        axis_to_select.remove(self.image.spectral_axis)
-        return self.band_mask.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1], index=0)
-
-    @property
-    def flattened_attributes(self) -> torch.Tensor:
-        """Returns a flattened tensor of attributes.
-
-        In the case of spectral attributes, the flattened attributes are the same as the `spectral_band_mask`
-
-        Returns:
-            torch.Tensor: A flattened tensor of attributes.
-        """
-        return self.spectral_band_mask
-
-    @model_validator(mode="after")
-    def validate_image_attributions(self) -> Self:
-        """Validates the image attributions.
-
-        This method performs validation on the image attributions by calling the
-        base class's `_validate_image_attributions` method. It also converts the
-        `band_mask` attribute to the device specified by `self.device`.
-
-        Returns:
-            Self: The current instance of the class.
-        """
-        super()._validate_image_attributions()
-        self.band_mask = self.band_mask.to(self.device)
-        return self
-
-    def to(self, device: str | torch.device) -> Self:
-        """Move the Lime object to the specified device.
-
-        Args:
-            device (str or torch.device): The device to move the object to.
-
-        Returns:
-            Self: The Lime object itself.
-
-        Examples:
-            >>> attrs = ImageSpectralAttributes(image, attributes, score=0.5, band_mask=band_mask)
-            >>> attrs.to("cpu")
-            >>> attrs.band_mask.device
-            device(type='cpu')
-            >>> attrs.image.device
-            device(type='cpu')
-            >>> attrs.to("cuda")
-            >>> attrs.band_mask.device
-            device(type='cuda')
-        """
-        super().to(device)
-        self.band_mask = self.band_mask.to(device)
-        self.band_names = align_band_names_with_mask(self.band_names, self.band_mask)
-        return self
-
-
-###################################################################
-############################ EXPLAINER ############################
-###################################################################
-
-
-class Explainer(ABC):
-    """Explainer class for explaining models.
+def validate_mask_shape(problem_type: Literal["spatial", "spectral"], image: Image, mask: torch.Tensor) -> torch.Tensor:
+    """Validate mask (segmentation or band mask) shape against the image. The problem_type specifies whether the mask is
+    segmentation or band mask.
 
     Args:
-        explainable_model (ExplainableModel): The explainable model to be explained.
-        interpretable_model (InterpretableModel): The interpretable model used to approximate the black-box model
+        problem_type (Literal[&quot;spatial&quot;, &quot;spectral&quot;]): _description_
+        image (Image): An original image for which the mask is created
+        mask (torch.Tensor): A segmentation or band mask to be validated.
+
+    Raises:
+        ValueError: In case the shapes cannot be broadcasted, or the image and band mask orientation is invalid
+    Returns:
+        torch.Tensor: The validated mask
     """
 
-    def __init__(self, explainable_model: ExplainableModel, interpretable_model: InterpretableModel):
-        self.explainable_model = explainable_model
-        self.interpretable_model = interpretable_model
+    if problem_type not in ["spatial", "spectral"]:
+        raise ValueError(f"Unsupported problem type: {problem_type}")
 
-    @cached_property
-    def device(self) -> torch.device:
-        """Get the device on which the explainable model is located.
+    image_shape = image.image.shape
+    mask_shape = mask.shape
 
-        Returns:
-            torch.device: The device on which the explainable model is located.
-        """
-        try:
-            device = next(self.explainable_model.forward_func.parameters()).device  # type: ignore
-        except Exception:
-            logger.debug("Could not extract device from the explainable model, setting device to cpu")
-            logger.warning("Not a torch model, setting device to cpu")
-            device = torch.device("cpu")
-        return device
+    if len(mask_shape) != 3:
+        raise ValueError(f"Mask should be a 3D tensor, but got shape: {mask_shape}")
 
-    def to(self, device: str | torch.device) -> Self:
-        """Move the explainable model to the specified device.
+    try:
+        broadcasted_shape = torch.broadcast_shapes(image_shape, mask_shape)
+    except RuntimeError as e:
+        raise ValueError(
+            f"Cannot broadcast image and mask of shapes {image_shape} and {mask_shape} respectively: {e}"
+        ) from e
 
-        Args:
-            device (str or torch.device): The device to move the explainable model to.
+    if broadcasted_shape != image_shape:
+        raise ValueError(f"Image and mask shapes are not compatible: {image_shape} and {mask_shape}")
 
-        Returns:
-            Self: The updated Explainer instance.
-        """
-        self.explainable_model = self.explainable_model.to(device)
-        return self
+    # check on which dims the shapes match - the segmentation mask can differ only in the band dimension, band mask can differ in the height and width dimensions
+    shape_matches = [broadcasted_shape[i] == mask_shape[i] for i in range(3)]
+    orientation_mismatches = {image.orientation[i] for i in range(3) if not shape_matches[i]}
+
+    if problem_type == "spatial" and ("H" in orientation_mismatches or "W" in orientation_mismatches):
+        raise ValueError(
+            f"Image and mask orientation mismatch: {image.orientation} and {mask_shape}."
+            + "Segmentation mask should differ only in the band dimension"
+        )
+
+    if problem_type == "spectral" and "C" in orientation_mismatches:
+        raise ValueError(
+            f"Image and mask orientation mismatch: {image.orientation} and {mask_shape}."
+            + "Band mask should differ only in the height and width dimensions"
+        )
+
+    return mask
 
 
 class Lime(Explainer):
@@ -807,8 +353,9 @@ class Lime(Explainer):
         similarity_func: Callable[[torch.Tensor], torch.Tensor] | None = None,
         perturb_func: Callable[[torch.Tensor], torch.Tensor] | None = None,
     ):
-        super().__init__(explainable_model, interpretable_model)
-        self._lime = self._construct_lime(
+        super().__init__(explainable_model)
+        self.interpretable_model = interpretable_model
+        self._attribution_method: LimeBase = self._construct_lime(
             self.explainable_model.forward_func, interpretable_model, similarity_func, perturb_func
         )
 
@@ -860,10 +407,10 @@ class Lime(Explainer):
 
         Examples:
             >>> image = mt.Image(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
-            >>> segmentation_mask = mt_lime.Lime.get_segmentation_mask(image, segmentation_method="slic")
+            >>> segmentation_mask = meteors.attr.Lime.get_segmentation_mask(image, segmentation_method="slic")
             >>> segmentation_mask.shape
             torch.Size([1, 240, 240])
-            >>> segmentation_mask = mt_lime.Lime.get_segmentation_mask(image, segmentation_method="patch", patch_size=2)
+            >>> segmentation_mask = meteors.attr.Lime.get_segmentation_mask(image, segmentation_method="patch", patch_size=2)
             >>> segmentation_mask.shape
             torch.Size([1, 240, 240])
             >>> segmentation_mask[0, :2, :2]
@@ -1449,6 +996,29 @@ class Lime(Explainer):
             return band_mask, dict_labels_to_segment_ids
         return band_mask
 
+    def attribute(
+        self, attribution_type: Literal["spatial", "spectral"], image: Image, target: int | None = None, **kwargs
+    ) -> ImageLimeSpectralAttributes | ImageLimeSpatialAttributes:
+        """A wrapper function to attribute the image using the LIME method. It executes either the
+        `get_spatial_attributes` or `get_spectral_attributes` method based on the provided `attribution_type`. For more
+        detailed description of the methods, please refer to the respective method documentation.
+
+        Additional, nondefault parameters, should be passed as keyword arguments to avoid misalignment of the arguments.
+
+        Args:
+            attribution_type (Literal["spatial", "spectral"]): An attribution type to be executed.
+            image (Image): an image on which the explanation is performed.
+            target (int | None, optional): Target output index for the explanation. Defaults to None.
+
+        Returns:
+            ImageLimeSpectralAttributes | ImageLimeSpatialAttributes: An object containing the image, the attributions and additional information. In case the `attribution_type` is `spatial`, the object is of type `ImageLimeSpatialAttributes`, otherwise it is of type `ImageLimeSpectralAttributes`.
+        """
+        if attribution_type == "spatial":
+            return self.get_spatial_attributes(image, target=target, **kwargs)
+        elif attribution_type == "spectral":
+            return self.get_spectral_attributes(image, target=target, **kwargs)
+        raise ValueError(f"Unsupported attribution type: {attribution_type}. Use 'spatial' or 'spectral'")
+
     def get_spatial_attributes(
         self,
         image: Image,
@@ -1456,7 +1026,7 @@ class Lime(Explainer):
         target: int | None = None,
         segmentation_method: Literal["slic", "patch"] = "slic",
         **segmentation_method_params: Any,
-    ) -> ImageSpatialAttributes:
+    ) -> ImageLimeSpatialAttributes:
         """
         Get spatial attributes of an image using the LIME method. Based on the provided image and segmentation mask
         LIME method attributes the `superpixels` provided by the segmentation mask. Please refer to the original paper
@@ -1464,13 +1034,15 @@ class Lime(Explainer):
         `https://christophm.github.io/interpretable-ml-book/lime.html`.
 
         This function attributes the image using the LIME (Local Interpretable Model-Agnostic Explanations)
-        method for spatial data. It returns an `ImageSpatialAttributes` object that contains the image,
+        method for spatial data. It returns an `ImageLimeSpatialAttributes` object that contains the image,
         the attributions, the segmentation mask, and the score of the interpretable model used for the explanation.
 
         Args:
             image (Image): An `Image` object for which the attribution is performed.
             segmentation_mask (np.ndarray | torch.Tensor | None, optional):
                 A segmentation mask according to which the attribution should be performed.
+                The segmentation mask should have a 3D shape, which can be broadcastable to the shape of the input image.
+                The only dimension on which the image and the mask shapes can differ is the spectral dimension, marked with letter `C` in the `image.orientation` parameter.
                 If None, a new segmentation mask is created using the `segmentation_method`.
                     Additional parameters for the segmentation method may be passed as kwargs. Defaults to None.
             target (int, optional): If the model creates more than one output, it analyzes the given target.
@@ -1480,7 +1052,7 @@ class Lime(Explainer):
             **segmentation_method_params (Any): Additional parameters for the segmentation method.
 
         Returns:
-            ImageSpatialAttributes: An `ImageSpatialAttributes` object that contains the image, the attributions,
+            ImageLimeSpatialAttributes: An `ImageLimeSpatialAttributes` object that contains the image, the attributions,
                 the segmentation mask, and the score of the interpretable model used for the explanation.
 
         Raises:
@@ -1492,7 +1064,7 @@ class Lime(Explainer):
             >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
             >>> image = mt.Image(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
             >>> segmentation_mask = torch.randint(1, 4, (1, 240, 240))
-            >>> lime = mt_lime.Lime(
+            >>> lime = meteors.attr.Lime(
                     explainable_model=ExplainableModel(simple_model, "regression"), interpretable_model=SkLearnLasso(alpha=0.1)
                 )
             >>> spatial_attribution = lime.get_spatial_attributes(image, segmentation_mask=segmentation_mask, target=0)
@@ -1505,7 +1077,7 @@ class Lime(Explainer):
             >>> spatial_attribution.score
             1.0
         """
-        if self._lime is None or not isinstance(self._lime, LimeBase):
+        if self._attribution_method is None or not isinstance(self._attribution_method, LimeBase):
             raise ValueError("Lime object not initialized")
 
         if self.explainable_model.problem_type != "regression":
@@ -1519,10 +1091,12 @@ class Lime(Explainer):
             segmentation_mask, "Segmentation mask should be None, numpy array, or torch tensor"
         )
 
+        segmentation_mask = validate_mask_shape("spatial", image, segmentation_mask)
+
         image = image.to(self.device)
         segmentation_mask = segmentation_mask.to(self.device)
 
-        lime_attributes, score = self._lime.attribute(
+        lime_attributes, score = self._attribution_method.attribute(
             inputs=image.image.unsqueeze(0),
             target=target,
             feature_mask=segmentation_mask.unsqueeze(0),
@@ -1532,7 +1106,7 @@ class Lime(Explainer):
             return_input_shape=True,
         )
 
-        spatial_attribution = ImageSpatialAttributes(
+        spatial_attribution = ImageLimeSpatialAttributes(
             image=image,
             attributes=lime_attributes[0],
             segmentation_mask=segmentation_mask,
@@ -1548,19 +1122,21 @@ class Lime(Explainer):
         target=None,
         band_names: list[str | list[str]] | dict[tuple[str, ...] | str, int] | None = None,
         verbose=False,
-    ) -> ImageSpectralAttributes:
+    ) -> ImageLimeSpectralAttributes:
         """
         Attributes the image using LIME method for spectral data. Based on the provided image and band mask, the LIME
         method attributes the image based on `superbands` (clustered bands) provided by the band mask.
         Please refer to the original paper `https://arxiv.org/abs/1602.04938` for more details or to
         Christoph Molnar's book `https://christophm.github.io/interpretable-ml-book/lime.html`.
 
-        The function returns an ImageSpectralAttributes object that contains the image, the attributions, the band mask,
+        The function returns an ImageLimeSpectralAttributes object that contains the image, the attributions, the band mask,
         the band names, and the score of the interpretable model used for the explanation.
 
         Args:
             image (Image): An Image for which the attribution is performed.
             band_mask (np.ndarray | torch.Tensor | None, optional): Band mask that is used for the spectral attribution.
+                The band mask should have a 3D shape, which can be broadcastable to the shape of the input image.
+                The only dimensions on which the image and the mask shapes can differ is the height and width dimensions, marked with letters `H` and `W` in the `image.orientation` parameter.
                 If equals to None, the band mask is created within the function. Defaults to None.
             target (int, optional): If the model creates more than one output, it analyzes the given target.
                 Defaults to None.
@@ -1568,7 +1144,7 @@ class Lime(Explainer):
             verbose (bool, optional): Specifies whether to show progress during the attribution process. Defaults to False.
 
         Returns:
-            ImageSpectralAttributes: An ImageSpectralAttributes object containing the image, the attributions,
+            ImageLimeSpectralAttributes: An ImageLimeSpectralAttributes object containing the image, the attributions,
                 the band mask, the band names, and the score of the interpretable model used for the explanation.
 
         Examples:
@@ -1576,7 +1152,7 @@ class Lime(Explainer):
             >>> image = mt.Image(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
             >>> band_mask = torch.randint(1, 4, (4, 1, 1)).repeat(1, 240, 240)
             >>> band_names = ["R", "G", "B"]
-            >>> lime = mt_lime.Lime(
+            >>> lime = meteors.attr.Lime(
                     explainable_model=ExplainableModel(simple_model, "regression"), interpretable_model=SkLearnLasso(alpha=0.1)
                 )
             >>> spectral_attribution = lime.get_spectral_attributes(image, band_mask=band_mask, band_names=band_names, target=0)
@@ -1592,7 +1168,7 @@ class Lime(Explainer):
             1.0
         """
 
-        if self._lime is None or not isinstance(self._lime, LimeBase):
+        if self._attribution_method is None or not isinstance(self._attribution_method, LimeBase):
             raise ValueError("Lime object not initialized")
 
         if self.explainable_model.problem_type != "regression":
@@ -1615,10 +1191,12 @@ class Lime(Explainer):
             #     assert set(unique_segments).issubset(set(band_names.values())), "Incorrect band names"
             logger.debug("Band names are provided, using them. In future it there should be an option to validate them")
 
+        band_mask = validate_mask_shape("spectral", image, band_mask)
+
         image = image.to(self.device)
         band_mask = band_mask.to(self.device)
 
-        lime_attributes, score = self._lime.attribute(
+        lime_attributes, score = self._attribution_method.attribute(
             inputs=image.image.unsqueeze(0),
             target=target,
             feature_mask=band_mask.unsqueeze(0),
@@ -1628,7 +1206,7 @@ class Lime(Explainer):
             return_input_shape=True,
         )
 
-        spectral_attribution = ImageSpectralAttributes(
+        spectral_attribution = ImageLimeSpectralAttributes(
             image=image,
             attributes=lime_attributes[0],
             band_mask=band_mask,
