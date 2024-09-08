@@ -19,14 +19,14 @@ from captum.attr import Attribution
 from loguru import logger
 
 
-def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device) -> torch.Tensor:
+def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | str | None = None) -> torch.Tensor:
     """Randomly selects `k` elements from the range [0, n) without replacement.
 
     Args:
         n (int): The range of the selection.
         k (int): The number of elements to select.
         n_samples (int): The number of samples to be drawn.
-        device (torch.device): The device to which the tensor will be moved.
+        device (torch.device | str | None): The device to which the tensor will be moved.
     Returns:
         torch.Tensor: A tensor of shape (n_samples,n) containing True for the selected elements and False for the rest. Each row contains k True values.
     """
@@ -104,7 +104,9 @@ class BaseHyperNoiseTunnel(Attribution):
                     f"Cannot perturb {num_perturbed_bands} bands in the input with {input.shape[0]} channels. The number of perturbed bands must be in the range [0, {input.shape[0]}]"
                 )
 
-            channels_to_be_perturbed = torch_random_choice(input.shape[0], num_perturbed_bands, n_samples, input.device)
+            channels_to_be_perturbed = torch_random_choice(
+                input.shape[0], num_perturbed_bands, n_samples, device=input.device
+            )
 
         # now having chosen the perturbed channels, we can replace them with the baseline
 
