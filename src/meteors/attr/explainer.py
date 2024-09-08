@@ -122,9 +122,7 @@ class Explainer(ABC):
         Returns:
             str: The name of the explainer.
         """
-        return "".join(
-            [char if char.islower() or idx == 0 else " " + char for idx, char in enumerate("Hyper" + cls.__name__)]
-        )
+        return "".join([char if char.islower() or idx == 0 else " " + char for idx, char in enumerate(cls.__name__)])
 
     def compute_convergence_delta(self):
         """Compute the convergence delta of the explainer.

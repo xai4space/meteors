@@ -101,7 +101,7 @@ def test_visualize_image_with_image_attributes_object():
     image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
     attributes = torch.ones_like(image.image)
     score = 0.5
-    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="hyper lime")
+    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="Lime")
     # Call the visualize_image function
     ax = visualize.visualize_image(image_attributes, None)
 
@@ -154,7 +154,7 @@ def test_visualize_image_with_image_attributes_object_and_ax():
     image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
     attributes = torch.ones_like(image.image)
     score = 0.5
-    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="hyper lime")
+    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="Lime")
 
     # Create an Axes object
     ax = plt.gca()

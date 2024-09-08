@@ -19,13 +19,13 @@ from meteors.image import resolve_inference_device
 # Constants
 HSI_AXIS_ORDER = [2, 1, 0]  # (bands, rows, columns)
 AVAILABLE_ATTRIBUTION_METHODS = [
-    "Hyper Lime",
-    "Hyper Integrated Gradients",
-    "Hyper Saliency",
-    "Hyper Input X Gradient",
-    "Hyper Occlusion",
+    "Lime",
+    "Integrated Gradients",
+    "Saliency",
+    "Input X Gradient",
+    "Occlusion",
     "Hyper Noise Tunnel",
-    "Hyper Hyper Noise Tunnel",
+    "Noise Tunnel",
 ]
 
 
@@ -297,11 +297,11 @@ class ImageAttributes(BaseModel):
         Returns:
             Self: The current instance of the class.
         """
-        if self.attribution_method.title() != "Hyper Lime" and self.score is not None:
+        if self.attribution_method.title() != "Lime" and self.score is not None:
             raise ValueError("Score should not be provided for non-LIME attributes")
-        if self.attribution_method.title() == "Hyper Lime" and self.score is None:
+        if self.attribution_method.title() == "Lime" and self.score is None:
             raise ValueError("Score must be provided for LIME attributes")
-        if self.attribution_method.title() != "Hyper Integrated Gradients" and self.approximation_error is not None:
+        if self.attribution_method.title() != "Integrated Gradients" and self.approximation_error is not None:
             raise ValueError("Approximation error should only be provided for IG attributes")
         return self
 
@@ -355,11 +355,11 @@ class ImageLimeSpatialAttributes(ImageAttributes):
     ]
     attribution_method: Annotated[
         str,
-        Literal["Hyper Lime"],
+        Literal["Lime"],
         Field(
             description="The method used to generate the explanation.",
         ),
-    ] = "Hyper Lime"
+    ] = "Lime"
 
     @property
     def spatial_segmentation_mask(self) -> torch.Tensor:
@@ -464,11 +464,11 @@ class ImageLimeSpectralAttributes(ImageAttributes):
     ]
     attribution_method: Annotated[
         str,
-        Literal["Hyper Lime"],
+        Literal["Lime"],
         Field(
             description="The method used to generate the explanation.",
         ),
-    ] = "Hyper Lime"
+    ] = "Lime"
 
     @property
     def spectral_band_mask(self) -> torch.Tensor:

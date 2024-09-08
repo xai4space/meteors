@@ -246,7 +246,7 @@ def test_validate_image_attributions():
         image=image,
         attributes=attributes,
         score=score,
-        attribution_method="hyper lime",
+        attribution_method="Lime",
         device=device,
         model_config=model_config,
     )
