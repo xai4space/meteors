@@ -96,6 +96,16 @@ def test_attribute():
     assert attributes is not None
     assert attributes.attributes.shape == (5, 5, 5)
 
+    attributes = hyper_noise_tunnel.attribute(image, n_samples=1, method="smoothgrad_sq")
+
+    assert attributes is not None
+    assert attributes.attributes.shape == (5, 5, 5)
+
+    attributes = hyper_noise_tunnel.attribute(image, n_samples=1, method="vargrad", steps_per_batch=3)
+
+    assert attributes is not None
+    assert attributes.attributes.shape == (5, 5, 5)
+
     # test validation
     # test with incorrect orientation
     image.orientation = ("H", "W", "C")

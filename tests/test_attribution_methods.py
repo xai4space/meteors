@@ -53,6 +53,43 @@ def test_explainer():
     with pytest.raises(ValueError):
         Explainer(chained_explainer)
 
+    assert not explainer.has_convergence_delta()
+
+    with pytest.raises(NotImplementedError):
+        explainer.compute_convergence_delta()
+
+    assert not explainer.multiplies_by_inputs
+
+
+def test_explainer_validation():
+    with pytest.raises(TypeError):
+        explainer = Explainer(lambda x: x)
+
+    from meteors.attr.explainer import validate_attribution_method_initialization
+
+    explainer = None
+    with pytest.raises(ValueError):
+        validate_attribution_method_initialization(explainer)
+
+    explainer = Explainer(ExplainableToyModel())
+    validate_attribution_method_initialization(explainer)
+
+    from meteors.attr.explainer import validate_and_transform_baseline
+
+    baseline = 1
+    image = Image(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
+    baseline = validate_and_transform_baseline(baseline, image)
+    assert baseline.shape == image.image.shape
+    assert torch.all(baseline == 1)
+
+    baseline = torch.rand(3, 224, 224)
+    baseline = validate_and_transform_baseline(baseline, image)
+    assert baseline.shape == image.image.shape
+
+    baseline = torch.rand(3, 224, 225)
+    with pytest.raises(ValueError):
+        validate_and_transform_baseline(baseline, image)
+
 
 def test_integrated_gradients():
     toy_model = ExplainableToyModel()
