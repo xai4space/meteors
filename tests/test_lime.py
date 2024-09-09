@@ -9,6 +9,7 @@ import meteors as mt
 import meteors.lime as mt_lime
 import meteors.lime_base as mt_lime_base
 from meteors.utils.models import ExplainableModel, SkLearnLasso
+from meteors.utils.utils import agg_segmentation_postprocessing
 
 # Temporary solution for wavelengths
 wavelengths = [
@@ -1742,6 +1743,22 @@ def test_get_spatial_attributes_regression():
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == image.image.shape
 
+    # Test added postprocessing
+    postprocessing = agg_segmentation_postprocessing()
+    spatial_attributes = lime.get_spatial_attributes(
+        image,
+        segmentation_mask,
+        target=0,
+        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
+    assert spatial_attributes.image == image
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert spatial_attributes.score <= 1.0
+    assert spatial_attributes.attributes.shape == image.image.shape
+
 
 def test_get_spatial_attributes_segmentation():
     # Create a sample image
@@ -1767,9 +1784,7 @@ def test_get_spatial_attributes_segmentation():
         explainable_model=ExplainableModel(dumb_model, "segmentation"), interpretable_model=SkLearnLasso(alpha=0.1)
     )
 
-    # Get postprocessing
-    from meteors.utils.utils import agg_segmentation_postprocessing
-
+    # Get postprocessingagg_segmentation_postprocessing
     postprocessing = agg_segmentation_postprocessing(classes_numb=3)
 
     # Call the get_spatial_attributes method
@@ -1854,7 +1869,7 @@ def test_get_spatial_attributes_segmentation():
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == image.image.shape
 
-    # Test case 5: No segmentation postprocessing
+    # Test No segmentation postprocessing
     with pytest.raises(AssertionError):
         spatial_attributes = lime.get_spatial_attributes(
             image, segmentation_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=None
@@ -1928,6 +1943,22 @@ def test_get_spatial_attributes_classification():
 
     # Call the get_spatial_attributes method
     spatial_attributes = lime.get_spatial_attributes(image, segmentation_mask, target=0)
+
+    # Assert the output type and properties
+    assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
+    assert spatial_attributes.image == image
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert spatial_attributes.score <= 1.0
+    assert spatial_attributes.attributes.shape == image.image.shape
+
+    # Test added postprocessing
+    postprocessing = agg_segmentation_postprocessing()
+    spatial_attributes = lime.get_spatial_attributes(
+        image,
+        segmentation_mask,
+        target=0,
+        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+    )
 
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.ImageSpatialAttributes)
@@ -2021,6 +2052,21 @@ def test_get_spectral_attributes_regression():
 
     # Use Band mask no Band names
     spectral_attributes = lime.get_spectral_attributes(image, band_mask, target=0)
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.ImageSpectralAttributes)
+    assert spectral_attributes.image == image
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names is not None
+    assert spectral_attributes.score <= 1.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == image.image.shape
+
+    # Test added postprocessing
+    postprocessing = agg_segmentation_postprocessing()
+    spectral_attributes = lime.get_spectral_attributes(
+        image, band_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+    )
 
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.ImageSpectralAttributes)
@@ -2125,6 +2171,21 @@ def test_get_spectral_attributes_classification():
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == image.image.shape
 
+    # Test added postprocessing
+    postprocessing = agg_segmentation_postprocessing()
+    spectral_attributes = lime.get_spectral_attributes(
+        image, band_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.ImageSpectralAttributes)
+    assert spectral_attributes.image == image
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names is not None
+    assert spectral_attributes.score <= 1.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == image.image.shape
+
 
 def test_get_spectral_attributes_segmentation():
     # Create a sample image
@@ -2156,8 +2217,6 @@ def test_get_spectral_attributes_segmentation():
     )
 
     # Get postprocessing
-    from meteors.utils.utils import agg_segmentation_postprocessing
-
     postprocessing = agg_segmentation_postprocessing(classes_numb=3)
 
     # Call the get_spectral_attributes method
