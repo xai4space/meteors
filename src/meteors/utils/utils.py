@@ -75,7 +75,7 @@ def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> torch.Tensor:
 
 def agg_segmentation_postprocessing(
     soft_labels: bool = False, classes_numb: int = 0, class_axis: int = 1
-) -> Callable[[torch.Tensor, torch.Tensor], torch.Tensor]: # pragma: no cover
+) -> Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:  # pragma: no cover
     """Postprocessing function for aggregating segmentation outputs.
 
     This function takes the segmentation model output and sums the pixel scores for
