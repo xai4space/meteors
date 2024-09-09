@@ -10,6 +10,7 @@ from itertools import chain
 
 import torch
 import numpy as np
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=FutureWarning)
     import spyndex
