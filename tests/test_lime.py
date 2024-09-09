@@ -499,8 +499,8 @@ def test_resolve_inference_device():
     # Test invalid device type
     device = 123
     info = ValidationInfoMock(data={"hsi": torch.randn(5, 5)})
-    with pytest.raises(TypeError):
-        mt_lime.resolve_inference_device(device, info)
+    with pytest.raises(ValueError):
+        mt_lime.resolve_inference_device("device", info)
 
     # Test no image in the info
     device = None
