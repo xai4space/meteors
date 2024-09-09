@@ -40,7 +40,7 @@ def validate_orientation(value: tuple[str, str, str] | list[str]) -> tuple[str, 
     if not isinstance(value, tuple):
         value = tuple(value)  # type: ignore
 
-    if len(value) != 3 or any(elem not in ["H", "W", "C"] for elem in value) or len(set(value)) != 3:
+    if len(value) != 3 or set(value) != {"H", "W", "C"}:
         raise ValueError("Orientation must be a tuple of 'H', 'W', and 'C' in any order.")
     return value  # type: ignore
 
@@ -597,8 +597,6 @@ class Image(BaseModel):
 
         if target_orientation == self.orientation:
             return image
-
-        logger.debug(f"Changing image orientation from {image.orientation} to {target_orientation}")
 
         permute_dims = [image.orientation.index(dim) for dim in target_orientation]
 

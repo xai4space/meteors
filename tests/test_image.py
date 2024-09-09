@@ -165,17 +165,20 @@ def test_orientation_change():
     assert new_image.orientation == new_orientation
     assert new_image.image.shape == torch.Size([3, 2, 4])
     assert image.orientation == ("C", "H", "W")
+    assert image.orientation != new_image.orientation
 
     # change of orientation inplace
     new_orientation = ("H", "C", "W")
-    image.change_orientation(new_orientation, inplace=True)
+    new_image = image.change_orientation(new_orientation, inplace=True)
     assert image.orientation == new_orientation
     assert image.image.shape == torch.Size([3, 4, 2])
+    assert image == new_image
 
     # test the case where the orientation is the same
     new_orientation = ("H", "C", "W")
-    image.change_orientation(new_orientation, inplace=True)
+    new_image = image.change_orientation(new_orientation, inplace=True)
     assert image.orientation == new_orientation
+    assert new_image == image
 
     # test case with binary mask
     tensor_image = torch.rand((4, 3, 2))
@@ -189,6 +192,11 @@ def test_orientation_change():
     image.change_orientation(new_orientation, inplace=True)
     assert image.orientation == new_orientation
     assert image.binary_mask.shape == torch.Size([3, 4, 2])
+
+    # test case with invalid orientation
+    new_orientation = ("H", "C", "A")
+    with pytest.raises(ValueError):
+        image.change_orientation(new_orientation, inplace=True)
 
 
 def test_ensure_image_tensor():
