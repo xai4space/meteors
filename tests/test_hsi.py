@@ -704,7 +704,7 @@ def test_get_image():
     # Test with apply_mask=False and binary_mask is None
     result = hsi_image.get_image(apply_mask=False)
     assert torch.all(torch.eq(result, image))
-    
+
     # Test with binary mask different:
     binary_mask[0, 0, 0] = False
     hsi_image = mt_image.HSI(image=image, wavelengths=[0, 1, 2], binary_mask=binary_mask)

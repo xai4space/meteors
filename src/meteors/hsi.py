@@ -367,20 +367,18 @@ class HSI(BaseModel):
         self.device = self.image.device
         return self
 
-    def get_image(
-        self, apply_mask: bool = True
-    ) -> torch.Tensor:
+    def get_image(self, apply_mask: bool = True) -> torch.Tensor:
         """Returns the hyperspectral image data with optional masking applied.
-        
+
         Args:
             apply_mask (bool, optional): Whether to apply the binary mask to the image.
                 Defaults to True.
         Returns:
             torch.Tensor: The hyperspectral image data.
-        
+
         Notes:
             - If apply_mask is True, the binary mask will be applied to the image based on the `binary_mask` attribute.
-        
+
         Examples:
             >>> hsi_image = Image(image=torch.rand(10, 100, 100), wavelengths=np.linspace(400, 1000, 10))
             >>> image = hsi_image.get_image()
