@@ -126,6 +126,11 @@ def test_validate_orientation():
     result = mt_image.validate_orientation(orientation)
     assert result == orientation
 
+    # test conversion of string to tuple
+    orientation = "CHW"
+    result = mt_image.validate_orientation(orientation)
+    assert result == ("C", "H", "W")
+
     # Test valid orientation with list
     orientation = ["C", "H", "W"]
     result = mt_image.validate_orientation(orientation)
@@ -140,6 +145,58 @@ def test_validate_orientation():
     orientation = ("C", "H", "A")
     with pytest.raises(ValueError):
         mt_image.validate_orientation(orientation)
+
+    # test invalid orientation with repeated elements
+    orientation = "HHH"
+    with pytest.raises(ValueError):
+        mt_image.validate_orientation(orientation)
+
+
+def test_orientation_change():
+    tensor_image = torch.rand((4, 3, 2))
+    image = mt_image.Image(image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"))
+
+    assert image.orientation == ("C", "H", "W")
+
+    # change of orientation with copy
+    new_orientation = ("H", "W", "C")
+    new_image = image.change_orientation(new_orientation, inplace=False)
+
+    assert new_image.orientation == new_orientation
+    assert new_image.image.shape == torch.Size([3, 2, 4])
+    assert image.orientation == ("C", "H", "W")
+    assert image.orientation != new_image.orientation
+
+    # change of orientation inplace
+    new_orientation = ("H", "C", "W")
+    new_image = image.change_orientation(new_orientation, inplace=True)
+    assert image.orientation == new_orientation
+    assert image.image.shape == torch.Size([3, 4, 2])
+    assert image == new_image
+
+    # test the case where the orientation is the same
+    new_orientation = ("H", "C", "W")
+    new_image = image.change_orientation(new_orientation, inplace=True)
+    assert image.orientation == new_orientation
+    assert new_image == image
+
+    # test case with binary mask
+    tensor_image = torch.rand((4, 3, 2))
+    binary_mask = torch.ones((4, 3, 2), dtype=torch.bool)
+    image = mt_image.Image(
+        image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"), binary_mask=binary_mask
+    )
+
+    assert image.orientation == ("C", "H", "W")
+
+    image.change_orientation(new_orientation, inplace=True)
+    assert image.orientation == new_orientation
+    assert image.binary_mask.shape == torch.Size([3, 4, 2])
+
+    # test case with invalid orientation
+    new_orientation = ("H", "C", "A")
+    with pytest.raises(ValueError):
+        image.change_orientation(new_orientation, inplace=True)
 
 
 def test_ensure_image_tensor():

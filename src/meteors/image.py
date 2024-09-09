@@ -40,7 +40,7 @@ def validate_orientation(value: tuple[str, str, str] | list[str]) -> tuple[str, 
     if not isinstance(value, tuple):
         value = tuple(value)  # type: ignore
 
-    if len(value) != 3 or any(elem not in ["H", "W", "C"] for elem in value):
+    if len(value) != 3 or set(value) != {"H", "W", "C"}:
         raise ValueError("Orientation must be a tuple of 'H', 'W', and 'C' in any order.")
     return value  # type: ignore
 
@@ -573,3 +573,40 @@ class Image(BaseModel):
             raise NotImplementedError(
                 f"Selection method '{selection_method}' is not supported. Only 'center' is currently available."
             )
+
+    def change_orientation(self, target_orientation: tuple[str, str, str], inplace=False) -> Self:
+        """Changes the orientation of the image data to the target orientation.
+
+        Args:
+            target_orientation (tuple[str, str, str]): The target orientation for the image data.
+                This should be a tuple of three one-letter strings in any order: "C", "H", "W".
+            inplace (bool, optional): Whether to modify the image data in place or return a new object.
+
+        Returns:
+            Self: The updated Image object with the new orientation.
+
+        Raises:
+            ValueError: If the target orientation is not a valid tuple of three one-letter strings.
+        """
+        target_orientation = validate_orientation(target_orientation)
+
+        if inplace:
+            image = self
+        else:
+            image = self.model_copy()
+
+        if target_orientation == self.orientation:
+            return image
+
+        permute_dims = [image.orientation.index(dim) for dim in target_orientation]
+
+        # permute the image
+        image.image = image.image.permute(permute_dims)
+
+        # permute the binary mask
+        if image.binary_mask is not None:
+            image.binary_mask = image.binary_mask.permute(permute_dims)
+
+        image.orientation = target_orientation
+
+        return image
