@@ -23,8 +23,8 @@ from captum._utils.common import (
     _get_max_feature_index,
     _is_tuple,
     _reduce_list,
-    _format_additional_forward_args, 
-    _format_inputs, 
+    _format_additional_forward_args,
+    _format_inputs,
     _select_targets,
 )
 from captum._utils.progress import progress
@@ -337,8 +337,8 @@ class LimeBase(PerturbationAttribution):
                         Default: 1
             model_postprocessing (Callable[[Tensor, Tensor], Tensor], optional):
                         Postprocessing to be applied to the model output
-                        and the masked region to aggregate the output for 
-                        interpretable model. This should be used only with 
+                        and the masked region to aggregate the output for
+                        interpretable model. This should be used only with
                         models that not provide a single scalar or 1d tensor
                         for example a segmentation model. The callable takes
                         two arguments - the model output and the masked region
@@ -463,16 +463,19 @@ class LimeBase(PerturbationAttribution):
                 else:
                     curr_sample = self.perturb_func(inputs, **kwargs)
                 batch_count += 1
-                if self.perturb_interpretable_space and self.from_interp_rep_transform is not None: #TODO: think about this
+                mask_inps.append(get_mask_from_interp_rep_transform(curr_sample, **kwargs))
+                if (
+                    self.perturb_interpretable_space and self.from_interp_rep_transform is not None
+                ):  # TODO: think about this
                     interpretable_inps.append(curr_sample)
                     curr_model_inputs.append(self.from_interp_rep_transform(curr_sample, inputs, **kwargs))
-                    mask_inps.append(get_mask_from_interp_rep_transform(curr_sample, **kwargs))
                 elif self.to_interp_rep_transform is not None:
                     curr_model_inputs.append(curr_sample)
                     interpretable_inps.append(self.to_interp_rep_transform(curr_sample, inputs, **kwargs))
                 else:
                     raise ValueError("Must provide either `to_interp_rep_transform` or `from_interp_rep_transform`")
                 curr_sim = self.similarity_func(inputs, curr_model_inputs[-1], interpretable_inps[-1], **kwargs)
+
                 similarities.append(
                     curr_sim.flatten() if isinstance(curr_sim, Tensor) else torch.tensor([curr_sim], device=device)
                 )
@@ -499,6 +502,7 @@ class LimeBase(PerturbationAttribution):
                     outputs.append(model_out)
 
                     curr_model_inputs = []
+                    mask_inps = []
 
             if len(curr_model_inputs) > 0:
                 expanded_additional_args = _expand_additional_forward_args(
@@ -541,12 +545,12 @@ class LimeBase(PerturbationAttribution):
 
     def _evaluate_batch(
         self,
-        curr_model_inputs: List[TensorOrTupleOfTensorsGeneric],
+        curr_model_inputs: List[TensorOrTupleOfTensorsGeneric],  # type: ignore
         expanded_target: TargetType,
         expanded_additional_args: Any,
         device: torch.device,
         model_postprocessing: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
-        mask_inps: List[TensorOrTupleOfTensorsGeneric] = None,
+        mask_inps: Optional[List[TensorOrTupleOfTensorsGeneric]] = None,
     ) -> Tensor:
         """This method evaluates the model on a batch of perturbed inputs.
 
@@ -610,7 +614,7 @@ def get_mask_from_interp_rep_transform(
 
     Args:
         curr_sample (Tensor): A single sampled interpretable representation (tensor of shape 1 x num_interp_features)
-        
+
     Returns:
         Tensor or tuple[Tensor, ...]: The binary mask used to make representation of input space (matching shapes of original input to attribute).
     """
@@ -741,9 +745,9 @@ def construct_feature_mask(feature_mask, formatted_inputs):
 
 
 def _run_forward(
-    forward_func: Callable, # Generic type `Callable` expects 2 type parameters.
-    inputs: Any, # Parameter annotation cannot be `Any`.
-    target: TargetType = None, # Parameter annotation cannot be `Any`.
+    forward_func: Callable,  # Generic type `Callable` expects 2 type parameters.
+    inputs: Any,  # Parameter annotation cannot be `Any`.
+    target: TargetType = None,  # Parameter annotation cannot be `Any`.
     additional_forward_args: Any = None,
     model_postprocessing: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
     mask_inps: Any = None,
@@ -762,12 +766,10 @@ def _run_forward(
         *(
             # pyre-fixme[60]: Concatenation not yet support for multiple variadic
             #  tuples: `*inputs, *additional_forward_args`.
-            (*formatted_inputs, *additional_forward_args)
-            if additional_forward_args is not None
-            else formatted_inputs
+            (*formatted_inputs, *additional_forward_args) if additional_forward_args is not None else formatted_inputs
         )
     )
-    
+
     if model_postprocessing and mask_inps is None:
         mask_inps = torch.ones_like(inputs)
 

@@ -1168,9 +1168,7 @@ class Lime(Explainer):
         band_indices: dict[str | tuple[str, ...], list[int]] = {}
         for segment_label, segment in band_wavelengths.items():
             try:
-                print(wavelengths.dtype)
                 dtype = torch_dtype_to_python_dtype(wavelengths.dtype)
-                print(dtype)
                 if isinstance(segment, (float, int)):
                     segment = [dtype(segment)]  # type: ignore
                 if isinstance(segment, list) and all(isinstance(x, (float, int)) for x in segment):
@@ -1185,11 +1183,8 @@ class Lime(Explainer):
                     else:
                         segment_dtype = tuple(change_dtype_of_list(segment, dtype))
 
-                    print(segment_dtype)
                     valid_segment_range = validate_segment_format(segment_dtype, dtype)
-                    print(valid_segment_range)
                     range_indices = Lime._convert_wavelengths_to_indices(wavelengths, valid_segment_range)  # type: ignore
-                    print(range_indices)
                     valid_indices_format = validate_segment_format(range_indices)
                     valid_range_indices = adjust_and_validate_segment_ranges(wavelengths, valid_indices_format)
                     indices = Lime._get_indices_from_wavelength_indices_range(wavelengths, valid_range_indices)
@@ -1459,8 +1454,14 @@ class Lime(Explainer):
         image: Image,
         segmentation_mask: np.ndarray | torch.Tensor | None = None,
         target: int | None = None,
+        n_samples: int = 10,
+        perturbations_per_eval: int = 4,
+        verbose: bool = False,
+        model_segmentation_postprocessing_for_segmentation_problem_type: Callable[
+            [torch.Tensor, torch.Tensor], torch.Tensor
+        ]
+        | None = None,
         segmentation_method: Literal["slic", "patch"] = "slic",
-        model_segmentation_postprocessing_for_segmentation_problem_type:  Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
         **segmentation_method_params: Any,
     ) -> ImageSpatialAttributes:
         """
@@ -1481,13 +1482,17 @@ class Lime(Explainer):
                     Additional parameters for the segmentation method may be passed as kwargs. Defaults to None.
             target (int, optional): If the model creates more than one output, it analyzes the given target.
                 Defaults to None.
+            n_samples (int, optional): The number of samples to generate/analyze in LIME. The more the better but slower. Defaults to 10.
+            perturbations_per_eval (int, optional): The number of perturbations to evaluate at once (Simply the inner batch size).
+                Defaults to 4.
+            verbose (bool, optional): Whether to show the progress bar. Defaults to False.
+            model_segmentation_postprocessing_for_segmentation_problem_type (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
+               A segmentation postprocessing function for segmentation problem type. This is required for segmentation problem type as
+               lime surrogate model needs to be optimized on the 1d output, and the model should be able to modify the model output with
+               inner lime active region mask as input and return the 1d output (for example number of pixel for each class) and not class mask.
+                   Defaults to None.
             segmentation_method (Literal["slic", "patch"], optional):
                 Segmentation method used only if `segmentation_mask` is None. Defaults to "slic".
-            model_segmentation_postprocessing_for_segmentation_problem_type (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
-                A segmentation postprocessing function for segmentation problem type. This is required for segmentation problem type as
-                lime surrogate model needs to be optimized on the 1d output, and the model should be able to modify the model output with
-                inner lime active region mask as input and return the 1d output (for example number of pixel for each class) and not class mask.
-                    Defaults to None.
             **segmentation_method_params (Any): Additional parameters for the segmentation method.
 
         Returns:
@@ -1519,7 +1524,7 @@ class Lime(Explainer):
             raise ValueError("Lime object not initialized")
 
         assert isinstance(image, Image), "Image should be an instance of Image class"
-        
+
         if self.explainable_model.problem_type == "segmentation":
             assert model_segmentation_postprocessing_for_segmentation_problem_type, (
                 "model_segmentation_postprocessing_for_segmentation_problem_type is required for segmentation problem type, "
@@ -1534,6 +1539,7 @@ class Lime(Explainer):
 
         if segmentation_mask is None:
             segmentation_mask = self.get_segmentation_mask(image, segmentation_method, **segmentation_method_params)
+
         segmentation_mask = ensure_torch_tensor(
             segmentation_mask, "Segmentation mask should be None, numpy array, or torch tensor"
         )
@@ -1545,10 +1551,10 @@ class Lime(Explainer):
             inputs=image.image.unsqueeze(0),
             target=target,
             feature_mask=segmentation_mask.unsqueeze(0),
-            n_samples=10,
-            perturbations_per_eval=4,
+            n_samples=n_samples,
+            perturbations_per_eval=perturbations_per_eval,
             model_postprocessing=model_segmentation_postprocessing_for_segmentation_problem_type,
-            show_progress=True,
+            show_progress=verbose,
             return_input_shape=True,
         )
 
@@ -1566,9 +1572,14 @@ class Lime(Explainer):
         image: Image,
         band_mask: np.ndarray | torch.Tensor | None = None,
         target=None,
+        n_samples: int = 10,
+        perturbations_per_eval: int = 4,
+        verbose: bool = False,
         band_names: list[str | list[str]] | dict[tuple[str, ...] | str, int] | None = None,
-        model_segmentation_postprocessing_for_segmentation_problem_type: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
-        verbose=False,
+        model_segmentation_postprocessing_for_segmentation_problem_type: Callable[
+            [torch.Tensor, torch.Tensor], torch.Tensor
+        ]
+        | None = None,
     ) -> ImageSpectralAttributes:
         """
         Attributes the image using LIME method for spectral data. Based on the provided image and band mask, the LIME
@@ -1585,13 +1596,16 @@ class Lime(Explainer):
                 If equals to None, the band mask is created within the function. Defaults to None.
             target (int, optional): If the model creates more than one output, it analyzes the given target.
                 Defaults to None.
-            band_names (list[str] | dict[str | tuple[str, ...], int] | None, optional): Band names. Defaults to None.
+            n_samples (int, optional): The number of samples to generate/analyze in LIME. The more the better but slower. Defaults to 10.
+            perturbations_per_eval (int, optional): The number of perturbations to evaluate at once (Simply the inner batch size).
+                Defaults to 4.
+            verbose (bool, optional): Specifies whether to show progress during the attribution process. Defaults to False.
             model_segmentation_postprocessing_for_segmentation_problem_type: (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
                 A segmentation postprocessing function for segmentation problem type. This is required for segmentation problem type as
                 lime surrogate model needs to be optimized on the 1d output, and the model should be able to modify the model output with
                 inner lime active region mask as input and return the 1d output (for example number of pixel for each class) and not class mask.
                 Defaults to None.
-            verbose (bool, optional): Specifies whether to show progress during the attribution process. Defaults to False.
+            band_names (list[str] | dict[str | tuple[str, ...], int] | None, optional): Band names. Defaults to None.
 
         Returns:
             ImageSpectralAttributes: An ImageSpectralAttributes object containing the image, the attributions,
@@ -1662,8 +1676,8 @@ class Lime(Explainer):
             inputs=image.image.unsqueeze(0),
             target=target,
             feature_mask=band_mask.unsqueeze(0),
-            n_samples=10,
-            perturbations_per_eval=4,
+            n_samples=n_samples,
+            perturbations_per_eval=perturbations_per_eval,
             model_postprocessing=model_segmentation_postprocessing_for_segmentation_problem_type,
             show_progress=verbose,
             return_input_shape=True,
