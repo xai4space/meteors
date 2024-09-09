@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing_extensions import Annotated, Self, Literal, Callable, Any, TypeVar, Type
 import warnings
+
 from abc import ABC
 from loguru import logger
 from functools import cached_property
@@ -9,7 +10,11 @@ from itertools import chain
 
 import torch
 import numpy as np
-import spyndex
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=FutureWarning)
+    import spyndex
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator, ValidationInfo
 from pydantic.functional_validators import BeforeValidator
 

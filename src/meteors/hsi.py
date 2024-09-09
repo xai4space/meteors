@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing_extensions import Annotated, Self
+import warnings
 
 import torch
 import numpy as np
@@ -7,7 +8,9 @@ from loguru import logger
 from pydantic import BaseModel, ConfigDict, ValidationInfo, Field, model_validator
 from pydantic.functional_validators import PlainValidator
 
-import spyndex
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=FutureWarning)
+    import spyndex
 
 #####################################################################
 ############################ VALIDATIONS ############################
