@@ -1840,7 +1840,7 @@ def test_get_spatial_attributes_regression():
     # Test case 5: provide a custom segmentation postprocessing function
     postprocessing = agg_segmentation_postprocessing(classes_numb=3)
     spatial_attributes = lime.get_spatial_attributes(
-        hsi, segmentation_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+        hsi, segmentation_mask, target=0, postprocessing_segmentation_output=postprocessing
     )
 
     # Assert the output type and properties
@@ -1929,7 +1929,7 @@ def test_get_spatial_attributes_classification():
     # Test case 5: provide a custom segmentation postprocessing function
     postprocessing = agg_segmentation_postprocessing(classes_numb=3)
     spatial_attributes = lime.get_spatial_attributes(
-        hsi, segmentation_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+        hsi, segmentation_mask, target=0, postprocessing_segmentation_output=postprocessing
     )
 
     # Assert the output type and properties
@@ -1972,7 +1972,7 @@ def test_get_spatial_attributes_segmentation():
         hsi,
         segmentation_mask,
         target=0,
-        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+        postprocessing_segmentation_output=postprocessing,
     )
 
     # Assert the output type and properties
@@ -1987,7 +1987,7 @@ def test_get_spatial_attributes_segmentation():
         hsi,
         segmentation_mask,
         target=1,
-        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+        postprocessing_segmentation_output=postprocessing,
     )
     assert spatial_attributes.hsi == hsi
     assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
@@ -1999,7 +1999,7 @@ def test_get_spatial_attributes_segmentation():
         hsi,
         segmentation_method="slic",
         target=0,
-        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+        postprocessing_segmentation_output=postprocessing,
     )
 
     # Assert the output type and properties
@@ -2015,7 +2015,7 @@ def test_get_spatial_attributes_segmentation():
         segmentation_method="patch",
         target=0,
         patch_size=5,
-        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+        postprocessing_segmentation_output=postprocessing,
     )
 
     # Assert the output type and properties
@@ -2039,7 +2039,7 @@ def test_get_spatial_attributes_segmentation():
         hsi,
         segmentation_mask,
         target=0,
-        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+        postprocessing_segmentation_output=postprocessing,
     )
 
     # Assert the output type and properties
@@ -2052,7 +2052,7 @@ def test_get_spatial_attributes_segmentation():
     # Test No segmentation postprocessing
     with pytest.raises(AssertionError):
         spatial_attributes = lime.get_spatial_attributes(
-            hsi, segmentation_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=None
+            hsi, segmentation_mask, target=0, postprocessing_segmentation_output=None
         )
 
 
@@ -2153,7 +2153,7 @@ def test_get_spectral_attributes_regression():
     # Test case 5: provide a custom segmentation postprocessing function
     postprocessing = agg_segmentation_postprocessing(classes_numb=3)
     spectral_attributes = lime.get_spectral_attributes(
-        hsi, band_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+        hsi, band_mask, target=0, postprocessing_segmentation_output=postprocessing
     )
 
     # Assert the output type and properties
@@ -2262,7 +2262,7 @@ def test_get_spectral_attributes_classification():
     # Test case 5: provide a custom segmentation postprocessing function
     postprocessing = agg_segmentation_postprocessing(classes_numb=3)
     spectral_attributes = lime.get_spectral_attributes(
-        hsi, band_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+        hsi, band_mask, target=0, postprocessing_segmentation_output=postprocessing
     )
 
     # Assert the output type and properties
@@ -2313,7 +2313,7 @@ def test_get_spectral_attributes_segmentation():
         band_mask,
         band_names=band_names,
         target=0,
-        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+        postprocessing_segmentation_output=postprocessing,
     )
 
     # Assert the output type and properties
@@ -2331,7 +2331,7 @@ def test_get_spectral_attributes_segmentation():
         band_mask,
         band_names=band_names,
         target=1,
-        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+        postprocessing_segmentation_output=postprocessing,
     )
 
     # Assert the output type and properties
@@ -2348,7 +2348,7 @@ def test_get_spectral_attributes_segmentation():
         hsi,
         band_names=band_names,
         target=0,
-        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+        postprocessing_segmentation_output=postprocessing,
     )
 
     # Assert the output type and properties
@@ -2362,7 +2362,7 @@ def test_get_spectral_attributes_segmentation():
 
     # Use Band mask no Band names
     spectral_attributes = lime.get_spectral_attributes(
-        hsi, band_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+        hsi, band_mask, target=0, postprocessing_segmentation_output=postprocessing
     )
 
     # Assert the output type and properties
@@ -2385,7 +2385,7 @@ def test_get_spectral_attributes_segmentation():
 
     # Use Band mask no Band names
     spectral_attributes = lime.get_spectral_attributes(
-        hsi, band_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+        hsi, band_mask, target=0, postprocessing_segmentation_output=postprocessing
     )
 
     # Assert the output type and properties
@@ -2404,5 +2404,5 @@ def test_get_spectral_attributes_segmentation():
             band_mask,
             band_names=band_names,
             target=0,
-            model_segmentation_postprocessing_for_segmentation_problem_type=None,
+            postprocessing_segmentation_output=None,
         )

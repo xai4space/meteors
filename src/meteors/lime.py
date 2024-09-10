@@ -1496,10 +1496,7 @@ class Lime(Explainer):
         n_samples: int = 10,
         perturbations_per_eval: int = 4,
         verbose: bool = False,
-        model_segmentation_postprocessing_for_segmentation_problem_type: Callable[
-            [torch.Tensor, torch.Tensor], torch.Tensor
-        ]
-        | None = None,
+        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
         segmentation_method: Literal["slic", "patch"] = "slic",
         **segmentation_method_params: Any,
     ) -> HSISpatialAttributes:
@@ -1525,7 +1522,7 @@ class Lime(Explainer):
             perturbations_per_eval (int, optional): The number of perturbations to evaluate at once (Simply the inner batch size).
                 Defaults to 4.
             verbose (bool, optional): Whether to show the progress bar. Defaults to False.
-            model_segmentation_postprocessing_for_segmentation_problem_type (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
+            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
                A segmentation postprocessing function for segmentation problem type. This is required for segmentation problem type as
                lime surrogate model needs to be optimized on the 1d output, and the model should be able to modify the model output with
                inner lime active region mask as input and return the 1d output (for example number of pixel for each class) and not class mask.
@@ -1540,8 +1537,7 @@ class Lime(Explainer):
 
         Raises:
             ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
-            AssertionError: If explainable model type is `segmentation` and
-                `model_segmentation_postprocessing_for_segmentation_problem_type` is not provided.
+            AssertionError: If explainable model type is `segmentation` and `postprocessing_segmentation_output` is not provided.
             AssertionError: If the hsi is not an instance of the HSI class.
 
         Examples:
@@ -1567,16 +1563,16 @@ class Lime(Explainer):
         assert isinstance(hsi, HSI), "hsi should be an instance of HSI class"
 
         if self.explainable_model.problem_type == "segmentation":
-            assert model_segmentation_postprocessing_for_segmentation_problem_type, (
-                "model_segmentation_postprocessing_for_segmentation_problem_type is required for segmentation problem type, "
-                "please provide the model_segmentation_postprocessing_for_segmentation_problem_type."
-                "For a reference we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
+            assert postprocessing_segmentation_output, (
+                "postprocessing_segmentation_output is required for segmentation problem type, please provide "
+                "the `postprocessing_segmentation_output`. For a reference "
+                "we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
             )
-        elif model_segmentation_postprocessing_for_segmentation_problem_type is not None:
+        elif postprocessing_segmentation_output is not None:
             logger.warning(
-                "model_segmentation_postprocessing_for_segmentation_problem_type is provided but the problem is not segmentation, will be ignored"
+                "postprocessing_segmentation_output is provided but the problem is not segmentation, will be ignored"
             )
-            model_segmentation_postprocessing_for_segmentation_problem_type = None
+            postprocessing_segmentation_output = None
 
         if segmentation_mask is None:
             segmentation_mask = self.get_segmentation_mask(hsi, segmentation_method, **segmentation_method_params)
@@ -1593,7 +1589,7 @@ class Lime(Explainer):
             feature_mask=segmentation_mask.unsqueeze(0),
             n_samples=n_samples,
             perturbations_per_eval=perturbations_per_eval,
-            model_postprocessing=model_segmentation_postprocessing_for_segmentation_problem_type,
+            model_postprocessing=postprocessing_segmentation_output,
             show_progress=verbose,
             return_input_shape=True,
         )
@@ -1615,10 +1611,7 @@ class Lime(Explainer):
         n_samples: int = 10,
         perturbations_per_eval: int = 4,
         verbose: bool = False,
-        model_segmentation_postprocessing_for_segmentation_problem_type: Callable[
-            [torch.Tensor, torch.Tensor], torch.Tensor
-        ]
-        | None = None,
+        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
         band_names: list[str | list[str]] | dict[tuple[str, ...] | str, int] | None = None,
     ) -> HSISpectralAttributes:
         """
@@ -1640,7 +1633,7 @@ class Lime(Explainer):
             perturbations_per_eval (int, optional): The number of perturbations to evaluate at once (Simply the inner batch size).
                 Defaults to 4.
             verbose (bool, optional): Specifies whether to show progress during the attribution process. Defaults to False.
-            model_segmentation_postprocessing_for_segmentation_problem_type: (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
+            postprocessing_segmentation_output: (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
                 A segmentation postprocessing function for segmentation problem type. This is required for segmentation problem type as
                 lime surrogate model needs to be optimized on the 1d output, and the model should be able to modify the model output with
                 inner lime active region mask as input and return the 1d output (for example number of pixel for each class) and not class mask.
@@ -1653,8 +1646,7 @@ class Lime(Explainer):
 
         Raises:
             ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
-            AssertionError: If explainable model type is `segmentation` and
-                `model_segmentation_postprocessing_for_segmentation_problem_type` is not provided.
+            AssertionError: If explainable model type is `segmentation` and `postprocessing_segmentation_output` is not provided.
             AssertionError: If the hsi is not an instance of the HSI class.
 
         Examples:
@@ -1682,16 +1674,16 @@ class Lime(Explainer):
             raise ValueError("Lime object not initialized")  # pragma: no cover
 
         if self.explainable_model.problem_type == "segmentation":
-            assert model_segmentation_postprocessing_for_segmentation_problem_type, (
-                "model_segmentation_postprocessing_for_segmentation_problem_type is required for segmentation problem type, "
-                "please provide the model_segmentation_postprocessing_for_segmentation_problem_type."
-                "For a reference we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
+            assert postprocessing_segmentation_output, (
+                "postprocessing_segmentation_output is required for segmentation problem type, please provide "
+                "the `postprocessing_segmentation_output`. For a reference "
+                "we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
             )
-        elif model_segmentation_postprocessing_for_segmentation_problem_type is not None:
+        elif postprocessing_segmentation_output is not None:
             logger.warning(
-                "model_segmentation_postprocessing_for_segmentation_problem_type is provided but the problem is not segmentation, will be ignored"
+                "postprocessing_segmentation_output is provided but the problem is not segmentation, will be ignored"
             )
-            model_segmentation_postprocessing_for_segmentation_problem_type = None
+            postprocessing_segmentation_output = None
 
         assert isinstance(hsi, HSI), "hsi should be an instance of HSI class"
 
@@ -1719,7 +1711,7 @@ class Lime(Explainer):
             feature_mask=band_mask.unsqueeze(0),
             n_samples=n_samples,
             perturbations_per_eval=perturbations_per_eval,
-            model_postprocessing=model_segmentation_postprocessing_for_segmentation_problem_type,
+            model_postprocessing=postprocessing_segmentation_output,
             show_progress=verbose,
             return_input_shape=True,
         )

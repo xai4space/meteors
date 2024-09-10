@@ -464,9 +464,7 @@ class LimeBase(PerturbationAttribution):
                     curr_sample = self.perturb_func(inputs, **kwargs)
                 batch_count += 1
                 mask_inps.append(get_mask_from_interp_rep_transform(curr_sample, **kwargs))
-                if (
-                    self.perturb_interpretable_space and self.from_interp_rep_transform is not None
-                ):  # TODO: think about this
+                if self.perturb_interpretable_space and self.from_interp_rep_transform is not None:
                     interpretable_inps.append(curr_sample)
                     curr_model_inputs.append(self.from_interp_rep_transform(curr_sample, inputs, **kwargs))
                 elif self.to_interp_rep_transform is not None:

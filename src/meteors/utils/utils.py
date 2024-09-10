@@ -46,7 +46,9 @@ def change_dtype_of_list(original_list: list[Any] | Any, dtype: Callable[[Any], 
 
 
 def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> torch.Tensor:
-    """Adjust the shape of a source tensor to match the shape of target tensor.
+    """Adjust the shape of a source tensor to match the shape of target tensor. The function squeezes or unsqueezes the
+    source tensor if the dimensions of source and target don't match. Afterwards, it tries to broadcasts the source
+    tensor to match the target dimensions.
 
     Args:
         target (torch.Tensor): The target tensor.
@@ -79,12 +81,12 @@ def agg_segmentation_postprocessing(
     class_axis: int = 1,
     use_mask: bool = True,
 ) -> Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:  # pragma: no cover
-    """Postprocessing function for aggregating segmentation outputs.
+    """Generator for postprocessing function for aggregating segmentation outputs.
 
-    This function takes the segmentation model output and sums the pixel scores for
-    all pixels predicted as each class, returning a tensor with a single value for
-    each class. This makes it easier to attribute with respect to a single output
-    scalar, as opposed to an individual pixel output attribution.
+    This generator creates a postprocessing function that takes the model output and input mask
+    (these parameters are mandatory for the function), and then creates a 2d tensor
+    with aggregated output <batch_size, classes_numb>. This is an example of a post-processing function
+    for segmentation model output that aggregates pixel results. We encouraged to write more tailored functions.
 
     Args:
         soft_labels (bool, optional): Whether the model output is soft labels (probabilities for each class)
@@ -103,6 +105,20 @@ def agg_segmentation_postprocessing(
     """
 
     def postprocessing_function(output: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        """Postprocessing function for aggregating segmentation outputs.
+
+        This function takes the segmentation model output and sums the pixel scores for
+        all pixels predicted as each class, returning a tensor with a single value for
+        each class. This makes it easier to attribute with respect to a single output
+        scalar, as opposed to an individual pixel output attribution.
+
+        Args:
+            output (torch.Tensor): The model output tensor.
+            mask (torch.Tensor): The mask tensor used to mask the input.
+
+        Returns:
+            torch.Tensor: The aggregated output tensor.
+        """
         nonlocal classes_numb
         # Adjust the shape of the mask to match the shape of the output
         mask = adjust_shape(output, mask)
