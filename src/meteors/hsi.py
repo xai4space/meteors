@@ -223,7 +223,7 @@ def process_and_validate_binary_mask(
 ######################################################################
 
 
-class Image(BaseModel):
+class HSI(BaseModel):
     image: Annotated[  # Should always be a first field
         torch.Tensor,
         PlainValidator(ensure_image_tensor),
@@ -370,7 +370,31 @@ class Image(BaseModel):
         self.device = self.image.device
         return self
 
-    # @lru_cache torch.Tensor is not hashable
+    def get_image(self, apply_mask: bool = True) -> torch.Tensor:
+        """Returns the hyperspectral image data with optional masking applied.
+
+        Args:
+            apply_mask (bool, optional): Whether to apply the binary mask to the image.
+                Defaults to True.
+        Returns:
+            torch.Tensor: The hyperspectral image data.
+
+        Notes:
+            - If apply_mask is True, the binary mask will be applied to the image based on the `binary_mask` attribute.
+
+        Examples:
+            >>> hsi_image = Image(image=torch.rand(10, 100, 100), wavelengths=np.linspace(400, 1000, 10))
+            >>> image = hsi_image.get_image()
+            >>> image.shape
+            torch.Size([10, 100, 100])
+            >>> image = hsi_image.get_image(apply_mask=False)
+            >>> image.shape
+            torch.Size([10, 100, 100])
+        """
+        if apply_mask and self.binary_mask is not None:
+            return self.image * self.binary_mask
+        return self.image
+
     def get_rgb_image(
         self, apply_mask: bool = True, apply_min_cutoff: bool = False, output_channel_axis: int | None = None
     ) -> torch.Tensor:
