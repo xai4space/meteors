@@ -391,11 +391,8 @@ class HSI(BaseModel):
             >>> image.shape
             torch.Size([10, 100, 100])
         """
-        if apply_mask:
-            if self.binary_mask is not None:
-                return self.image * self.binary_mask
-            else:
-                logger.warning("Binary mask is not available, returning the original")
+        if apply_mask and self.binary_mask is not None:
+            return self.image * self.binary_mask
         return self.image
 
     def get_rgb_image(
