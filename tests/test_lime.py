@@ -1858,6 +1858,122 @@ def test_get_spatial_attributes_classification():
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
 
+def test_get_spatial_attributes_segmentation():
+    # Create a sample image
+    wavelengths = [400, 450, 500, 550, 600, 650, 700]
+    hsi = mt.HSI(image=torch.randn(len(wavelengths), 10, 10), wavelengths=wavelengths)
+
+    # Dumb model
+    def dumb_model(image: torch.Tensor) -> torch.Tensor:
+        output = torch.zeros_like(image)
+        if len(image.shape) == 3:
+            output[0:2] = 1
+            output[0:2] = 2
+        else:
+            output[:, 0:2] = 1
+            output[:, 0:2] = 2
+        return output
+
+    # Create a sample segmentation mask
+    segmentation_mask = torch.randint(1, 4, (1, 10, 10))
+
+    # Create a sample Lime object
+    lime = mt_lime.Lime(
+        explainable_model=ExplainableModel(dumb_model, "segmentation"), interpretable_model=SkLearnLasso(alpha=0.1)
+    )
+
+    # Get postprocessingagg_segmentation_postprocessing
+    postprocessing = agg_segmentation_postprocessing(classes_numb=3)
+
+    # Call the get_spatial_attributes method
+    spatial_attributes = lime.get_spatial_attributes(
+        hsi,
+        segmentation_mask,
+        target=0,
+        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spatial_attributes, mt.HSISpatialAttributes)
+    assert spatial_attributes.hsi == hsi
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert spatial_attributes.score <= 1.0
+    assert spatial_attributes.attributes.shape == hsi.image.shape
+
+    # Test case 1: Different target
+    spatial_attributes = lime.get_spatial_attributes(
+        hsi,
+        segmentation_mask,
+        target=1,
+        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+    )
+    assert spatial_attributes.hsi == hsi
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert spatial_attributes.score <= 1.0
+    assert spatial_attributes.attributes.shape == hsi.image.shape
+
+    # Test case 2: Use slic for segmentation
+    spatial_attributes = lime.get_spatial_attributes(
+        hsi,
+        segmentation_method="slic",
+        target=0,
+        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spatial_attributes, mt.HSISpatialAttributes)
+    assert spatial_attributes.hsi == hsi
+    assert spatial_attributes.segmentation_mask is not None
+    assert spatial_attributes.score <= 1.0
+    assert spatial_attributes.attributes.shape == hsi.image.shape
+
+    # Test case 3: Use patch for segmentation
+    spatial_attributes = lime.get_spatial_attributes(
+        hsi,
+        segmentation_method="patch",
+        target=0,
+        patch_size=5,
+        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spatial_attributes, mt.HSISpatialAttributes)
+    assert spatial_attributes.hsi == hsi
+    assert spatial_attributes.segmentation_mask is not None
+    assert spatial_attributes.score <= 1.0
+    assert spatial_attributes.attributes.shape == hsi.image.shape
+
+    # Test case 4: different lime parameters
+    similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
+    interpretable_model = SkLearnLasso(alpha=0.08)
+    lime = mt_lime.Lime(
+        explainable_model=ExplainableModel(dumb_model, "segmentation"),
+        interpretable_model=interpretable_model,
+        similarity_func=similarity_func,
+    )
+
+    # Call the get_spatial_attributes method
+    spatial_attributes = lime.get_spatial_attributes(
+        hsi,
+        segmentation_mask,
+        target=0,
+        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spatial_attributes, mt.HSISpatialAttributes)
+    assert spatial_attributes.hsi == hsi
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert spatial_attributes.score <= 1.0
+    assert spatial_attributes.attributes.shape == hsi.image.shape
+
+    # Test No segmentation postprocessing
+    with pytest.raises(AssertionError):
+        spatial_attributes = lime.get_spatial_attributes(
+            hsi, segmentation_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=None
+        )
+
+
 def test_get_spectral_attributes_regression():
     # Dumb model
     def dumb_model(image: torch.Tensor) -> torch.Tensor:
@@ -2045,3 +2161,136 @@ def test_get_spectral_attributes_classification():
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == hsi.image.shape
+
+
+def test_get_spectral_attributes_segmentation():
+    # Create a sample image
+    wavelengths = [400, 450, 500, 550, 600, 650, 700]
+    hsi = mt.HSI(image=torch.randn(len(wavelengths), 10, 10), wavelengths=wavelengths)
+
+    # Dumb model
+    def dumb_model(image: torch.Tensor) -> torch.Tensor:
+        output = torch.zeros_like(image)
+        if len(image.shape) == 3:
+            output[:, 0:5] = 1
+            output[:, 0:5] = 2
+        else:
+            output[:, :, 0:5] = 1
+            output[:, :, 0:5] = 2
+        return output
+
+    # Create a sample band mask
+    band_mask = torch.zeros_like(hsi.image, dtype=int)
+    band_mask[0] = 1
+    band_mask[1] = 2
+
+    # Create a sample band names dictionary
+    band_names = {"R": 0, "G": 1, "B": 2}
+
+    # Create a sample Lime object
+    lime = mt_lime.Lime(
+        explainable_model=ExplainableModel(dumb_model, "segmentation"), interpretable_model=SkLearnLasso(alpha=0.1)
+    )
+
+    # Get postprocessing
+    postprocessing = agg_segmentation_postprocessing(classes_numb=3)
+
+    # Call the get_spectral_attributes method
+    spectral_attributes = lime.get_spectral_attributes(
+        hsi,
+        band_mask,
+        band_names=band_names,
+        target=0,
+        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.HSISpectralAttributes)
+    assert spectral_attributes.hsi == hsi
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names == band_names
+    assert spectral_attributes.score <= 1.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Different target
+    spectral_attributes = lime.get_spectral_attributes(
+        hsi,
+        band_mask,
+        band_names=band_names,
+        target=1,
+        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.HSISpectralAttributes)
+    assert spectral_attributes.hsi == hsi
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names == band_names
+    assert spectral_attributes.score <= 1.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Use Band names no Band mask
+    spectral_attributes = lime.get_spectral_attributes(
+        hsi,
+        band_names=band_names,
+        target=0,
+        model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing,
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.HSISpectralAttributes)
+    assert spectral_attributes.hsi == hsi
+    assert spectral_attributes.band_mask is not None
+    assert spectral_attributes.band_names == band_names
+    assert spectral_attributes.score <= 1.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Use Band mask no Band names
+    spectral_attributes = lime.get_spectral_attributes(
+        hsi, band_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.HSISpectralAttributes)
+    assert spectral_attributes.hsi == hsi
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names is not None
+    assert spectral_attributes.score <= 1.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Test case different lime parameters
+    similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
+    interpretable_model = SkLearnLasso(alpha=0.08)
+    lime = mt_lime.Lime(
+        explainable_model=ExplainableModel(dumb_model, "segmentation"),
+        interpretable_model=interpretable_model,
+        similarity_func=similarity_func,
+    )
+
+    # Use Band mask no Band names
+    spectral_attributes = lime.get_spectral_attributes(
+        hsi, band_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.HSISpectralAttributes)
+    assert spectral_attributes.hsi == hsi
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names is not None
+    assert spectral_attributes.score <= 1.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Test case 5: No segmentation postprocessing
+    with pytest.raises(AssertionError):
+        spectral_attributes = lime.get_spectral_attributes(
+            hsi,
+            band_mask,
+            band_names=band_names,
+            target=0,
+            model_segmentation_postprocessing_for_segmentation_problem_type=None,
+        )

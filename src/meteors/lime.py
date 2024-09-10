@@ -1542,12 +1542,9 @@ class Lime(Explainer):
 
         Raises:
             ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
-<<<<<<< HEAD
-            AssertionError: If the image is not an instance of the Image class.
-=======
-            ValueError: If the explainable model problem type is not supported.
+            AssertionError: If explainable model type is `segmentation` and
+                `model_segmentation_postprocessing_for_segmentation_problem_type` is not provided.
             AssertionError: If the hsi is not an instance of the HSI class.
->>>>>>> origin/main
 
         Examples:
             >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
@@ -1568,9 +1565,6 @@ class Lime(Explainer):
         """
         if self._lime is None or not isinstance(self._lime, LimeBase):
             raise ValueError("Lime object not initialized")
-
-        if self.explainable_model.problem_type not in ["regression", "classification"]:
-            raise ValueError("For now only the `regression` and `classification` problem is supported")
 
         assert isinstance(hsi, HSI), "hsi should be an instance of HSI class"
 
@@ -1623,6 +1617,10 @@ class Lime(Explainer):
         n_samples: int = 10,
         perturbations_per_eval: int = 4,
         verbose: bool = False,
+        model_segmentation_postprocessing_for_segmentation_problem_type: Callable[
+            [torch.Tensor, torch.Tensor], torch.Tensor
+        ]
+        | None = None,
         band_names: list[str | list[str]] | dict[tuple[str, ...] | str, int] | None = None,
     ) -> HSISpectralAttributes:
         """
@@ -1657,7 +1655,8 @@ class Lime(Explainer):
 
         Raises:
             ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
-            ValueError: If the explainable model problem type is not supported.
+            AssertionError: If explainable model type is `segmentation` and
+                `model_segmentation_postprocessing_for_segmentation_problem_type` is not provided.
             AssertionError: If the hsi is not an instance of the HSI class.
 
         Examples:
