@@ -10,6 +10,7 @@ from pydantic.functional_validators import PlainValidator
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=FutureWarning)
+    warnings.simplefilter("ignore", category=DeprecationWarning)
     import spyndex
 
 #####################################################################

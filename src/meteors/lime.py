@@ -13,6 +13,7 @@ import numpy as np
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=FutureWarning)
+    warnings.simplefilter("ignore", category=DeprecationWarning)
     import spyndex
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator, ValidationInfo
@@ -1564,7 +1565,7 @@ class Lime(Explainer):
             1.0
         """
         if self._lime is None or not isinstance(self._lime, LimeBase):
-            raise ValueError("Lime object not initialized")
+            raise ValueError("Lime object not initialized")  # pragma: no cover
 
         assert isinstance(hsi, HSI), "hsi should be an instance of HSI class"
 
@@ -1681,7 +1682,7 @@ class Lime(Explainer):
         """
 
         if self._lime is None or not isinstance(self._lime, LimeBase):
-            raise ValueError("Lime object not initialized")
+            raise ValueError("Lime object not initialized")  # pragma: no cover
 
         if self.explainable_model.problem_type == "segmentation":
             assert model_segmentation_postprocessing_for_segmentation_problem_type, (

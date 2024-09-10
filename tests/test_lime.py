@@ -476,6 +476,56 @@ def test_adjust_and_validate_segment_ranges():
         mt_lime.adjust_and_validate_segment_ranges(wavelengths, segment_range)
 
 
+def test_validate_tensor():
+    # Test with numpy array
+    np_array = np.array([1, 2, 3])
+    result = mt_lime.validate_tensor(np_array, "Input must be a numpy array or torch tensor")
+    assert isinstance(result, torch.Tensor)
+    assert torch.all(torch.eq(result, torch.tensor([1, 2, 3])))
+
+    # Test with torch tensor
+    torch_tensor = torch.tensor([4, 5, 6])
+    result = mt_lime.validate_tensor(torch_tensor, "Input must be a numpy array or torch tensor")
+    assert isinstance(result, torch.Tensor)
+    assert torch.all(torch.eq(result, torch.tensor([4, 5, 6])))
+
+    # Test with invalid input type
+    with pytest.raises(TypeError):
+        mt_lime.validate_tensor("invalid", "Input must be a numpy array or torch tensor")
+
+
+def test_validate_segment_range():
+    # Test case 1: Valid segment range within bounds
+    wavelengths = torch.tensor([400, 500, 600, 700])
+    segment_range = [(1, 2), (2, 3)]
+    result = mt_lime.validate_segment_range(wavelengths, segment_range)
+    assert result == [(1, 2), (2, 3)]
+
+    # Test case 2: Valid segment range with adjustments
+    wavelengths = torch.tensor([400, 500, 600, 700])
+    segment_range = [(0, 3), (2, 5)]
+    result = mt_lime.validate_segment_range(wavelengths, segment_range)
+    assert result == [(0, 3), (2, 4)]
+
+    # Test case 3: Valid segment range with adjustments
+    wavelengths = torch.tensor([400, 500, 600, 700])
+    segment_range = [(-1, 3), (2, 4)]
+    result = mt_lime.validate_segment_range(wavelengths, segment_range)
+    assert result == [(0, 3), (2, 4)]
+
+    # Test case 4: Invalid segment range out of bounds
+    wavelengths = torch.tensor([400, 500, 600, 700])
+    segment_range = [(0, 5), (4, 8)]
+    with pytest.raises(ValueError):
+        mt_lime.validate_segment_range(wavelengths, segment_range)
+
+    # Test case 5: Invalid segment range out of bounds
+    wavelengths = torch.tensor([400, 500, 600, 700])
+    segment_range = [(-1, 0), (2, 4)]
+    with pytest.raises(ValueError):
+        mt_lime.validate_segment_range(wavelengths, segment_range)
+
+
 def test_resolve_inference_device():
     # Test device as string
     device = "cpu"
@@ -1781,6 +1831,19 @@ def test_get_spatial_attributes_regression():
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
+    # Test case 5: provide a custom segmentation postprocessing function
+    postprocessing = agg_segmentation_postprocessing(classes_numb=3)
+    spatial_attributes = lime.get_spatial_attributes(
+        hsi, segmentation_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spatial_attributes, mt.HSISpatialAttributes)
+    assert spatial_attributes.hsi == hsi
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert spatial_attributes.score <= 1.0
+    assert spatial_attributes.attributes.shape == hsi.image.shape
+
 
 def test_get_spatial_attributes_classification():
     # Dumb model
@@ -1849,6 +1912,19 @@ def test_get_spatial_attributes_classification():
 
     # Call the get_spatial_attributes method
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_mask, target=0)
+
+    # Assert the output type and properties
+    assert isinstance(spatial_attributes, mt.HSISpatialAttributes)
+    assert spatial_attributes.hsi == hsi
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert spatial_attributes.score <= 1.0
+    assert spatial_attributes.attributes.shape == hsi.image.shape
+
+    # Test case 5: provide a custom segmentation postprocessing function
+    postprocessing = agg_segmentation_postprocessing(classes_numb=3)
+    spatial_attributes = lime.get_spatial_attributes(
+        hsi, segmentation_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+    )
 
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.HSISpatialAttributes)
@@ -2068,6 +2144,21 @@ def test_get_spectral_attributes_regression():
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == hsi.image.shape
 
+    # Test case 5: provide a custom segmentation postprocessing function
+    postprocessing = agg_segmentation_postprocessing(classes_numb=3)
+    spectral_attributes = lime.get_spectral_attributes(
+        hsi, band_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+    )
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.HSISpectralAttributes)
+    assert spectral_attributes.hsi == hsi
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names is not None
+    assert spectral_attributes.score <= 1.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == hsi.image.shape
+
 
 def test_get_spectral_attributes_classification():
     # Dumb model
@@ -2152,6 +2243,21 @@ def test_get_spectral_attributes_classification():
 
     # Use Band mask no Band names
     spectral_attributes = lime.get_spectral_attributes(hsi, band_mask, target=0)
+
+    # Assert the output type and properties
+    assert isinstance(spectral_attributes, mt.HSISpectralAttributes)
+    assert spectral_attributes.hsi == hsi
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names is not None
+    assert spectral_attributes.score <= 1.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Test case 5: provide a custom segmentation postprocessing function
+    postprocessing = agg_segmentation_postprocessing(classes_numb=3)
+    spectral_attributes = lime.get_spectral_attributes(
+        hsi, band_mask, target=0, model_segmentation_postprocessing_for_segmentation_problem_type=postprocessing
+    )
 
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.HSISpectralAttributes)

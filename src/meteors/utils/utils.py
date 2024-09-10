@@ -74,7 +74,10 @@ def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> torch.Tensor:
 
 
 def agg_segmentation_postprocessing(
-    soft_labels: bool = False, classes_numb: int = 0, class_axis: int = 1
+    soft_labels: bool = False,
+    classes_numb: int = 0,
+    class_axis: int = 1,
+    use_mask: bool = True,
 ) -> Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:  # pragma: no cover
     """Postprocessing function for aggregating segmentation outputs.
 
@@ -90,6 +93,8 @@ def agg_segmentation_postprocessing(
             If 0, use unique values in the output. Defaults to 0.
         class_axis (int, optional): The axis of the model output tensor that contains the class predictions
             if the model output is soft labels. Defaults to 1.
+        use_mask (bool, optional): Whether to use the mask to multiply the output before aggregation.
+            Defaults to True.
 
     Returns:
         Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:
@@ -110,8 +115,11 @@ def agg_segmentation_postprocessing(
 
         # IMPORTANT if mask does not have the same shape as output, you need to adjust the mask to the output shape
 
-        # Mask the output to only consider the pixels is in the mask
-        masked_output = torch.where(mask, output_labels, torch.ones_like(output_labels) * -1)
+        if use_mask:
+            # Mask the output to only consider the pixels is in the mask
+            masked_output = torch.where(mask, output_labels, torch.ones_like(output_labels) * -1)
+        else:
+            masked_output = output_labels
 
         # Get flattened masked output
         batch_size = masked_output.size(0)
