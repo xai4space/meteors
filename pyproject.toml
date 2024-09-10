@@ -75,6 +75,11 @@ docstring-code-line-length = 120
 wrap-descriptions = 120
 wrap-summaries = 120
 
+[tool.coverage.run]
+omit = [
+    "src/meteors/lime_base.py",
+]
+
 
 [tool.pytest.ini_options]
 addopts = "--cov=src/meteors --cov-report=xml"

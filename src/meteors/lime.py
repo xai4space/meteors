@@ -13,6 +13,7 @@ import numpy as np
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=FutureWarning)
+    warnings.simplefilter("ignore", category=DeprecationWarning)
     import spyndex
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator, ValidationInfo
@@ -1027,9 +1028,6 @@ class Lime(Explainer):
                     f"Incorrect band ranges indices provided, please check if provided indices are correct: {e}"
                 ) from e
 
-        if band_groups is None:
-            raise ValueError("No band names, groups, or ranges provided")
-
         return Lime._create_tensor_band_mask(
             hsi,
             band_groups,
@@ -1495,6 +1493,10 @@ class Lime(Explainer):
         hsi: HSI,
         segmentation_mask: np.ndarray | torch.Tensor | None = None,
         target: int | None = None,
+        n_samples: int = 10,
+        perturbations_per_eval: int = 4,
+        verbose: bool = False,
+        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
         segmentation_method: Literal["slic", "patch"] = "slic",
         **segmentation_method_params: Any,
     ) -> HSISpatialAttributes:
@@ -1516,6 +1518,15 @@ class Lime(Explainer):
                     Additional parameters for the segmentation method may be passed as kwargs. Defaults to None.
             target (int, optional): If the model creates more than one output, it analyzes the given target.
                 Defaults to None.
+            n_samples (int, optional): The number of samples to generate/analyze in LIME. The more the better but slower. Defaults to 10.
+            perturbations_per_eval (int, optional): The number of perturbations to evaluate at once (Simply the inner batch size).
+                Defaults to 4.
+            verbose (bool, optional): Whether to show the progress bar. Defaults to False.
+            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
+               A segmentation postprocessing function for segmentation problem type. This is required for segmentation problem type as
+               lime surrogate model needs to be optimized on the 1d output, and the model should be able to modify the model output with
+               inner lime active region mask as input and return the 1d output (for example number of pixel for each class) and not class mask.
+                   Defaults to None.
             segmentation_method (Literal["slic", "patch"], optional):
                 Segmentation method used only if `segmentation_mask` is None. Defaults to "slic".
             **segmentation_method_params (Any): Additional parameters for the segmentation method.
@@ -1526,7 +1537,7 @@ class Lime(Explainer):
 
         Raises:
             ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
-            ValueError: If the explainable model problem type is not supported.
+            AssertionError: If explainable model type is `segmentation` and `postprocessing_segmentation_output` is not provided.
             AssertionError: If the hsi is not an instance of the HSI class.
 
         Examples:
@@ -1547,12 +1558,21 @@ class Lime(Explainer):
             1.0
         """
         if self._lime is None or not isinstance(self._lime, LimeBase):
-            raise ValueError("Lime object not initialized")
-
-        if self.explainable_model.problem_type not in ["regression", "classification"]:
-            raise ValueError("For now only the `regression` and `classification` problem is supported")
+            raise ValueError("Lime object not initialized")  # pragma: no cover
 
         assert isinstance(hsi, HSI), "hsi should be an instance of HSI class"
+
+        if self.explainable_model.problem_type == "segmentation":
+            assert postprocessing_segmentation_output, (
+                "postprocessing_segmentation_output is required for segmentation problem type, please provide "
+                "the `postprocessing_segmentation_output`. For a reference "
+                "we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
+            )
+        elif postprocessing_segmentation_output is not None:
+            logger.warning(
+                "postprocessing_segmentation_output is provided but the problem is not segmentation, will be ignored"
+            )
+            postprocessing_segmentation_output = None
 
         if segmentation_mask is None:
             segmentation_mask = self.get_segmentation_mask(hsi, segmentation_method, **segmentation_method_params)
@@ -1567,9 +1587,10 @@ class Lime(Explainer):
             inputs=hsi.get_image().unsqueeze(0),
             target=target,
             feature_mask=segmentation_mask.unsqueeze(0),
-            n_samples=10,
-            perturbations_per_eval=4,
-            show_progress=True,
+            n_samples=n_samples,
+            perturbations_per_eval=perturbations_per_eval,
+            model_postprocessing=postprocessing_segmentation_output,
+            show_progress=verbose,
             return_input_shape=True,
         )
 
@@ -1587,8 +1608,11 @@ class Lime(Explainer):
         hsi: HSI,
         band_mask: np.ndarray | torch.Tensor | None = None,
         target=None,
+        n_samples: int = 10,
+        perturbations_per_eval: int = 4,
+        verbose: bool = False,
+        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
         band_names: list[str | list[str]] | dict[tuple[str, ...] | str, int] | None = None,
-        verbose=False,
     ) -> HSISpectralAttributes:
         """
         Attributes the hsi image using LIME method for spectral data. Based on the provided hsi and band mask, the LIME
@@ -1605,8 +1629,16 @@ class Lime(Explainer):
                 If equals to None, the band mask is created within the function. Defaults to None.
             target (int, optional): If the model creates more than one output, it analyzes the given target.
                 Defaults to None.
-            band_names (list[str] | dict[str | tuple[str, ...], int] | None, optional): Band names. Defaults to None.
+            n_samples (int, optional): The number of samples to generate/analyze in LIME. The more the better but slower. Defaults to 10.
+            perturbations_per_eval (int, optional): The number of perturbations to evaluate at once (Simply the inner batch size).
+                Defaults to 4.
             verbose (bool, optional): Specifies whether to show progress during the attribution process. Defaults to False.
+            postprocessing_segmentation_output: (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None):
+                A segmentation postprocessing function for segmentation problem type. This is required for segmentation problem type as
+                lime surrogate model needs to be optimized on the 1d output, and the model should be able to modify the model output with
+                inner lime active region mask as input and return the 1d output (for example number of pixel for each class) and not class mask.
+                Defaults to None.
+            band_names (list[str] | dict[str | tuple[str, ...], int] | None, optional): Band names. Defaults to None.
 
         Returns:
             HSISpectralAttributes: An HSISpectralAttributes object containing the hsi, the attributions,
@@ -1614,7 +1646,7 @@ class Lime(Explainer):
 
         Raises:
             ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
-            ValueError: If the explainable model problem type is not supported.
+            AssertionError: If explainable model type is `segmentation` and `postprocessing_segmentation_output` is not provided.
             AssertionError: If the hsi is not an instance of the HSI class.
 
         Examples:
@@ -1639,10 +1671,19 @@ class Lime(Explainer):
         """
 
         if self._lime is None or not isinstance(self._lime, LimeBase):
-            raise ValueError("Lime object not initialized")
+            raise ValueError("Lime object not initialized")  # pragma: no cover
 
-        if self.explainable_model.problem_type not in ["regression", "classification"]:
-            raise ValueError("For now only the `regression` and `classification` problem is supported")
+        if self.explainable_model.problem_type == "segmentation":
+            assert postprocessing_segmentation_output, (
+                "postprocessing_segmentation_output is required for segmentation problem type, please provide "
+                "the `postprocessing_segmentation_output`. For a reference "
+                "we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
+            )
+        elif postprocessing_segmentation_output is not None:
+            logger.warning(
+                "postprocessing_segmentation_output is provided but the problem is not segmentation, will be ignored"
+            )
+            postprocessing_segmentation_output = None
 
         assert isinstance(hsi, HSI), "hsi should be an instance of HSI class"
 
@@ -1668,8 +1709,9 @@ class Lime(Explainer):
             inputs=hsi.get_image().unsqueeze(0),
             target=target,
             feature_mask=band_mask.unsqueeze(0),
-            n_samples=10,
-            perturbations_per_eval=4,
+            n_samples=n_samples,
+            perturbations_per_eval=perturbations_per_eval,
+            model_postprocessing=postprocessing_segmentation_output,
             show_progress=verbose,
             return_input_shape=True,
         )

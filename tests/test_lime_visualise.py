@@ -159,7 +159,6 @@ def test_visualize_hsi_with_hsi_object_and_ax():
 
 def test_visualize_hsi_with_hsi_attributes_object_and_ax():
     # Create an HSIAttributes object
-    # Create an HSIAttributes object
     hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
     attributes = torch.ones_like(hsi.image)
     score = 0.5

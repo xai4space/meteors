@@ -152,53 +152,6 @@ def test_validate_orientation():
         mt_image.validate_orientation(orientation)
 
 
-def test_orientation_change():
-    tensor_image = torch.rand((4, 3, 2))
-    image = mt_image.HSI(image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"))
-
-    assert image.orientation == ("C", "H", "W")
-
-    # change of orientation with copy
-    new_orientation = ("H", "W", "C")
-    new_image = image.change_orientation(new_orientation, inplace=False)
-
-    assert new_image.orientation == new_orientation
-    assert new_image.image.shape == torch.Size([3, 2, 4])
-    assert image.orientation == ("C", "H", "W")
-    assert image.orientation != new_image.orientation
-
-    # change of orientation inplace
-    new_orientation = ("H", "C", "W")
-    new_image = image.change_orientation(new_orientation, inplace=True)
-    assert image.orientation == new_orientation
-    assert image.image.shape == torch.Size([3, 4, 2])
-    assert image == new_image
-
-    # test the case where the orientation is the same
-    new_orientation = ("H", "C", "W")
-    new_image = image.change_orientation(new_orientation, inplace=True)
-    assert image.orientation == new_orientation
-    assert new_image == image
-
-    # test case with binary mask
-    tensor_image = torch.rand((4, 3, 2))
-    binary_mask = torch.ones((4, 3, 2), dtype=torch.bool)
-    image = mt_image.HSI(
-        image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"), binary_mask=binary_mask
-    )
-
-    assert image.orientation == ("C", "H", "W")
-
-    image.change_orientation(new_orientation, inplace=True)
-    assert image.orientation == new_orientation
-    assert image.binary_mask.shape == torch.Size([3, 4, 2])
-
-    # test case with invalid orientation
-    new_orientation = ("H", "C", "A")
-    with pytest.raises(ValueError):
-        image.change_orientation(new_orientation, inplace=True)
-
-
 def test_ensure_image_tensor():
     # Test ensure_image_tensor as numpy array
     image = np.random.rand(10, 10)
@@ -254,6 +207,12 @@ def test_resolve_inference_device():
     device = None
     info = ValidationInfoMock(data={})
     with pytest.raises(ValueError):
+        mt_image.resolve_inference_device(device, info)
+
+    # Test wrong type device
+    device = 0
+    info = ValidationInfoMock(data={"image": torch.randn(5, 5)})
+    with pytest.raises(TypeError):
         mt_image.resolve_inference_device(device, info)
 
 
@@ -576,6 +535,36 @@ def test_image_to():
     assert result.device == torch.device(device)
 
 
+def test_get_image():
+    # Test with apply_mask=True and binary_mask is not None
+    image = torch.randn((3, 5, 5))
+    binary_mask = torch.ones((3, 5, 5), dtype=torch.bool)
+    hsi_image = mt_image.HSI(image=image, wavelengths=[0, 1, 2], binary_mask=binary_mask)
+    result = hsi_image.get_image(apply_mask=True)
+    assert torch.all(torch.eq(result, image))
+
+    # Test with apply_mask=False and binary_mask is not None
+    result = hsi_image.get_image(apply_mask=False)
+    assert torch.all(torch.eq(result, image))
+
+    # Test with apply_mask=True and binary_mask is None
+    hsi_image = mt_image.HSI(image=image, wavelengths=[0, 1, 2])
+    result = hsi_image.get_image(apply_mask=True)
+    assert torch.all(torch.eq(result, image))
+
+    # Test with apply_mask=False and binary_mask is None
+    result = hsi_image.get_image(apply_mask=False)
+    assert torch.all(torch.eq(result, image))
+
+    # Test with binary mask different:
+    binary_mask[0, 0, 0] = False
+    hsi_image = mt_image.HSI(image=image, wavelengths=[0, 1, 2], binary_mask=binary_mask)
+    result = hsi_image.get_image(apply_mask=True)
+    assert not torch.all(torch.eq(result, image))
+    assert torch.all(torch.eq(result[0, 0, 0], torch.tensor(0.0)))
+    assert torch.all(torch.eq(result[1:, 1:, 1:], image[1:, 1:, 1:]))
+
+
 def test__extract_central_slice_from_band():
     # Create a sample Image object
 
@@ -684,31 +673,48 @@ def test_get_rgb_image():
     assert result.shape == torch.Size([3, 10, 10])
 
 
-def test_get_image():
-    # Test with apply_mask=True and binary_mask is not None
-    image = torch.randn((3, 5, 5))
-    binary_mask = torch.ones((3, 5, 5), dtype=torch.bool)
-    hsi_image = mt_image.HSI(image=image, wavelengths=[0, 1, 2], binary_mask=binary_mask)
-    result = hsi_image.get_image(apply_mask=True)
-    assert torch.all(torch.eq(result, image))
+def test_orientation_change():
+    tensor_image = torch.rand((4, 3, 2))
+    image = mt_image.HSI(image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"))
 
-    # Test with apply_mask=False and binary_mask is not None
-    result = hsi_image.get_image(apply_mask=False)
-    assert torch.all(torch.eq(result, image))
+    assert image.orientation == ("C", "H", "W")
 
-    # Test with apply_mask=True and binary_mask is None
-    hsi_image = mt_image.HSI(image=image, wavelengths=[0, 1, 2])
-    result = hsi_image.get_image(apply_mask=True)
-    assert torch.all(torch.eq(result, image))
+    # change of orientation with copy
+    new_orientation = ("H", "W", "C")
+    new_image = image.change_orientation(new_orientation, inplace=False)
 
-    # Test with apply_mask=False and binary_mask is None
-    result = hsi_image.get_image(apply_mask=False)
-    assert torch.all(torch.eq(result, image))
+    assert new_image.orientation == new_orientation
+    assert new_image.image.shape == torch.Size([3, 2, 4])
+    assert image.orientation == ("C", "H", "W")
+    assert image.orientation != new_image.orientation
 
-    # Test with binary mask different:
-    binary_mask[0, 0, 0] = False
-    hsi_image = mt_image.HSI(image=image, wavelengths=[0, 1, 2], binary_mask=binary_mask)
-    result = hsi_image.get_image(apply_mask=True)
-    assert not torch.all(torch.eq(result, image))
-    assert torch.all(torch.eq(result[0, 0, 0], torch.tensor(0.0)))
-    assert torch.all(torch.eq(result[1:, 1:, 1:], image[1:, 1:, 1:]))
+    # change of orientation inplace
+    new_orientation = ("H", "C", "W")
+    new_image = image.change_orientation(new_orientation, inplace=True)
+    assert image.orientation == new_orientation
+    assert image.image.shape == torch.Size([3, 4, 2])
+    assert image == new_image
+
+    # test the case where the orientation is the same
+    new_orientation = ("H", "C", "W")
+    new_image = image.change_orientation(new_orientation, inplace=True)
+    assert image.orientation == new_orientation
+    assert new_image == image
+
+    # test case with binary mask
+    tensor_image = torch.rand((4, 3, 2))
+    binary_mask = torch.ones((4, 3, 2), dtype=torch.bool)
+    image = mt_image.HSI(
+        image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"), binary_mask=binary_mask
+    )
+
+    assert image.orientation == ("C", "H", "W")
+
+    image.change_orientation(new_orientation, inplace=True)
+    assert image.orientation == new_orientation
+    assert image.binary_mask.shape == torch.Size([3, 4, 2])
+
+    # test case with invalid orientation
+    new_orientation = ("H", "C", "A")
+    with pytest.raises(ValueError):
+        image.change_orientation(new_orientation, inplace=True)

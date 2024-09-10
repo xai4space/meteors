@@ -173,6 +173,7 @@ def test_sklearn_logistic_regression():
 
     X = torch.rand(10, 10)
     y = torch.randint(0, 2, (10, 1)).reshape(-1)
+    y[0], y[1] = 0, 1
 
     dataset = torch.utils.data.TensorDataset(X, y)
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=10)
