@@ -1,16 +1,16 @@
-from .image import Image
+from .hsi import HSI
 
-from .lime import Lime, ImageAttributes, ImageSpatialAttributes, ImageSpectralAttributes
+from .lime import Lime, HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
 
 from . import utils
 from . import visualize
 
 __all__ = [
-    "Image",
+    "HSI",
     "Lime",
-    "ImageAttributes",
-    "ImageSpatialAttributes",
-    "ImageSpectralAttributes",
+    "HSIAttributes",
+    "HSISpatialAttributes",
+    "HSISpectralAttributes",
     "utils",
     "visualize",
 ]
