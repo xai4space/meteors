@@ -209,6 +209,12 @@ def test_resolve_inference_device():
     with pytest.raises(ValueError):
         mt_image.resolve_inference_device(device, info)
 
+    # Test wrong type device
+    device = 0
+    info = ValidationInfoMock(data={"image": torch.randn(5, 5)})
+    with pytest.raises(TypeError):
+        mt_image.resolve_inference_device(device, info)
+
 
 def test_ensure_wavelengths_tensor():
     # Test valid wavelengths as torch tensor

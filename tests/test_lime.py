@@ -559,6 +559,12 @@ def test_resolve_inference_device():
     with pytest.raises(ValueError):
         mt_lime.resolve_inference_device(device, info)
 
+    # Test wrong type device
+    device = 0
+    info = ValidationInfoMock(data={"hsi": torch.randn(5, 5)})
+    with pytest.raises(TypeError):
+        mt_lime.resolve_inference_device(device, info)
+
 
 ######################################################################
 ############################ EXPLANATIONS ############################

@@ -1028,9 +1028,6 @@ class Lime(Explainer):
                     f"Incorrect band ranges indices provided, please check if provided indices are correct: {e}"
                 ) from e
 
-        if band_groups is None:
-            raise ValueError("No band names, groups, or ranges provided")
-
         return Lime._create_tensor_band_mask(
             hsi,
             band_groups,

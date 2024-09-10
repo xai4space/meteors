@@ -287,7 +287,7 @@ class HSI(BaseModel):
             - 'W' represents the width (columns) of the image
 
         Examples:
-            >>> hsi_image = Image()
+            >>> hsi_image = HSI()
             >>> hsi_image.orientation = "CHW"
             >>> hsi_image.spectral_axis
             0
@@ -316,11 +316,11 @@ class HSI(BaseModel):
 
         Examples:
             >>> # If self.binary_mask has shape (100, 100, 5) with spectral_axis=2:
-            >>> hsi_image = Image(binary_mask=torch.rand(100, 100, 5), orientation=("H", "W", "C"))
+            >>> hsi_image = HSI(binary_mask=torch.rand(100, 100, 5), orientation=("H", "W", "C"))
             >>> hsi_image.spatial_mask.shape
             torch.Size([100, 100])
             >>> If self.binary_mask has shape (5, 100, 100) with spectral_axis=0:
-            >>> hsi_image = Image(binary_mask=torch.rand(5, 100, 100), orientation=("C", "H", "W"))
+            >>> hsi_image = HSI(binary_mask=torch.rand(5, 100, 100), orientation=("C", "H", "W"))
             >>> hsi_image.spatial_mask.shape
             torch.Size([100, 100])
         """
@@ -355,8 +355,8 @@ class HSI(BaseModel):
             Self: The updated Image object.
 
         Examples:
-            >>> # Create an Image object
-            >>> hsi_image = Image(image=torch.rand(10, 10, 10), wavelengths=np.arange(10))
+            >>> # Create an HSI object
+            >>> hsi_image = HSI(image=torch.rand(10, 10, 10), wavelengths=np.arange(10))
             >>> # Move the image to cpu
             >>> hsi_image = hsi_image.to("cpu")
             >>> hsi_image.device
@@ -384,7 +384,7 @@ class HSI(BaseModel):
             - If apply_mask is True, the binary mask will be applied to the image based on the `binary_mask` attribute.
 
         Examples:
-            >>> hsi_image = Image(image=torch.rand(10, 100, 100), wavelengths=np.linspace(400, 1000, 10))
+            >>> hsi_image = HSI(image=torch.rand(10, 100, 100), wavelengths=np.linspace(400, 1000, 10))
             >>> image = hsi_image.get_image()
             >>> image.shape
             torch.Size([10, 100, 100])
@@ -425,7 +425,7 @@ class HSI(BaseModel):
             - If apply_min_cutoff is True, a minimum intensity threshold is applied to each band.
 
         Examples:
-            >>> hsi_image = Image(image=torch.rand(10, 100, 100), wavelengths=np.linspace(400, 1000, 10))
+            >>> hsi_image = HSI(image=torch.rand(10, 100, 100), wavelengths=np.linspace(400, 1000, 10))
             >>> rgb_image = hsi_image.get_rgb_image()
             >>> rgb_image.shape
             torch.Size([100, 100, 3])
@@ -492,7 +492,7 @@ class HSI(BaseModel):
             - The binary mask, if applied, is expected to have the same spatial dimensions as the image.
 
         Examples:
-            >>> hsi_image = Image(image=torch.rand(13, 100, 100), wavelengths=np.linspace(400, 1000, 13))
+            >>> hsi_image = HSI(image=torch.rand(13, 100, 100), wavelengths=np.linspace(400, 1000, 13))
             >>> band_wavelengths = torch.tensor([500, 600, 650, 700])
             >>> central_slice = hsi_image._extract_central_slice_from_band(band_wavelengths)
             >>> central_slice.shape
@@ -578,7 +578,7 @@ class HSI(BaseModel):
             - Processing steps are applied in the order: normalization, cutoff, masking.
 
         Examples:
-            >>> hsi_image = HyperspectralImage(image=torch.rand(200, 100, 100), wavelengths=np.linspace(400, 2500, 200))
+            >>> hsi_image = HSI(image=torch.rand(200, 100, 100), wavelengths=np.linspace(400, 2500, 200))
             >>> red_band = hsi_image.extract_band_by_name("Red")
             >>> red_band.shape
             torch.Size([100, 100])
