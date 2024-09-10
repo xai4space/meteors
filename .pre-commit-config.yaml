@@ -6,9 +6,19 @@ repos:
         name: ✅ Lint using ruff
         types_or: [python, pyi, jupyter, toml]
         args: [--fix, --exit-non-zero-on-fix]
+        exclude: |
+          (?x)^(
+            # examples with outsourced code
+            examples/clip/.*
+          )$
       - id: ruff-format
         name: ☕️ Format using ruff
         types_or: [python, pyi, jupyter, toml]
+        exclude: |
+          (?x)^(
+            # examples with outsourced code
+            examples/clip/.*
+          )$
   - repo: https://github.com/PyCQA/docformatter
     rev: v1.7.5
     hooks:
@@ -34,7 +44,9 @@ repos:
             custom_components/foldingathomecontrol/translations/de.json|
             custom_components/foldingathomecontrol/translations/nb.json|
             custom_components/foldingathomecontrol/translations/pl.json|
-            custom_components/foldingathomecontrol/translations/pt.json
+            custom_components/foldingathomecontrol/translations/pt.json|
+            # examples with jupyter notebooks
+            examples/.*
           )$
         entry: rye run codespell
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -56,5 +68,10 @@ repos:
     rev: v1.11.0
     hooks:
       - id: mypy
-        args: [--config-file=pyproject.toml]
+        args: ["--config-file", "pyproject.toml"]
         additional_dependencies: [pydantic==2.7.1]
+        exclude: |
+          (?x)^(
+            # examples with outsourced code
+            examples/clip/.*
+          )$
