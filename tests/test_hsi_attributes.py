@@ -87,6 +87,12 @@ wavelengths = [
     698.62,
 ]
 
+
+class ValidationInfoMock:
+    def __init__(self, data):
+        self.data = data
+
+
 #####################################################################
 ############################ VALIDATIONS ############################
 #####################################################################
@@ -289,6 +295,48 @@ def test_validate_image_attributions():
     # Not implemented yet functions
     with pytest.raises(NotImplementedError):
         image_attributes.flattened_attributes
+
+
+def test_resolve_inference_device_attributes():
+    # Test device as string
+    device = "cpu"
+    hsi = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+
+    info = ValidationInfoMock(data={"hsi": hsi})
+    result = mt_attr.attributes.resolve_inference_device_attributes(device, info)
+    assert isinstance(result, torch.device)
+    assert str(result) == device
+
+    # Test device as torch.device
+    device = torch.device("cpu")
+    result = mt_attr.attributes.resolve_inference_device_attributes(device, info)
+    assert isinstance(result, torch.device)
+    assert result == device
+
+    # Test device as None
+    device = None
+    info = ValidationInfoMock(data={"hsi": hsi})
+    result = mt_attr.attributes.resolve_inference_device_attributes(device, info)
+    assert isinstance(result, torch.device)
+    assert result == info.data["hsi"].device
+
+    # Test invalid device type
+    device = 123
+    info = ValidationInfoMock(data={"hsi": hsi})
+    with pytest.raises(ValueError):
+        mt_attr.attributes.resolve_inference_device_attributes("device", info)
+
+    # Test no image in the info
+    device = None
+    info = ValidationInfoMock(data={})
+    with pytest.raises(ValueError):
+        mt_attr.attributes.resolve_inference_device_attributes(device, info)
+
+    # Test wrong type device
+    device = 0
+    info = ValidationInfoMock(data={"hsi": hsi})
+    with pytest.raises(TypeError):
+        mt_attr.attributes.resolve_inference_device_attributes(device, info)
 
 
 ######################################################################

@@ -452,7 +452,15 @@ class Lime(Explainer):
         if band_names is not None:
             logger.debug("Getting band mask from band names of spectral bands")
             if band_wavelengths is not None or band_indices is not None:
-                logger.info("Only the band names will be used to create the band mask")
+                ignored_params = [
+                    param
+                    for param in ["band_wavelengths", "band_indices"]
+                    if param in locals() and locals()[param] is not None
+                ]
+                ignored_params_str = " and ".join(ignored_params)
+                logger.info(
+                    f"Only the band names will be used to create the band mask. The additional parameters {ignored_params_str} will be ignored."
+                )
             try:
                 validate_band_names(band_names)
                 band_groups, dict_labels_to_segment_ids = Lime._get_band_wavelengths_indices_from_band_names(
@@ -463,7 +471,9 @@ class Lime(Explainer):
         elif band_wavelengths is not None:
             logger.debug("Getting band mask from band groups given by ranges of wavelengths")
             if band_indices is not None:
-                logger.info("Only the band wavelengths will be used to create the band mask")
+                logger.info(
+                    "Only the band wavelengths will be used to create the band mask. The band_indices will be ignored."
+                )
             validate_band_format(band_wavelengths, variable_name="band_wavelengths")
             try:
                 band_groups = Lime._get_band_indices_from_band_wavelengths(

@@ -1223,6 +1223,10 @@ def test_get_band_mask():
     assert band_mask.shape == (len(wavelengths), 1, 1)
     assert dict_labels_to_segment_ids == {"RGB": 1}
 
+    # Test case 7: Valid input with band ranges (wavelengths) and too many params
+    mt_lime.Lime.get_band_mask(hsi, band_names=band_names, band_indices=band_ranges_indices)
+    mt_lime.Lime.get_band_mask(hsi, band_wavelengths=band_ranges_wavelengths, band_indices=band_indices)
+
     # Test case 8: Invalid input (no band names, groups, or ranges provided)
     hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     with pytest.raises(AssertionError):

@@ -55,25 +55,6 @@ def ensure_torch_tensor(value: np.ndarray | torch.Tensor, context: str) -> torch
     raise TypeError(f"{context} must be a NumPy array or PyTorch tensor")
 
 
-def ensure_hsi_object(value: HSI) -> HSI:
-    """Ensures the input is a HSI object.
-
-    This function validates that the input is a HSI object, raising an error if it's not.
-
-    Args:
-        value (HSI): The input value to be validated.
-
-    Returns:
-        HSI: The input value as a HSI object.
-
-    Raises:
-        TypeError: If the input is not a HSI object.
-    """
-    if not isinstance(value, HSI):
-        raise TypeError("HSI object must be provided")
-    return value
-
-
 def validate_and_convert_segmentation_mask(value: np.ndarray | torch.Tensor) -> torch.Tensor:
     """Ensures the segmentation mask is a PyTorch tensor, converting it if necessary.
 
