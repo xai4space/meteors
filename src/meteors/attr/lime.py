@@ -233,12 +233,11 @@ def adjust_and_validate_segment_ranges(
     return adjusted_ranges  # type: ignore
 
 
-def validate_mask_shape(problem_type: Literal["spatial", "spectral"], hsi: HSI, mask: torch.Tensor) -> torch.Tensor:
-    """Validate mask (segmentation or band mask) shape against the hyperspectral image. The problem_type specifies
-    whether the mask is segmentation or band mask.
+def validate_mask_shape(mask_type: Literal["segmentation", "band"], hsi: HSI, mask: torch.Tensor) -> torch.Tensor:
+    """Validate mask (segmentation or band mask) shape against the hyperspectral image.
 
     Args:
-        problem_type (Literal[&quot;spatial&quot;, &quot;spectral&quot;]): a problem type specifying whether the mask is segmentation or band mask
+        mask_type (Literal[&quot;spatial&quot;, &quot;spectral&quot;]): a problem type specifying type of the attribution for the mask is segmentation or band mask
         hsi (HSI): An original hyperspectral image for which the mask is created
         mask (torch.Tensor): A segmentation or band mask to be validated.
 
@@ -248,8 +247,8 @@ def validate_mask_shape(problem_type: Literal["spatial", "spectral"], hsi: HSI, 
         torch.Tensor: The validated mask
     """
 
-    if problem_type not in ["spatial", "spectral"]:
-        raise ValueError(f"Unsupported problem type: {problem_type}")
+    if mask_type not in ["segmentation", "band"]:
+        raise ValueError(f"Unsupported mask type passed to validation: {mask_type}")
 
     image_shape = hsi.image.shape
     mask_shape = mask.shape
@@ -271,13 +270,13 @@ def validate_mask_shape(problem_type: Literal["spatial", "spectral"], hsi: HSI, 
     shape_matches = [broadcasted_shape[i] == mask_shape[i] for i in range(3)]
     orientation_mismatches = {hsi.orientation[i] for i in range(3) if not shape_matches[i]}
 
-    if problem_type == "spatial" and ("H" in orientation_mismatches or "W" in orientation_mismatches):
+    if mask_type == "segmentation" and ("H" in orientation_mismatches or "W" in orientation_mismatches):
         raise ValueError(
             f"Image and mask orientation mismatch: {hsi.orientation} and {mask_shape}."
             + "Segmentation mask should differ only in the band dimension"
         )
 
-    if problem_type == "spectral" and "C" in orientation_mismatches:
+    if mask_type == "band" and "C" in orientation_mismatches:
         raise ValueError(
             f"Image and mask orientation mismatch: {hsi.orientation} and {mask_shape}."
             + "Band mask should differ only in the height and width dimensions"
@@ -1062,7 +1061,7 @@ class Lime(Explainer):
             segmentation_mask, "Segmentation mask should be None, numpy array, or torch tensor"
         )
 
-        segmentation_mask = validate_mask_shape("spatial", hsi, segmentation_mask)
+        segmentation_mask = validate_mask_shape("segmentation", hsi, segmentation_mask)
 
         hsi = hsi.to(self.device)
         segmentation_mask = segmentation_mask.to(self.device)
@@ -1188,7 +1187,7 @@ class Lime(Explainer):
             #     assert set(unique_segments).issubset(set(band_names.values())), "Incorrect band names"
             logger.debug("Band names are provided, using them. In future it there should be an option to validate them")
 
-        band_mask = validate_mask_shape("spectral", hsi, band_mask)
+        band_mask = validate_mask_shape("band", hsi, band_mask)
 
         hsi = hsi.to(self.device)
         band_mask = band_mask.to(self.device)

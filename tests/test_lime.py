@@ -332,6 +332,56 @@ def test_adjust_and_validate_segment_ranges():
         mt_lime.adjust_and_validate_segment_ranges(wavelengths, segment_range)
 
 
+def test_validate_mask_shape():
+    # validation of the function
+
+    hsi = mt.HSI(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47])
+    segmentation_mask = torch.randint(0, 3, (1, 240, 240))
+
+    validated_segmentation_mask = mt_lime.validate_mask_shape("segmentation", hsi=hsi, mask=segmentation_mask)
+
+    assert validated_segmentation_mask.shape == (1, 240, 240)
+    assert torch.all(validated_segmentation_mask == segmentation_mask)
+
+    band_mask = torch.randint(0, 3, (3, 1, 1))
+
+    validated_band_mask = mt_lime.validate_mask_shape("band", hsi=hsi, mask=band_mask)
+
+    assert validated_band_mask.shape == (3, 1, 1)
+    assert torch.all(validated_band_mask == band_mask)
+
+    # incorrect mask type
+    with pytest.raises(ValueError):
+        mt_lime.validate_mask_shape("incorrect", hsi=hsi, mask=band_mask)
+
+    # incorrect mask shape
+    incorrect_band_mask = torch.randint(0, 3, (3, 240, 240, 1))
+    with pytest.raises(ValueError):
+        mt_lime.validate_mask_shape("band", hsi=hsi, mask=incorrect_band_mask)
+
+    unbroadcastable_band_mask = torch.randint(0, 3, (3, 243, 240))
+    with pytest.raises(ValueError):
+        mt_lime.validate_mask_shape("band", hsi=hsi, mask=unbroadcastable_band_mask)
+
+    incorrectly_broadcastable_band_mask = torch.randint(0, 3, (3, 240, 1))
+    incorrectly_broadcastable_hsi = mt.HSI(image=torch.randn(1, 240, 240), wavelengths=[462.08])
+    with pytest.raises(ValueError):
+        mt_lime.validate_mask_shape("band", hsi=incorrectly_broadcastable_hsi, mask=incorrectly_broadcastable_band_mask)
+
+    # orientation mismatches
+    incorrect_band_mask = torch.randint(
+        0, 3, (1, 240, 240)
+    )  # this band mask can be broadcasted, but on the channel axis
+
+    with pytest.raises(ValueError):
+        mt_lime.validate_mask_shape("band", hsi=hsi, mask=incorrect_band_mask)
+
+    incorrect_segmentation_mask = torch.randint(0, 3, (1, 240, 1))
+
+    with pytest.raises(ValueError):
+        mt_lime.validate_mask_shape("segmentation", hsi=hsi, mask=incorrect_segmentation_mask)
+
+
 ###################################################################
 ############################ EXPLAINER ############################
 ###################################################################
