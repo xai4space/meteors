@@ -5,9 +5,9 @@ import inspect
 
 from typing import Any, Union, Literal
 
-from meteors.attr import Explainer, ImageAttributes
+from meteors.attr import Explainer, HSIAttributes
 from meteors.attr.explainer import validate_and_transform_baseline
-from meteors import Image
+from meteors import HSI
 
 import torch
 from torch import Tensor
@@ -183,7 +183,7 @@ class HyperNoiseTunnel(Explainer):
 
     def attribute(
         self,
-        image: Image,
+        hsi: HSI,
         baselines: int | float | Tensor | None = None,
         target: int | None = None,
         n_samples: int = 5,
@@ -192,19 +192,17 @@ class HyperNoiseTunnel(Explainer):
         num_perturbed_bands: int | None = None,
         method: Literal["smoothgrad", "smoothgrad_sq", "vargrad"] = "smoothgrad",
     ):
-        if image.orientation != ("C", "H", "W"):
-            logger.warning(
-                f"The image orientation is {image.orientation}. Switching the orientation to ('C', 'H', 'W')"
-            )
-            # image.change_orientation("CHW", inplace=True)
+        if hsi.orientation != ("C", "H", "W"):
+            logger.warning(f"The hsi orientation is {hsi.orientation}. Switching the orientation to ('C', 'H', 'W')")
+            # hsi.change_orientation("CHW", inplace=True)
             raise ValueError(
-                "The image orientation must be ('C', 'H', 'W'), the orientation change is not reviewed yet (pls come back Vladimir)"
+                "The hsi orientation must be ('C', 'H', 'W'), the orientation change is not reviewed yet (pls come back Vladimir)"
             )
 
-        baselines = validate_and_transform_baseline(baselines, image)
+        baselines = validate_and_transform_baseline(baselines, hsi)
 
         attributes = self._attribution_method.attribute(
-            image.image,
+            hsi.image,
             baselines=baselines,
             target=target,
             n_samples=n_samples,
@@ -215,5 +213,5 @@ class HyperNoiseTunnel(Explainer):
         )
         attributes = attributes.squeeze(0)
 
-        image_attributes = ImageAttributes(image=image, attributes=attributes, attribution_method=self.get_name())
-        return image_attributes
+        hsi_attributes = HSIAttributes(hsi=hsi, attributes=attributes, attribution_method=self.get_name())
+        return hsi_attributes

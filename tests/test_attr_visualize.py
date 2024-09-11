@@ -109,7 +109,7 @@ def test_visualize_ig_attributes():
 
     tensor_image[50, 50:100, 40:60] = 500
 
-    image = mt.Image(image=tensor_image, wavelengths=wavelengths_main)
+    image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main)
 
     toy_model = ExplainableToyModel()
     ig = mt.attr.IntegratedGradients(toy_model)
@@ -127,7 +127,7 @@ def test_visualize_ig_attributes():
 
 def test_validaton_checks():
     tensor_image = torch.rand((5, 5, len(wavelengths_main)))
-    image = mt.Image(image=tensor_image, wavelengths=wavelengths_main, orientation=("H", "W", "C"))
+    image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main, orientation=("H", "W", "C"))
     toy_model = ExplainableToyModel()
     ig = mt.attr.IntegratedGradients(toy_model)
     image_attributes = ig.attribute(image)

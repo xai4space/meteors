@@ -5,7 +5,7 @@ from .lime_visualize import (
     visualize_spatial_attributes,
 )
 
-from .image_visualize import visualize_image
+from .hsi_visualize import visualize_image
 
 from .attr_visualize import visualize_attributes
 

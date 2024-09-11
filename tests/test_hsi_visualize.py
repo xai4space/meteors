@@ -1,8 +1,8 @@
 import torch
 import matplotlib.pyplot as plt
 
-from meteors import Image
-from meteors.attr import ImageAttributes, ImageLimeSpatialAttributes, ImageLimeSpectralAttributes
+from meteors import HSI
+from meteors.attr import HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
 import meteors.visualize as visualize
 
 # Temporary solution for wavelengths
@@ -86,8 +86,8 @@ wavelengths_main = [
 
 
 def test_visualize_image_with_image_object():
-    # Create an Image object
-    image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    # Create an HSI object
+    image = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
 
     # Call the visualize_image function
     ax = visualize.visualize_image(image, None)
@@ -97,21 +97,21 @@ def test_visualize_image_with_image_object():
 
 
 def test_visualize_image_with_image_attributes_object():
-    # Create an ImageAttributes object
-    image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    # Create an HSIAttributes object
+    image = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
     attributes = torch.ones_like(image.image)
     score = 0.5
-    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="Lime")
+    image_attributes = HSIAttributes(hsi=image, attributes=attributes, score=score, attribution_method="Lime")
     # Call the visualize_image function
     ax = visualize.visualize_image(image_attributes, None)
 
     # Check if the axes object is returned
     assert isinstance(ax, plt.Axes)
 
-    # Create an ImageLimeSpatialAttributes object
+    # Create an HSISpatialAttributes object
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    image_attributes_spatial = ImageLimeSpatialAttributes(
-        image=image, segmentation_mask=segmentation_mask, attributes=attributes, score=score
+    image_attributes_spatial = HSISpatialAttributes(
+        hsi=image, segmentation_mask=segmentation_mask, attributes=attributes, score=score
     )
     # Call the visualize_image function
     ax = visualize.visualize_image(image_attributes_spatial, None)
@@ -119,13 +119,13 @@ def test_visualize_image_with_image_attributes_object():
     # Check if the axes object is returned
     assert isinstance(ax, plt.Axes)
 
-    # Create an ImageLimeSpectralAttributes object
+    # Create an HSISpectralAttributes object
     band_names = {"R": 0, "G": 1, "B": 2}
     band_mask = torch.zeros_like(image.image)
     band_mask[0] = 1
     band_mask[1] = 2
-    image_attributes_spectral = ImageLimeSpectralAttributes(
-        image=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
+    image_attributes_spectral = HSISpectralAttributes(
+        hsi=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
     )
 
     # Call the visualize_image function
@@ -136,8 +136,8 @@ def test_visualize_image_with_image_attributes_object():
 
 
 def test_visualize_image_with_image_object_and_ax():
-    # Create an Image object
-    image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    # Create an HSI object
+    image = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
 
     # Create an Axes object
     ax = plt.gca()
@@ -150,11 +150,11 @@ def test_visualize_image_with_image_object_and_ax():
 
 
 def test_visualize_image_with_image_attributes_object_and_ax():
-    # Create an ImageAttributes object
-    image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    # Create an HSIAttributes object
+    image = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
     attributes = torch.ones_like(image.image)
     score = 0.5
-    image_attributes = ImageAttributes(image=image, attributes=attributes, score=score, attribution_method="Lime")
+    image_attributes = HSIAttributes(hsi=image, attributes=attributes, score=score, attribution_method="Lime")
 
     # Create an Axes object
     ax = plt.gca()
@@ -165,10 +165,10 @@ def test_visualize_image_with_image_attributes_object_and_ax():
     # Check if the same axes object is returned
     assert returned_ax is ax
 
-    # Create an ImageLimeSpatialAttributes object
+    # Create an HSISpatialAttributes object
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    image_attributes_spatial = ImageLimeSpatialAttributes(
-        image=image, segmentation_mask=segmentation_mask, attributes=attributes, score=score
+    image_attributes_spatial = HSISpatialAttributes(
+        hsi=image, segmentation_mask=segmentation_mask, attributes=attributes, score=score
     )
     # Call the visualize_image function
     returned_ax = visualize.visualize_image(image_attributes_spatial, ax)
@@ -176,13 +176,13 @@ def test_visualize_image_with_image_attributes_object_and_ax():
     # Check if the same axes object is returned
     assert returned_ax is ax
 
-    # Create an ImageLimeSpectralAttributes object
+    # Create an HSISpectralAttributes object
     band_names = {"R": 0, "G": 1, "B": 2}
     band_mask = torch.zeros_like(image.image)
     band_mask[0] = 1
     band_mask[1] = 2
-    image_attributes_spectral = ImageLimeSpectralAttributes(
-        image=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
+    image_attributes_spectral = HSISpectralAttributes(
+        hsi=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
     )
     # Call the visualize_image function
     returned_ax = visualize.visualize_image(image_attributes_spectral, ax)

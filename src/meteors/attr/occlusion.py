@@ -7,8 +7,8 @@ import torch
 from captum.attr import Occlusion as CaptumOcclusion
 
 from meteors.utils.models import ExplainableModel
-from meteors import Image
-from meteors.attr import ImageAttributes
+from meteors import HSI
+from meteors.attr import HSIAttributes
 from meteors.attr import Explainer
 from meteors.attr.explainer import validate_and_transform_baseline
 
@@ -20,7 +20,7 @@ class Occlusion(Explainer):
 
     def attribute(
         self,
-        image: Image,
+        hsi: HSI,
         sliding_window_shapes,
         strides=None,  # TODO add default value
         target: int | None = None,
@@ -28,16 +28,16 @@ class Occlusion(Explainer):
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-    ) -> ImageAttributes:
+    ) -> HSIAttributes:
         if self._attribution_method is None:
             raise ValueError("Occlusion explainer is not initialized")
 
         logger.debug("Applying Occlusion on the image")
 
-        baseline = validate_and_transform_baseline(baseline, image)
+        baseline = validate_and_transform_baseline(baseline, hsi)
 
         occlusion_attributions = self._attribution_method.attribute(
-            image.image.unsqueeze(0),
+            hsi.get_image().unsqueeze(0),
             sliding_window_shapes=(1,)
             + sliding_window_shapes,  # I'am not sure about this scaling method - need to check how exactly occlusion modifies the image shape
             strides=(1,) + strides,
@@ -48,6 +48,6 @@ class Occlusion(Explainer):
             show_progress=show_progress,
         )
         occlusion_attributions = occlusion_attributions.squeeze(0)
-        attributes = ImageAttributes(image=image, attributes=occlusion_attributions, attribution_method=self.get_name())
+        attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
 
         return attributes

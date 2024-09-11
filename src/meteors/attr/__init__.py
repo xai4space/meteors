@@ -1,4 +1,4 @@
-from .attributes import ImageAttributes, ImageLimeSpatialAttributes, ImageLimeSpectralAttributes
+from .attributes import HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
 from .explainer import Explainer
 
 from .lime import Lime
@@ -10,9 +10,9 @@ from .noise_tunnel import NoiseTunnel
 from .hyper_noise_tunnel import HyperNoiseTunnel
 
 __all__ = [
-    "ImageAttributes",
-    "ImageLimeSpatialAttributes",
-    "ImageLimeSpectralAttributes",
+    "HSIAttributes",
+    "HSISpatialAttributes",
+    "HSISpectralAttributes",
     "Explainer",
     "IntegratedGradients",
     "InputXGradient",

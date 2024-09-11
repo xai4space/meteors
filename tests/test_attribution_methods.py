@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from meteors.utils.models import ExplainableModel
 from meteors.attr import IntegratedGradients, Saliency, InputXGradient, NoiseTunnel, Occlusion, Explainer
-from meteors import Image
+from meteors import HSI
 
 import pytest
 
@@ -77,7 +77,7 @@ def test_explainer_validation():
     from meteors.attr.explainer import validate_and_transform_baseline
 
     baseline = 1
-    image = Image(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
+    image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
     baseline = validate_and_transform_baseline(baseline, image)
     assert baseline.shape == image.image.shape
     assert torch.all(baseline == 1)
@@ -98,7 +98,7 @@ def test_integrated_gradients():
     assert ig is not None
     assert ig._attribution_method is not None
 
-    image = Image(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
+    image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
     attributions = ig.attribute(image)
     assert attributions.attributes.shape == image.image.shape
 
@@ -109,7 +109,7 @@ def test_saliency():
 
     assert saliency is not None
 
-    image = Image(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
+    image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
     attributions = saliency.attribute(image)
     assert attributions.attributes.shape == image.image.shape
 
@@ -120,7 +120,7 @@ def test_input_x_gradient():
 
     assert input_x_gradient is not None
 
-    image = Image(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
+    image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
     attributions = input_x_gradient.attribute(image)
     assert attributions.attributes.shape == image.image.shape
 
@@ -132,7 +132,7 @@ def test_noise_tunnel():
 
     assert noise_tunnel is not None
 
-    image = Image(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
+    image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
     attributions = noise_tunnel.attribute(image)
     assert attributions.attributes.shape == image.image.shape
 
@@ -140,10 +140,9 @@ def test_noise_tunnel():
 def test_occlusion():
     toy_model = ExplainableToyModel()
     occlusion = Occlusion(toy_model)
-
     assert occlusion is not None
 
-    image = Image(image=torch.rand(3, 10, 10), wavelengths=[0, 100, 200])
+    image = HSI(image=torch.rand(3, 10, 10), wavelengths=[0, 100, 200])
     attributions = occlusion.attribute(image, sliding_window_shapes=(2, 2), strides=(2, 2))
     assert attributions.attributes.shape == image.image.shape
 

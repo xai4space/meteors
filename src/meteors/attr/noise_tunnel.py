@@ -4,8 +4,8 @@ from __future__ import annotations
 from loguru import logger
 from captum.attr import NoiseTunnel as CaptumNoiseTunnel
 
-from meteors import Image
-from meteors.attr import ImageAttributes, Explainer
+from meteors import HSI
+from meteors.attr import HSIAttributes, Explainer
 
 
 class NoiseTunnel(Explainer):
@@ -19,14 +19,14 @@ class NoiseTunnel(Explainer):
 
     def attribute(
         self,
-        image: Image,
+        hsi: HSI,
         target: int | None = None,
         nt_type="smoothgrad",
         nt_samples=5,
         nt_samples_batch_size=None,
         stdevs=1.0,
         draw_baseline_from_distrib=False,
-    ) -> ImageAttributes:
+    ) -> HSIAttributes:
         if self._attribution_method is None:
             raise ValueError("Noise Tunnel explainer is not initialized")
         if self.chained_explainer is None:
@@ -37,7 +37,7 @@ class NoiseTunnel(Explainer):
         logger.debug("Applying Noise Tunnel on the image")
 
         noise_tunnel_attributes = self._attribution_method.attribute(
-            image.image,
+            hsi.get_image(),
             target=target,
             nt_type=nt_type,
             nt_samples=nt_samples,
@@ -46,8 +46,6 @@ class NoiseTunnel(Explainer):
             draw_baseline_from_distrib=draw_baseline_from_distrib,
         )
 
-        attributes = ImageAttributes(
-            image=image, attributes=noise_tunnel_attributes, attribution_method=self.get_name()
-        )
+        attributes = HSIAttributes(hsi=hsi, attributes=noise_tunnel_attributes, attribution_method=self.get_name())
 
         return attributes

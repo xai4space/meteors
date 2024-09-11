@@ -8,12 +8,11 @@ from loguru import logger
 
 import torch
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, ValidationInfo
 from pydantic.functional_validators import BeforeValidator
 
 
-from meteors import Image
-from meteors.image import resolve_inference_device
+from meteors import HSI
 
 
 # Constants
@@ -56,6 +55,25 @@ def ensure_torch_tensor(value: np.ndarray | torch.Tensor, context: str) -> torch
     raise TypeError(f"{context} must be a NumPy array or PyTorch tensor")
 
 
+def ensure_hsi_object(value: HSI) -> HSI:
+    """Ensures the input is a HSI object.
+
+    This function validates that the input is a HSI object, raising an error if it's not.
+
+    Args:
+        value (HSI): The input value to be validated.
+
+    Returns:
+        HSI: The input value as a HSI object.
+
+    Raises:
+        TypeError: If the input is not a HSI object.
+    """
+    if not isinstance(value, HSI):
+        raise TypeError("HSI object must be provided")
+    return value
+
+
 def validate_and_convert_segmentation_mask(value: np.ndarray | torch.Tensor) -> torch.Tensor:
     """Ensures the segmentation mask is a PyTorch tensor, converting it if necessary.
 
@@ -94,18 +112,18 @@ def validate_and_convert_attributes(value: np.ndarray | torch.Tensor) -> torch.T
     return ensure_torch_tensor(value, "Attributes")
 
 
-def validate_shapes(attributes: torch.Tensor, image: Image) -> None:
-    """Validates that the shape of the attributes tensor matches the shape of the image.
+def validate_shapes(attributes: torch.Tensor, hsi: HSI) -> None:
+    """Validates that the shape of the attributes tensor matches the shape of the hsi.
 
     Args:
         attributes (torch.Tensor): The attributes tensor to validate.
-        image (Image): The image object to compare the shape with.
+        hsi (HSI): The HSI object to compare the shape with.
 
     Raises:
-        ValueError: If the shape of the attributes tensor does not match the shape of the image.
+        ValueError: If the shape of the attributes tensor does not match the shape of the hsi.
     """
-    if attributes.shape != image.image.shape:
-        raise ValueError("Attributes must have the same shape as the image")
+    if attributes.shape != hsi.image.shape:
+        raise ValueError("Attributes must have the same shape as the hsi")
 
 
 def validate_and_convert_band_mask(value: np.ndarray | torch.Tensor) -> torch.Tensor:
@@ -183,27 +201,68 @@ def validate_attribution_method(value: str) -> str:
     return value
 
 
+def resolve_inference_device_attributes(device: str | torch.device | None, info: ValidationInfo) -> torch.device:
+    """Resolves and returns the device to be used for inference.
+
+    This function determines the appropriate PyTorch device for inference based on the input
+    parameters and available information. It handles three scenarios:
+    1. If a specific device is provided, it validates and returns it.
+    2. If no device is specified (None), it uses the device of the input hsi.
+    3. If a string is provided, it attempts to convert it to a torch.device.
+
+    Args:
+        device (str | torch.device | None): The desired device for inference.
+            If None, the device of the input hsi will be used.
+        info (ValidationInfo): An object containing additional validation information,
+            including the input hsi data.
+
+    Returns:
+        torch.device: The resolved PyTorch device for inference.
+
+    Raises:
+        ValueError: If no device is specified and the hsi is not present in the info data,
+            or if the provided device string is invalid.
+        TypeError: If the provided device is neither None, a string, nor a torch.device.
+    """
+    if device is None:
+        if "hsi" not in info.data:
+            raise ValueError("The HSI image is not present in the attributes data, INTERNAL ERROR")
+
+        hsi: torch.Tensor = info.data["hsi"]
+        device = hsi.device
+    elif isinstance(device, str):
+        try:
+            device = torch.device(device)
+        except Exception as e:
+            raise ValueError(f"Device {device} is not valid") from e
+    if not isinstance(device, torch.device):
+        raise TypeError("Device should be a string or torch device")
+
+    logger.debug(f"Device for inference: {device.type}")
+    return device
+
+
 ######################################################################
 ############################ EXPLANATIONS ############################
 ######################################################################
 
 
-class ImageAttributes(BaseModel):
-    """Represents an object that contains image attributes and explanations.
+class HSIAttributes(BaseModel):
+    """Represents an object that contains Hyperspectral image attributes and explanations.
 
     Attributes:
-        image (Image): Hyperspectral image object for which the explanations were created.
-        attributes (torch.Tensor): Attributions (explanations) for the image.
+        hsi (HSI): Hyperspectral image object for which the explanations were created.
+        attributes (torch.Tensor): Attributions (explanations) for the hsi.
         score (float): R^2 score of interpretable model used for the explanation. Used only for LIME attributes
         approximation_error (float): Approximation error of the explanation. Used only for IG attributes
-        device (torch.device): Device to be used for inference. If None, the device of the input image will be used.
+        device (torch.device): Device to be used for inference. If None, the device of the input hsi will be used.
             Defaults to None.
         model_config (ConfigDict): Configuration dictionary for the model.
         attribution_method (str): The method used to generate the explanation.
     """
 
-    image: Annotated[
-        Image,
+    hsi: Annotated[
+        HSI,
         Field(
             description="Hyperspectral image object for which the explanations were created.",
         ),
@@ -212,7 +271,7 @@ class ImageAttributes(BaseModel):
         torch.Tensor,
         BeforeValidator(validate_and_convert_attributes),
         Field(
-            description="Attributions (explanations) for the image.",
+            description="Attributions (explanations) for the hsi.",
         ),
     ]
     attribution_method: Annotated[
@@ -240,12 +299,12 @@ class ImageAttributes(BaseModel):
     ] = None
     device: Annotated[
         torch.device,
-        BeforeValidator(resolve_inference_device),
+        BeforeValidator(resolve_inference_device_attributes),
         Field(
             validate_default=True,
             exclude=True,
             description=(
-                "Device to be used for inference. If None, the device of the input image will be used. "
+                "Device to be used for inference. If None, the device of the input hsi will be used. "
                 "Defaults to None."
             ),
         ),
@@ -264,28 +323,28 @@ class ImageAttributes(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def _validate_image_attributions(self) -> None:
-        """Validates the image attributions and performs necessary operations to ensure compatibility with the device.
+    def _validate_hsi_attributions(self) -> None:
+        """Validates the hsi attributions and performs necessary operations to ensure compatibility with the device.
 
         Raises:
-            ValueError: If the shapes of the attributes and image tensors do not match.
+            ValueError: If the shapes of the attributes and hsi tensors do not match.
         """
-        validate_shapes(self.attributes, self.image)
+        validate_shapes(self.attributes, self.hsi)
 
         self.attributes = self.attributes.to(self.device)
-        if self.device != self.image.device:
-            self.image.to(self.device)
+        if self.device != self.hsi.device:
+            self.hsi.to(self.device)
 
     @model_validator(mode="after")
-    def validate_image_attributions(self) -> Self:
-        """Validates the image attributions.
+    def validate_hsi_attributions(self) -> Self:
+        """Validates the hsi attributions.
 
-        This method performs validation on the image attributions to ensure they are correct.
+        This method performs validation on the hsi attributions to ensure they are correct.
 
         Returns:
             Self: The current instance of the class.
         """
-        self._validate_image_attributions()
+        self._validate_hsi_attributions()
         return self
 
     @model_validator(mode="after")
@@ -306,7 +365,7 @@ class ImageAttributes(BaseModel):
         return self
 
     def to(self, device: str | torch.device) -> Self:
-        """Move the image and attributes tensors to the specified device.
+        """Move the hsi and attributes tensors to the specified device.
 
         Args:
             device (str or torch.device): The device to move the tensors to.
@@ -315,32 +374,32 @@ class ImageAttributes(BaseModel):
             Self: The modified object with tensors moved to the specified device.
 
         Examples:
-            >>> attrs = ImageAttributes(image, attributes, score=0.5)
+            >>> attrs = HSIAttributes(hsi, attributes, score=0.5)
             >>> attrs.to("cpu")
-            >>> attrs.image.device
+            >>> attrs.hsi.device
             device(type='cpu')
             >>> attrs.attributes.device
             device(type='cpu')
             >>> attrs.to("cuda")
-            >>> attrs.image.device
+            >>> attrs.hsi.device
             device(type='cuda')
             >>> attrs.attributes.device
             device(type='cuda')
         """
-        self.image = self.image.to(device)
+        self.hsi = self.hsi.to(device)
         self.attributes = self.attributes.to(device)
-        self.device = self.image.device
+        self.device = self.hsi.device
         return self
 
 
-class ImageLimeSpatialAttributes(ImageAttributes):
-    """Represents spatial attributes of an image used for explanation.
+class HSISpatialAttributes(HSIAttributes):
+    """Represents spatial attributes of an hsi used for explanation.
 
     Attributes:
-        image (Image): Hyperspectral image object for which the explanations were created.
-        attributes (torch.Tensor): Attributions (explanations) for the image.
+        hsi (HSI): Hyperspectral image object for which the explanations were created.
+        attributes (torch.Tensor): Attributions (explanations) for the hsi.
         score (float): R^2 score of interpretable model used for the explanation.
-        device (torch.device): Device to be used for inference. If None, the device of the input image will be used.
+        device (torch.device): Device to be used for inference. If None, the device of the input hsi will be used.
             Defaults to None.
         model_config (ConfigDict): Configuration dictionary for the model.
         segmentation_mask (torch.Tensor): Spatial (Segmentation) mask used for the explanation.
@@ -373,12 +432,12 @@ class ImageLimeSpatialAttributes(ImageAttributes):
 
         Examples:
             >>> segmentation_mask = torch.zeros((3, 2, 2))
-            >>> attrs = ImageLimeSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
+            >>> attrs = HSISpatialAttributes(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
             >>> attrs.spatial_segmentation_mask
             tensor([[0., 0.],
                     [0., 0.]])
         """
-        return self.segmentation_mask.select(dim=self.image.spectral_axis, index=0)
+        return self.segmentation_mask.select(dim=self.hsi.spectral_axis, index=0)
 
     @property
     def flattened_attributes(self) -> torch.Tensor:
@@ -389,7 +448,7 @@ class ImageLimeSpatialAttributes(ImageAttributes):
         Returns:
             torch.Tensor: A flattened tensor of attributes.
         >>> segmentation_mask = torch.zeros((3, 2, 2))
-        >>> attrs = ImageLimeSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
+        >>> attrs = HSISpatialAttributes(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
         >>> attrs.flattened_attributes
             tensor([[0., 0.],
                     [0., 0.]])
@@ -397,16 +456,16 @@ class ImageLimeSpatialAttributes(ImageAttributes):
         return self.spatial_segmentation_mask
 
     @model_validator(mode="after")
-    def validate_image_attributions(self) -> Self:
-        """Validates the image attributions.
+    def validate_hsi_attributions(self) -> Self:
+        """Validates the hsi attributions.
 
-        This method is responsible for validating the image attributions
+        This method is responsible for validating the hsi attributions
         and performing any necessary operations on the segmentation mask.
 
         Returns:
             Self: The current instance of the class.
         """
-        super()._validate_image_attributions()
+        super()._validate_hsi_attributions()
         self.segmentation_mask = self.segmentation_mask.to(self.device)
         return self
 
@@ -420,11 +479,11 @@ class ImageLimeSpatialAttributes(ImageAttributes):
             Self: The Lime object itself.
 
         Examples:
-            >>> attrs = ImageLimeSpatialAttributes(image, attributes, score=0.5, segmentation_mask=segmentation_mask)
+            >>> attrs = HSISpatialAttributes(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
             >>> attrs.to("cpu")
             >>> attrs.segmentation_mask.device
             device(type='cpu')
-            >>> attrs.image.device
+            >>> attrs.hsi.device
             device(type='cpu')
             >>> attrs.to("cuda")
             >>> attrs.segmentation_mask.device
@@ -435,14 +494,14 @@ class ImageLimeSpatialAttributes(ImageAttributes):
         return self
 
 
-class ImageLimeSpectralAttributes(ImageAttributes):
-    """Represents an image with spectral attributes used for explanation.
+class HSISpectralAttributes(HSIAttributes):
+    """Represents an hsi with spectral attributes used for explanation.
 
     Attributes:
-        image (Image): Hyperspectral image object for which the explanations were created.
-        attributes (torch.Tensor): Attributions (explanations) for the image.
+        hsi (HSI): Hyperspectral hsi object for which the explanations were created.
+        attributes (torch.Tensor): Attributions (explanations) for the hsi.
         score (float): R^2 score of interpretable model used for the explanation.
-        device (torch.device): Device to be used for inference. If None, the device of the input image will be used.
+        device (torch.device): Device to be used for inference. If None, the device of the input hsi will be used.
             Defaults to None.
         model_config (ConfigDict): Configuration dictionary for the model.
         band_mask (torch.Tensor): Band mask used for the explanation.
@@ -483,12 +542,12 @@ class ImageLimeSpectralAttributes(ImageAttributes):
 
         Examples:
             >>> band_names = {"R": 0, "G": 1, "B": 2}
-            >>> attrs = ImageLimeSpectralAttributes(image, attributes, score=0.5, band_mask=band_mask)
+            >>> attrs = HSISpectralAttributes(hsi, attributes, score=0.5, band_mask=band_mask)
             >>> attrs.spectral_band_mask
             torch.tensor([0, 1, 2])
         """
         axis_to_select = HSI_AXIS_ORDER.copy()
-        axis_to_select.remove(self.image.spectral_axis)
+        axis_to_select.remove(self.hsi.spectral_axis)
         return self.band_mask.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1], index=0)
 
     @property
@@ -503,17 +562,17 @@ class ImageLimeSpectralAttributes(ImageAttributes):
         return self.spectral_band_mask
 
     @model_validator(mode="after")
-    def validate_image_attributions(self) -> Self:
-        """Validates the image attributions.
+    def validate_hsi_attributions(self) -> Self:
+        """Validates the hsi attributions.
 
-        This method performs validation on the image attributions by calling the
-        base class's `_validate_image_attributions` method. It also converts the
+        This method performs validation on the hsi attributions by calling the
+        base class's `_validate_hsi_attributions` method. It also converts the
         `band_mask` attribute to the device specified by `self.device`.
 
         Returns:
             Self: The current instance of the class.
         """
-        super()._validate_image_attributions()
+        super()._validate_hsi_attributions()
         self.band_mask = self.band_mask.to(self.device)
         return self
 
@@ -527,11 +586,11 @@ class ImageLimeSpectralAttributes(ImageAttributes):
             Self: The Lime object itself.
 
         Examples:
-            >>> attrs = ImageLimeSpectralAttributes(image, attributes, score=0.5, band_mask=band_mask)
+            >>> attrs = HSISpectralAttributes(hsi, attributes, score=0.5, band_mask=band_mask)
             >>> attrs.to("cpu")
             >>> attrs.band_mask.device
             device(type='cpu')
-            >>> attrs.image.device
+            >>> attrs.hsi.device
             device(type='cpu')
             >>> attrs.to("cuda")
             >>> attrs.band_mask.device

@@ -12,7 +12,7 @@ from captum.attr import Attribution
 import torch
 
 from meteors.utils.models import ExplainableModel
-from meteors import Image
+from meteors import HSI
 
 
 def validate_attribution_method_initialization(attribution_method: Explainer):
@@ -27,12 +27,12 @@ def validate_attribution_method_initialization(attribution_method: Explainer):
 
 
 # @lru_cache(maxsize=32)
-def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None, image: Image) -> torch.Tensor:
-    """Function validates the baseline and transforms it to the same device as the image tensor.
+def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None, hsi: HSI) -> torch.Tensor:
+    """Function validates the baseline and transforms it to the same device as the hsi tensor.
 
     Args:
         baseline (int | float | torch.Tensor): _description_
-        image (Image): an Image object for which the baseline is being validated
+        hsi (HSI): a HSI object for which the baseline is being validated
 
     Raises:
         ValueError: _description_
@@ -44,12 +44,12 @@ def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None,
     if baseline is None:
         baseline = 0
     if isinstance(baseline, (int, float)):
-        baseline = torch.zeros_like(image.image) + baseline
+        baseline = torch.zeros_like(hsi.image) + baseline
     elif isinstance(baseline, torch.Tensor):
-        if baseline.shape != image.image.shape:
-            raise ValueError(f"Baseline shape {baseline.shape} does not match image shape {image.image.shape}")
+        if baseline.shape != hsi.image.shape:
+            raise ValueError(f"Baseline shape {baseline.shape} does not match image shape {hsi.image.shape}")
 
-    baseline = baseline.to(image.image.device)  # cast the baseline to the same device as the image tensor
+    baseline = baseline.to(hsi.image.device)  # cast the baseline to the same device as the hsi tensor
     return baseline
 
 
@@ -96,13 +96,13 @@ class Explainer(ABC):
     """Default method to attribute the input to the model.
 
     Args:
-        image (Image): The input image to be explained.
+        hsi (HSI): The input hsi to be explained.
         target (int | None, optional): The target class index to be explained. Defaults to None.
         *args: Variable length argument list.
         **kwargs: Arbitrary keyword arguments.
 
     Returns:
-        ImageAttributes: The image attributes.
+        HSIAttributes: The hsi attributes.
     """
 
     def has_convergence_delta(self) -> bool:

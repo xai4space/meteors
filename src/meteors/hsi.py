@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing_extensions import Annotated, Self
+import warnings
 
 import torch
 import numpy as np
@@ -7,7 +8,10 @@ from loguru import logger
 from pydantic import BaseModel, ConfigDict, ValidationInfo, Field, model_validator
 from pydantic.functional_validators import PlainValidator
 
-import spyndex
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=FutureWarning)
+    warnings.simplefilter("ignore", category=DeprecationWarning)
+    import spyndex
 
 #####################################################################
 ############################ VALIDATIONS ############################
@@ -40,7 +44,7 @@ def validate_orientation(value: tuple[str, str, str] | list[str]) -> tuple[str, 
     if not isinstance(value, tuple):
         value = tuple(value)  # type: ignore
 
-    if len(value) != 3 or any(elem not in ["H", "W", "C"] for elem in value):
+    if len(value) != 3 or set(value) != {"H", "W", "C"}:
         raise ValueError("Orientation must be a tuple of 'H', 'W', and 'C' in any order.")
     return value  # type: ignore
 
@@ -69,32 +73,32 @@ def ensure_image_tensor(image: np.ndarray | torch.Tensor) -> torch.Tensor:
     return image
 
 
-def resolve_inference_device(device: str | torch.device | None, info: ValidationInfo) -> torch.device:
+def resolve_inference_device_hsi(device: str | torch.device | None, info: ValidationInfo) -> torch.device:
     """Resolves and returns the device to be used for inference.
 
     This function determines the appropriate PyTorch device for inference based on the input
     parameters and available information. It handles three scenarios:
     1. If a specific device is provided, it validates and returns it.
-    2. If no device is specified (None), it uses the device of the input image.
+    2. If no device is specified (None), it uses the device of the input tensor image.
     3. If a string is provided, it attempts to convert it to a torch.device.
 
     Args:
         device (str | torch.device | None): The desired device for inference.
-            If None, the device of the input image will be used.
+            If None, the device of the input hsi will be used.
         info (ValidationInfo): An object containing additional validation information,
-            including the input image data.
+            including the input hsi data.
 
     Returns:
         torch.device: The resolved PyTorch device for inference.
 
     Raises:
-        ValueError: If no device is specified and the image is not present in the info data,
+        ValueError: If no device is specified and the hsi is not present in the info data,
             or if the provided device string is invalid.
         TypeError: If the provided device is neither None, a string, nor a torch.device.
     """
     if device is None:
         if "image" not in info.data:
-            raise ValueError("Image is not present in the data, INTERNAL ERROR")
+            raise ValueError("Hyperspectral image tensor is not present in the data, INTERNAL ERROR")
         image: torch.Tensor = info.data["image"]
         device = image.device
     elif isinstance(device, str):
@@ -220,7 +224,7 @@ def process_and_validate_binary_mask(
 ######################################################################
 
 
-class Image(BaseModel):
+class HSI(BaseModel):
     image: Annotated[  # Should always be a first field
         torch.Tensor,
         PlainValidator(ensure_image_tensor),
@@ -243,7 +247,7 @@ class Image(BaseModel):
     ] = ("C", "H", "W")
     device: Annotated[
         torch.device,
-        PlainValidator(resolve_inference_device),
+        PlainValidator(resolve_inference_device_hsi),
         Field(
             validate_default=True,
             exclude=True,
@@ -283,7 +287,7 @@ class Image(BaseModel):
             - 'W' represents the width (columns) of the image
 
         Examples:
-            >>> hsi_image = Image()
+            >>> hsi_image = HSI()
             >>> hsi_image.orientation = "CHW"
             >>> hsi_image.spectral_axis
             0
@@ -312,11 +316,11 @@ class Image(BaseModel):
 
         Examples:
             >>> # If self.binary_mask has shape (100, 100, 5) with spectral_axis=2:
-            >>> hsi_image = Image(binary_mask=torch.rand(100, 100, 5), orientation=("H", "W", "C"))
+            >>> hsi_image = HSI(binary_mask=torch.rand(100, 100, 5), orientation=("H", "W", "C"))
             >>> hsi_image.spatial_mask.shape
             torch.Size([100, 100])
             >>> If self.binary_mask has shape (5, 100, 100) with spectral_axis=0:
-            >>> hsi_image = Image(binary_mask=torch.rand(5, 100, 100), orientation=("C", "H", "W"))
+            >>> hsi_image = HSI(binary_mask=torch.rand(5, 100, 100), orientation=("C", "H", "W"))
             >>> hsi_image.spatial_mask.shape
             torch.Size([100, 100])
         """
@@ -348,11 +352,11 @@ class Image(BaseModel):
             device (str or torch.device): The device to move the image and binary mask to.
 
         Returns:
-            Self: The updated Image object.
+            Self: The updated HSI object.
 
         Examples:
-            >>> # Create an Image object
-            >>> hsi_image = Image(image=torch.rand(10, 10, 10), wavelengths=np.arange(10))
+            >>> # Create an HSI object
+            >>> hsi_image = HSI(image=torch.rand(10, 10, 10), wavelengths=np.arange(10))
             >>> # Move the image to cpu
             >>> hsi_image = hsi_image.to("cpu")
             >>> hsi_image.device
@@ -367,7 +371,31 @@ class Image(BaseModel):
         self.device = self.image.device
         return self
 
-    # @lru_cache torch.Tensor is not hashable
+    def get_image(self, apply_mask: bool = True) -> torch.Tensor:
+        """Returns the hyperspectral image data with optional masking applied.
+
+        Args:
+            apply_mask (bool, optional): Whether to apply the binary mask to the image.
+                Defaults to True.
+        Returns:
+            torch.Tensor: The hyperspectral image data.
+
+        Notes:
+            - If apply_mask is True, the binary mask will be applied to the image based on the `binary_mask` attribute.
+
+        Examples:
+            >>> hsi_image = HSI(image=torch.rand(10, 100, 100), wavelengths=np.linspace(400, 1000, 10))
+            >>> image = hsi_image.get_image()
+            >>> image.shape
+            torch.Size([10, 100, 100])
+            >>> image = hsi_image.get_image(apply_mask=False)
+            >>> image.shape
+            torch.Size([10, 100, 100])
+        """
+        if apply_mask and self.binary_mask is not None:
+            return self.image * self.binary_mask
+        return self.image
+
     def get_rgb_image(
         self, apply_mask: bool = True, apply_min_cutoff: bool = False, output_channel_axis: int | None = None
     ) -> torch.Tensor:
@@ -397,7 +425,7 @@ class Image(BaseModel):
             - If apply_min_cutoff is True, a minimum intensity threshold is applied to each band.
 
         Examples:
-            >>> hsi_image = Image(image=torch.rand(10, 100, 100), wavelengths=np.linspace(400, 1000, 10))
+            >>> hsi_image = HSI(image=torch.rand(10, 100, 100), wavelengths=np.linspace(400, 1000, 10))
             >>> rgb_image = hsi_image.get_rgb_image()
             >>> rgb_image.shape
             torch.Size([100, 100, 3])
@@ -464,7 +492,7 @@ class Image(BaseModel):
             - The binary mask, if applied, is expected to have the same spatial dimensions as the image.
 
         Examples:
-            >>> hsi_image = Image(image=torch.rand(13, 100, 100), wavelengths=np.linspace(400, 1000, 13))
+            >>> hsi_image = HSI(image=torch.rand(13, 100, 100), wavelengths=np.linspace(400, 1000, 13))
             >>> band_wavelengths = torch.tensor([500, 600, 650, 700])
             >>> central_slice = hsi_image._extract_central_slice_from_band(band_wavelengths)
             >>> central_slice.shape
@@ -550,7 +578,7 @@ class Image(BaseModel):
             - Processing steps are applied in the order: normalization, cutoff, masking.
 
         Examples:
-            >>> hsi_image = HyperspectralImage(image=torch.rand(200, 100, 100), wavelengths=np.linspace(400, 2500, 200))
+            >>> hsi_image = HSI(image=torch.rand(200, 100, 100), wavelengths=np.linspace(400, 2500, 200))
             >>> red_band = hsi_image.extract_band_by_name("Red")
             >>> red_band.shape
             torch.Size([100, 100])
@@ -573,3 +601,40 @@ class Image(BaseModel):
             raise NotImplementedError(
                 f"Selection method '{selection_method}' is not supported. Only 'center' is currently available."
             )
+
+    def change_orientation(self, target_orientation: tuple[str, str, str], inplace=False) -> Self:
+        """Changes the orientation of the image data to the target orientation.
+
+        Args:
+            target_orientation (tuple[str, str, str]): The target orientation for the image data.
+                This should be a tuple of three one-letter strings in any order: "C", "H", "W".
+            inplace (bool, optional): Whether to modify the image data in place or return a new object.
+
+        Returns:
+            Self: The updated HSI object with the new orientation.
+
+        Raises:
+            ValueError: If the target orientation is not a valid tuple of three one-letter strings.
+        """
+        target_orientation = validate_orientation(target_orientation)
+
+        if inplace:
+            hsi = self
+        else:
+            hsi = self.model_copy()
+
+        if target_orientation == self.orientation:
+            return hsi
+
+        permute_dims = [hsi.orientation.index(dim) for dim in target_orientation]
+
+        # permute the image
+        hsi.image = hsi.image.permute(permute_dims)
+
+        # permute the binary mask
+        if hsi.binary_mask is not None:
+            hsi.binary_mask = hsi.binary_mask.permute(permute_dims)
+
+        hsi.orientation = target_orientation
+
+        return hsi

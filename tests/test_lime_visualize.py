@@ -4,8 +4,8 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-from meteors import Image
-from meteors.attr import ImageLimeSpatialAttributes, ImageLimeSpectralAttributes
+from meteors import HSI
+from meteors.attr import HSISpatialAttributes, HSISpectralAttributes
 from meteors.visualize import lime_visualize as visualize
 
 
@@ -90,17 +90,17 @@ wavelengths_main = [
 
 
 def test_visualize_spatial_attributes():
-    # Create an ImageLimeSpatialAttributes object
-    image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
-    attributes = torch.ones_like(image.image)
+    # Create an HSISpatialAttributes object
+    hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    attributes = torch.ones_like(hsi.image)
     score = 0.5
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    image_attributes_spatial = ImageLimeSpatialAttributes(
-        image=image, segmentation_mask=segmentation_mask, attributes=attributes, score=score
+    hsi_attributes_spatial = HSISpatialAttributes(
+        hsi=hsi, segmentation_mask=segmentation_mask, attributes=attributes, score=score
     )
 
     # Call the visualize_spatial_attributes function
-    fig, ax = visualize.visualize_spatial_attributes(image_attributes_spatial)
+    fig, ax = visualize.visualize_spatial_attributes(hsi_attributes_spatial)
 
     # Check if the figure and axes objects are returned
     assert isinstance(fig, plt.Figure)
@@ -122,21 +122,17 @@ def test_visualize_spatial_attributes():
 
 def test_validate_consistent_band_and_wavelengths():
     # Test case 1: Consistent band names and wavelengths
-    image = Image(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
-    attributes = torch.ones_like(image.image)
+    hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    attributes = torch.ones_like(hsi.image)
     score = 0.5
     band_names = {"R": 0, "G": 1, "B": 2}
-    band_mask = torch.zeros_like(image.image)
+    band_mask = torch.zeros_like(hsi.image)
     band_mask[0] = 1
     band_mask[1] = 2
 
     spectral_attributes = [
-        ImageLimeSpectralAttributes(
-            image=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
-        ),
-        ImageLimeSpectralAttributes(
-            image=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
-        ),
+        HSISpectralAttributes(hsi=hsi, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask),
+        HSISpectralAttributes(hsi=hsi, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask),
     ]
 
     # No exception should be raised
@@ -145,11 +141,9 @@ def test_validate_consistent_band_and_wavelengths():
     # Test case 2: Inconsistent band names
     inconsistent_band_names = {"R": 0, "B": 1, "G": 2}
     spectral_attributes = [
-        ImageLimeSpectralAttributes(
-            image=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
-        ),
-        ImageLimeSpectralAttributes(
-            image=image, attributes=attributes, score=score, band_names=inconsistent_band_names, band_mask=band_mask
+        HSISpectralAttributes(hsi=hsi, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask),
+        HSISpectralAttributes(
+            hsi=hsi, attributes=attributes, score=score, band_names=inconsistent_band_names, band_mask=band_mask
         ),
     ]
 
@@ -161,17 +155,15 @@ def test_validate_consistent_band_and_wavelengths():
 
     # Test case 3: Inconsistent wavelengths
     inconsistent_wavelengths = wavelengths_main + [1000.0]
-    inconsistent_image = torch.ones((len(inconsistent_wavelengths), 240, 240))
+    inconsistent_hsi = torch.ones((len(inconsistent_wavelengths), 240, 240))
     spectral_attributes = [
-        ImageLimeSpectralAttributes(
-            image=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
-        ),
-        ImageLimeSpectralAttributes(
-            image=Image(image=inconsistent_image, wavelengths=inconsistent_wavelengths),  # noqa: E501
-            attributes=torch.ones_like(inconsistent_image),
+        HSISpectralAttributes(hsi=hsi, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask),
+        HSISpectralAttributes(
+            hsi=HSI(image=inconsistent_hsi, wavelengths=inconsistent_wavelengths),  # noqa: E501
+            attributes=torch.ones_like(inconsistent_hsi),
             score=score,
             band_names=band_names,
-            band_mask=torch.zeros_like(inconsistent_image),
+            band_mask=torch.zeros_like(inconsistent_hsi),
         ),
     ]
 
@@ -218,8 +210,8 @@ def test_visualize_spectral_attributes_by_waveband():
     band_mask[0] = 1
     band_mask[1] = 2
 
-    spectral_attributes = ImageLimeSpectralAttributes(
-        image=Image(image=image, wavelengths=wavelengths_main),
+    spectral_attributes = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         score=score,
         band_names=band_names,
@@ -252,15 +244,15 @@ def test_visualize_spectral_attributes_by_waveband():
 
     # Test multiple spectral attributes
     spectral_attributes = [
-        ImageLimeSpectralAttributes(
-            image=Image(image=image, wavelengths=wavelengths_main),
+        HSISpectralAttributes(
+            hsi=HSI(image=image, wavelengths=wavelengths_main),
             attributes=attribution_map,
             score=score,
             band_names=band_names,
             band_mask=band_mask,
         ),
-        ImageLimeSpectralAttributes(
-            image=Image(image=image, wavelengths=wavelengths_main),
+        HSISpectralAttributes(
+            hsi=HSI(image=image, wavelengths=wavelengths_main),
             attributes=attribution_map,
             score=score,
             band_names=band_names,
@@ -297,8 +289,8 @@ def test_visualize_spectral_attributes_by_waveband():
     with_not_included_band_names = {"R": 0, "G": 1, "B": 2, "not_included": 3}
     with_not_included_band_mask = band_mask.clone()
     with_not_included_band_mask[3] = 1
-    spectral_attributes = ImageLimeSpectralAttributes(
-        image=Image(image=image, wavelengths=wavelengths_main),
+    spectral_attributes = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         score=score,
         band_names=with_not_included_band_names,
@@ -388,8 +380,8 @@ def test_visualize_spectral_attributes_by_magnitude():
     band_mask[0] = 1
     band_mask[1] = 2
 
-    spectral_attributes = ImageLimeSpectralAttributes(
-        image=Image(image=image, wavelengths=wavelengths_main),
+    spectral_attributes = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         score=score,
         band_names=band_names,
@@ -439,15 +431,15 @@ def test_visualize_spectral_attributes_by_magnitude():
 
     # Test multiple spectral attributes
     spectral_attributes = [
-        ImageLimeSpectralAttributes(
-            image=Image(image=image, wavelengths=wavelengths_main),
+        HSISpectralAttributes(
+            hsi=HSI(image=image, wavelengths=wavelengths_main),
             attributes=attribution_map,
             score=score,
             band_names=band_names,
             band_mask=band_mask,
         ),
-        ImageLimeSpectralAttributes(
-            image=Image(image=image, wavelengths=wavelengths_main),
+        HSISpectralAttributes(
+            hsi=HSI(image=image, wavelengths=wavelengths_main),
             attributes=attribution_map,
             score=score,
             band_names=band_names,
@@ -498,8 +490,8 @@ def test_visualize_spectral_attributes_by_magnitude():
 
     # Test show_not_included True
     with_not_included_band_names = {"R": 0, "G": 1, "B": 2, "not_included": 3}
-    spectral_attributes = ImageLimeSpectralAttributes(
-        image=Image(image=image, wavelengths=wavelengths_main),
+    spectral_attributes = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         score=score,
         band_names=with_not_included_band_names,
@@ -517,8 +509,8 @@ def test_visualize_spectral_attributes_by_magnitude():
     with_not_included_band_names = {"R": 0, "G": 1, "B": 2, "not_included": 3}
     with_not_included_band_mask = band_mask.clone()
     with_not_included_band_mask[3] = 3
-    spectral_attributes = ImageLimeSpectralAttributes(
-        image=Image(image=image, wavelengths=wavelengths_main),
+    spectral_attributes = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=with_not_included_band_mask,
         score=score,
         band_names=with_not_included_band_names,
@@ -549,8 +541,8 @@ def test_visualize_spectral_attributes():
     band_mask[0] = 1
     band_mask[1] = 2
 
-    spectral_attributes = ImageLimeSpectralAttributes(
-        image=Image(image=image, wavelengths=wavelengths_main),
+    spectral_attributes = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         score=score,
         band_names=band_names,
@@ -577,6 +569,3 @@ def test_visualize_spectral_attributes():
     assert ax[1].get_title() == "Attributions by Magnitude"
     assert ax[1].get_xlabel() == "Group"
     assert ax[1].get_ylabel() == "Average Attribution Magnitude"
-
-
-test_visualize_spectral_attributes()

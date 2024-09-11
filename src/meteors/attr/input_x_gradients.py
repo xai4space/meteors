@@ -6,8 +6,8 @@ from loguru import logger
 
 from captum.attr import InputXGradient as CaptumInputXGradient
 from meteors.utils.models import ExplainableModel
-from meteors import Image
-from meteors.attr import ImageAttributes, Explainer
+from meteors import HSI
+from meteors.attr import HSIAttributes, Explainer
 
 
 class InputXGradient(Explainer):
@@ -17,19 +17,19 @@ class InputXGradient(Explainer):
 
     def attribute(
         self,
-        image: Image,
+        hsi: HSI,
         target: int | None = None,
         additional_forward_args: Any = None,
-    ) -> ImageAttributes:
+    ) -> HSIAttributes:
         if self._attribution_method is None:
             raise ValueError("InputXGradient explainer is not initialized")
 
         logger.debug("Applying InputXGradient on the image")
 
         gradient_attribution = self._attribution_method.attribute(
-            image.image, target=target, additional_forward_args=additional_forward_args
+            hsi.get_image(), target=target, additional_forward_args=additional_forward_args
         )
-        attributes = ImageAttributes(image=image, attributes=gradient_attribution, attribution_method=self.get_name())
+        attributes = HSIAttributes(hsi=hsi, attributes=gradient_attribution, attribution_method=self.get_name())
 
         return attributes
 

@@ -13,7 +13,7 @@ Structure:
       - [Saliency](#saliency)
       - [Noise Tunnel](#noise-tunnel)
       - [Hyper Noise Tunnel]
-    - [Image](#image)
+    - [HyperSpectral Image](#hsi)
 
 ## Meteors
 
@@ -62,8 +62,6 @@ The Lime Base class was adapted from the Captum Lime implementation. This adapta
 
 Hyper Noise Tunnel is our novel method, designed specifically to explain hyperspectral satellite images. It is inspired by the behaviour of the classical Noise Tunnel (Smooth Grad) method, but instead of sampling noise into the original image, it randomly removes some of the bands. In the process, the created _noised_ samples are close to the distribution of the original image, yet differ enough to smoothen the produced attribution map.
 
-### Image
+### HyperSpectral Image
 
-::: src.meteors.image
-
-The base image class, that stores the data and additional parameters of a multispectral image. It carries information about the image, binary mask, the orientation of the image, etc. Also allows to manipulate the image easily and integrate it with different elements of the package.
+::: src.meteors.hsi

@@ -89,7 +89,7 @@ def test_attribute():
     torch.manual_seed(0)
 
     tensor_image = torch.rand((5, 5, 5))
-    image = mt.Image(image=tensor_image, wavelengths=[1, 2, 3, 4, 5], orientation=("C", "H", "W"))
+    image = mt.HSI(image=tensor_image, wavelengths=[1, 2, 3, 4, 5], orientation=("C", "H", "W"))
 
     attributes = hyper_noise_tunnel.attribute(image, n_samples=1)
 

@@ -1,11 +1,11 @@
-from .image import Image
+from .hsi import HSI
 
 from . import utils
 from . import visualize
 from . import attr
 
 __all__ = [
-    "Image",
+    "HSI",
     "utils",
     "visualize",
     "attr",

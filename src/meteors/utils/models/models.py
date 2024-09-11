@@ -31,7 +31,7 @@ class ExplainableModel:
 
     VALID_PROBLEM_TYPES = {"classification", "regression", "segmentation"}
 
-    def __init__(self, forward_func: Callable, problem_type: str) -> None:
+    def __init__(self, forward_func: Callable[[torch.Tensor], torch.Tensor], problem_type: str) -> None:
         self.forward_func = forward_func
         self.problem_type = self.validate_problem_type(problem_type)
 
