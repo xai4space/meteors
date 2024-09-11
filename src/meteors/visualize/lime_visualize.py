@@ -8,18 +8,18 @@ from matplotlib.figure import Figure
 from captum.attr import visualization as viz
 
 from meteors import (
-    Image,
-    ImageAttributes,
-    ImageSpectralAttributes,
-    ImageSpatialAttributes,
+    HSI,
+    HSIAttributes,
+    HSISpectralAttributes,
+    HSISpatialAttributes,
 )
 
 
-def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:
-    """Visualizes an LIME image object on the given axes.
+def visualize_hsi(hsi: HSI | HSIAttributes, ax: Axes | None) -> Axes:
+    """Visualizes an LIME hsi object on the given axes.
 
     Parameters:
-        image (Image | ImageAttributes): The image to be visualized.
+        hsi (HSI | HSIAttributes): The HSI object to visualize.
         ax (matplotlib.axes.Axes | None): The axes on which the image will be plotted.
             If None, the current axes will be used.
 
@@ -28,10 +28,10 @@ def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:
             If use_pyplot is False, returns the figure and axes objects.
             If use_pyplot is True, returns None.
     """
-    if isinstance(image, ImageAttributes):
-        image = image.image
+    if isinstance(hsi, HSIAttributes):
+        hsi = hsi.hsi
 
-    rgb = image.get_rgb_image(output_channel_axis=2)
+    rgb = hsi.get_rgb_image(output_channel_axis=2)
     ax = ax or plt.gca()
     ax.imshow(rgb)
 
@@ -39,13 +39,13 @@ def visualize_image(image: Image | ImageAttributes, ax: Axes | None) -> Axes:
 
 
 def visualize_spatial_attributes(  # noqa: C901
-    spatial_attributes: ImageSpatialAttributes, use_pyplot: bool = False
+    spatial_attributes: HSISpatialAttributes, use_pyplot: bool = False
 ) -> tuple[Figure, Axes] | None:
-    """Visualizes the spatial attributes of an image using Lime attribution.
+    """Visualizes the spatial attributes of an hsi using Lime attribution.
 
     Args:
-        spatial_attributes (ImageSpatialAttributes):
-            The spatial attributes of the image object to visualize.
+        spatial_attributes (HSISpatialAttributes):
+            The spatial attributes of the hsi object to visualize.
         use_pyplot (bool, optional):
             Whether to use pyplot for visualization. Defaults to False.
 
@@ -56,7 +56,7 @@ def visualize_spatial_attributes(  # noqa: C901
     """
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
     fig.suptitle("Spatial Attributes Visualization")
-    ax[0].imshow(spatial_attributes.image.get_rgb_image(output_channel_axis=2).cpu())
+    ax[0].imshow(spatial_attributes.hsi.get_rgb_image(output_channel_axis=2).cpu())
     ax[0].set_title("Original image")
 
     viz.visualize_image_attr(
@@ -84,16 +84,16 @@ def visualize_spatial_attributes(  # noqa: C901
 
 
 def visualize_spectral_attributes(
-    spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
+    spectral_attributes: HSISpectralAttributes | list[HSISpectralAttributes],
     use_pyplot: bool = False,
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
 ) -> tuple[Figure, Axes] | None:
-    """Visualizes the spectral attributes of an image or a list of images.
+    """Visualizes the spectral attributes of an hsi object or a list of hsi objects.
 
     Args:
-        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]):
-            The spectral attributes of the image object to visualize.
+        spectral_attributes (HSISpectralAttributes | list[HSISpectralAttributes]):
+            The spectral attributes of the imhsiage object to visualize.
         use_pyplot (bool, optional):
             If True, displays the visualization using pyplot.
             If False, returns the figure and axes objects. Defaults to False.
@@ -113,7 +113,7 @@ def visualize_spectral_attributes(
     """
     band_names = (
         spectral_attributes.band_names
-        if isinstance(spectral_attributes, ImageSpectralAttributes)
+        if isinstance(spectral_attributes, HSISpectralAttributes)
         else spectral_attributes[0].band_names
     )
 
@@ -144,14 +144,14 @@ def visualize_spectral_attributes(
 
 
 def validate_consistent_band_and_wavelengths(
-    band_names: dict[str, int], wavelengths: torch.Tensor, spectral_attributes: list[ImageSpectralAttributes]
+    band_names: dict[str, int], wavelengths: torch.Tensor, spectral_attributes: list[HSISpectralAttributes]
 ) -> None:
     """Validates that all spectral attributes have consistent band names and wavelengths.
 
     Args:
         band_names (dict[str, int]): A dictionary mapping band names to their indices.
-        wavelengths (torch.Tensor): A tensor containing the wavelengths of the image.
-        spectral_attributes (list[ImageSpectralAttributes]): A list of spectral attributes.
+        wavelengths (torch.Tensor): A tensor containing the wavelengths of the hsi.
+        spectral_attributes (list[HSISpectralAttributes]): A list of spectral attributes.
 
     Raises:
         ValueError: If the band names or wavelengths of any spectral attribute are inconsistent.
@@ -159,7 +159,7 @@ def validate_consistent_band_and_wavelengths(
     for attr in spectral_attributes:
         if band_names != attr.band_names:
             raise ValueError("Band names are inconsistent among spectral attributes.")
-        if not torch.equal(wavelengths, attr.image.wavelengths):
+        if not torch.equal(wavelengths, attr.hsi.wavelengths):
             raise ValueError("Wavelengths are inconsistent among spectral attributes.")
 
 
@@ -184,7 +184,7 @@ def setup_visualization(ax: Axes | None, title: str, xlabel: str, ylabel: str) -
 
 
 def visualize_spectral_attributes_by_waveband(
-    spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
+    spectral_attributes: HSISpectralAttributes | list[HSISpectralAttributes],
     ax: Axes | None,
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
@@ -192,7 +192,7 @@ def visualize_spectral_attributes_by_waveband(
     """Visualizes spectral attributes by waveband.
 
     Args:
-        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]):
+        spectral_attributes (HSISpectralAttributes | list[HSISpectralAttributes]):
             The spectral attributes to visualize.
         ax (Axes | None): The matplotlib axes to plot the visualization on.
             If None, a new axes will be created.
@@ -204,19 +204,19 @@ def visualize_spectral_attributes_by_waveband(
     Returns:
         Axes: The matplotlib axes object containing the visualization.
     """
-    if isinstance(spectral_attributes, ImageSpectralAttributes):
+    if isinstance(spectral_attributes, HSISpectralAttributes):
         spectral_attributes = [spectral_attributes]
     if not (
         isinstance(spectral_attributes, list)
-        and all(isinstance(attr, ImageSpectralAttributes) for attr in spectral_attributes)
+        and all(isinstance(attr, HSISpectralAttributes) for attr in spectral_attributes)
     ):
         raise ValueError(
-            "spectral_attributes must be an ImageSpectralAttributes object or a list of ImageSpectralAttributes objects."
+            "spectral_attributes must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
         )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
     band_names = dict(spectral_attributes[0].band_names)
-    wavelengths = spectral_attributes[0].image.wavelengths
+    wavelengths = spectral_attributes[0].hsi.wavelengths
     validate_consistent_band_and_wavelengths(band_names, wavelengths, spectral_attributes)
 
     ax = setup_visualization(ax, "Attributions by Waveband", "Wavelength (nm)", "Correlation with Output")
@@ -281,7 +281,7 @@ def calculate_average_magnitudes(
 
 
 def visualize_spectral_attributes_by_magnitude(
-    spectral_attributes: ImageSpectralAttributes | list[ImageSpectralAttributes],
+    spectral_attributes: HSISpectralAttributes | list[HSISpectralAttributes],
     ax: Axes | None,
     color_palette: list[str] | None = None,
     annotate_bars: bool = True,
@@ -290,7 +290,7 @@ def visualize_spectral_attributes_by_magnitude(
     """Visualizes the spectral attributes by magnitude.
 
     Args:
-        spectral_attributes (ImageSpectralAttributes | list[ImageSpectralAttributes]):
+        spectral_attributes (HSISpectralAttributes | list[HSISpectralAttributes]):
             The spectral attributes to visualize.
         ax (Axes | None): The matplotlib Axes object to plot the visualization on.
             If None, a new Axes object will be created.
@@ -304,20 +304,20 @@ def visualize_spectral_attributes_by_magnitude(
     Returns:
         Axes: The matplotlib Axes object containing the visualization.
     """
-    if isinstance(spectral_attributes, ImageSpectralAttributes):
+    if isinstance(spectral_attributes, HSISpectralAttributes):
         spectral_attributes = [spectral_attributes]
     if not (
         isinstance(spectral_attributes, list)
-        and all(isinstance(attr, ImageSpectralAttributes) for attr in spectral_attributes)
+        and all(isinstance(attr, HSISpectralAttributes) for attr in spectral_attributes)
     ):
         raise ValueError(
-            "spectral_attributes must be an ImageSpectralAttributes object or a list of ImageSpectralAttributes objects."
+            "spectral_attributes must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
         )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
     band_names = dict(spectral_attributes[0].band_names)
     labels = list(band_names.keys())
-    wavelengths = spectral_attributes[0].image.wavelengths
+    wavelengths = spectral_attributes[0].hsi.wavelengths
     validate_consistent_band_and_wavelengths(band_names, wavelengths, spectral_attributes)
 
     ax = setup_visualization(ax, "Attributions by Magnitude", "Group", "Average Attribution Magnitude")

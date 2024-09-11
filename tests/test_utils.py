@@ -62,3 +62,33 @@ def test_change_dtype_of_list():
     expected_result = []
     result = utils.change_dtype_of_list(original_list, dtype)
     assert result == expected_result
+
+
+def test_adjust_shape():
+    # Test case 1: Same shape
+    target = torch.tensor([[1, 2], [3, 4]])
+    source = torch.tensor([[5, 6], [7, 8]])
+    expected_result = torch.tensor([[5, 6], [7, 8]])
+    result = utils.adjust_shape(target, source)
+    assert torch.allclose(result, expected_result)
+
+    # Test case 2: Source tensor has fewer dimensions
+    target = torch.tensor([[1, 2], [3, 4]])
+    source = torch.tensor([5, 6])
+    expected_result = torch.tensor([[5, 6], [5, 6]])
+    result = utils.adjust_shape(target, source)
+    assert torch.allclose(result, expected_result)
+
+    # Test case 3: Source tensor has more dimensions
+    target = torch.tensor([[1, 2], [3, 4]])
+    source = torch.tensor([[[5, 6]]])
+    expected_result = torch.tensor([[5, 6], [5, 6]])
+    result = utils.adjust_shape(target, source)
+    assert torch.allclose(result, expected_result)
+
+    # Test case 4: Source tensor has different shape and needs broadcasting
+    target = torch.tensor([[1, 2], [3, 4]])
+    source = torch.tensor([5, 6])
+    expected_result = torch.tensor([[5, 6], [5, 6]])
+    result = utils.adjust_shape(target, source)
+    assert torch.allclose(result, expected_result)

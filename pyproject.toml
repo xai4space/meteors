@@ -60,6 +60,9 @@ plugins = [
   "pydantic.mypy",
 ]
 
+[tool.codespell]
+ignore-words-list = "hsi,HSI"
+
 [tool.ruff]
 line-length = 120
 extend-include = ["*.ipynb"]
@@ -71,6 +74,11 @@ docstring-code-line-length = 120
 [tool.docformatter]
 wrap-descriptions = 120
 wrap-summaries = 120
+
+[tool.coverage.run]
+omit = [
+    "src/meteors/lime_base.py",
+]
 
 
 [tool.pytest.ini_options]
