@@ -233,58 +233,6 @@ def adjust_and_validate_segment_ranges(
     return adjusted_ranges  # type: ignore
 
 
-def validate_tensor(value: Any, error_message: str) -> torch.Tensor:
-    """Validates the input value and converts it to a torch.Tensor if necessary.
-
-    Args:
-        value (Any): The input value to be validated.
-        error_message (str): The error message to be raised if the value is not valid.
-
-    Returns:
-        torch.Tensor: The validated and converted tensor.
-
-    Raises:
-        TypeError: If the value is not an instance of np.ndarray or torch.Tensor.
-    """
-    if not isinstance(value, (np.ndarray, torch.Tensor)):
-        raise TypeError(error_message)
-    if isinstance(value, np.ndarray):
-        value = torch.from_numpy(value)
-    return value
-
-
-def validate_segment_range(wavelengths: torch.Tensor, segment_range: list[tuple[int, int]]) -> list[tuple[int, int]]:
-    """Validates the segment range and adjusts it if possible.
-
-    Args:
-        wavelengths (torch.Tensor): The wavelengths tensor.
-        segment_range (list[tuple[int, int]]): The segment range to be validated.
-
-    Returns:
-        list[tuple[int, int]]: The validated segment range.
-
-    Raises:
-        ValueError: If the segment range is out of bounds.
-    """
-    wavelengths_max_index = wavelengths.shape[0]
-    out_segment_range = []
-    for segment in segment_range:
-        new_segment: list[int] = list(segment)
-        if new_segment[0] < 0:
-            if new_segment[1] >= 1:
-                new_segment[0] = 0
-            else:
-                raise ValueError(f"Segment range {segment} is out of bounds")
-
-        if new_segment[1] > wavelengths_max_index:
-            if new_segment[0] <= wavelengths_max_index - 1:
-                new_segment[1] = wavelengths_max_index
-            else:
-                raise ValueError(f"Segment range {segment} is out of bounds")
-        out_segment_range.append(tuple(new_segment))
-    return out_segment_range  # type: ignore
-
-
 def validate_mask_shape(problem_type: Literal["spatial", "spectral"], hsi: HSI, mask: torch.Tensor) -> torch.Tensor:
     """Validate mask (segmentation or band mask) shape against the hyperspectral image. The problem_type specifies
     whether the mask is segmentation or band mask.
