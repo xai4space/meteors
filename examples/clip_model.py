@@ -15,7 +15,6 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-
 class HyperHead(nn.Module):
     """THIS FUNCTION IMPLEMENTS 2-LAYER MLP HEAD MODULE."""
 
