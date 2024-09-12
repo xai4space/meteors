@@ -285,7 +285,7 @@ class HSI(BaseModel):
 
         Note:
             The orientation is typically represented as a string where:
-            - 'C' or 'W' represents the spectral/wavelength dimension
+            - 'C' represents the spectral/wavelength dimension
             - 'H' represents the height (rows) of the image
             - 'W' represents the width (columns) of the image
 
