@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Literal
 from typing_extensions import Annotated, Self
 import warnings
 from loguru import logger
@@ -55,24 +54,6 @@ def ensure_torch_tensor(value: np.ndarray | torch.Tensor, context: str) -> torch
     raise TypeError(f"{context} must be a NumPy array or PyTorch tensor")
 
 
-def validate_and_convert_segmentation_mask(value: np.ndarray | torch.Tensor) -> torch.Tensor:
-    """Ensures the segmentation mask is a PyTorch tensor, converting it if necessary.
-
-    This function validates that the input segmentation mask is either a NumPy array
-    or a PyTorch tensor, and converts it to a PyTorch tensor if it's a NumPy array.
-
-    Args:
-        value (np.ndarray | torch.Tensor): The segmentation mask to be validated and potentially converted.
-
-    Returns:
-        torch.Tensor: The segmentation mask as a PyTorch tensor.
-
-    Raises:
-        TypeError: If the input is neither a NumPy array nor a PyTorch tensor.
-    """
-    return ensure_torch_tensor(value, "Segmentation mask")
-
-
 def validate_and_convert_attributes(value: np.ndarray | torch.Tensor) -> torch.Tensor:
     """Validates and converts the attributes to a PyTorch tensor.
 
@@ -93,6 +74,25 @@ def validate_and_convert_attributes(value: np.ndarray | torch.Tensor) -> torch.T
     return ensure_torch_tensor(value, "Attributes")
 
 
+def validate_and_convert_mask(value: np.ndarray | torch.Tensor | None) -> torch.Tensor | None:
+    """Ensures the `superpixel` or `superband` mask is a PyTorch tensor if provided, converting it if necessary.
+
+    This function validates that the input mask is either a NumPy array
+    or a PyTorch tensor, and converts it to a PyTorch tensor if it's a NumPy array.
+    if the input is None, it returns None.
+
+    Args:
+        value (np.ndarray | torch.Tensor | None): The mask to be validated and potentially converted.
+
+    Returns:
+        torch.Tensor | None: The mask as a PyTorch tensor or None if the input is None.
+
+    Raises:
+        TypeError: If the input is neither a NumPy array nor a PyTorch tensor.
+    """
+    return ensure_torch_tensor(value, "`superpixel` or `superband` mask") if value is not None else None
+
+
 def validate_shapes(attributes: torch.Tensor, hsi: HSI) -> None:
     """Validates that the shape of the attributes tensor matches the shape of the hsi.
 
@@ -105,24 +105,6 @@ def validate_shapes(attributes: torch.Tensor, hsi: HSI) -> None:
     """
     if attributes.shape != hsi.image.shape:
         raise ValueError("Attributes must have the same shape as the hsi")
-
-
-def validate_and_convert_band_mask(value: np.ndarray | torch.Tensor) -> torch.Tensor:
-    """Ensures the band mask is a PyTorch tensor, converting it if necessary.
-
-    This function validates that the input band mask is either a NumPy array
-    or a PyTorch tensor, and converts it to a PyTorch tensor if it's a NumPy array.
-
-    Args:
-        value (np.ndarray | torch.Tensor): The band mask to be validated and potentially converted.
-
-    Returns:
-        torch.Tensor: The band mask as a PyTorch tensor.
-
-    Raises:
-        TypeError: If the input is neither a NumPy array nor a PyTorch tensor.
-    """
-    return ensure_torch_tensor(value, "Band mask")
 
 
 def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tensor) -> dict[str, int]:
@@ -175,10 +157,14 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
     return band_names
 
 
-def validate_attribution_method(value: str) -> str:
+def validate_attribution_method(value: str | None) -> str | None:
+    if value is None:
+        return value
     value = value.title()
     if value not in AVAILABLE_ATTRIBUTION_METHODS:
-        raise ValueError(f"Attribution method must be one of {AVAILABLE_ATTRIBUTION_METHODS}, got {value} instead")
+        logger.warning(
+            "Unknown attribution method: {value}. The core implemented methods are {AVAILABLE_ATTRIBUTION_METHODS}"
+        )
     return value
 
 
@@ -239,7 +225,7 @@ class HSIAttributes(BaseModel):
         device (torch.device): Device to be used for inference. If None, the device of the input hsi will be used.
             Defaults to None.
         model_config (ConfigDict): Configuration dictionary for the model.
-        attribution_method (str): The method used to generate the explanation.
+        attribution_method (str | None): The method used to generate the explanation. Defaults to None.
     """
 
     hsi: Annotated[
@@ -256,12 +242,12 @@ class HSIAttributes(BaseModel):
         ),
     ]
     attribution_method: Annotated[
-        str,
+        str | None,
         BeforeValidator(validate_attribution_method),
         Field(
             description="The method used to generate the explanation.",
         ),
-    ]
+    ] = None
     score: Annotated[
         float | None,
         Field(
@@ -276,6 +262,13 @@ class HSIAttributes(BaseModel):
         Field(
             ge=1.0,
             description="Approximation error of the explanation. Also known as convergence delta. Used only for IG attributes",
+        ),
+    ] = None
+    mask: Annotated[
+        torch.Tensor | None,
+        BeforeValidator(validate_and_convert_mask),
+        Field(
+            description="`superpixel` or `superband` mask used for the explanation.",
         ),
     ] = None
     device: Annotated[
@@ -304,7 +297,16 @@ class HSIAttributes(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def _validate_hsi_attributions(self) -> None:
+    @property
+    def orientation(self) -> tuple[str, str, str]:
+        """Returns the orientation of the hsi.
+
+        Returns:
+            tuple[str, str, str]: The orientation of the hsi corresponding to the attributes.
+        """
+        return self.hsi.orientation
+
+    def _validate_hsi_attributions_and_mask(self) -> None:
         """Validates the hsi attributions and performs necessary operations to ensure compatibility with the device.
 
         Raises:
@@ -316,6 +318,10 @@ class HSIAttributes(BaseModel):
         if self.device != self.hsi.device:
             self.hsi.to(self.device)
 
+        if self.mask is not None:
+            validate_shapes(self.mask, self.hsi)
+            self.mask = self.mask.to(self.device)
+
     @model_validator(mode="after")
     def validate_hsi_attributions(self) -> Self:
         """Validates the hsi attributions.
@@ -325,7 +331,7 @@ class HSIAttributes(BaseModel):
         Returns:
             Self: The current instance of the class.
         """
-        self._validate_hsi_attributions()
+        self._validate_hsi_attributions_and_mask()
         return self
 
     @model_validator(mode="after")
@@ -337,12 +343,14 @@ class HSIAttributes(BaseModel):
         Returns:
             Self: The current instance of the class.
         """
-        if self.attribution_method.title() != "Lime" and self.score is not None:
-            raise ValueError("Score should not be provided for non-LIME attributes")
-        if self.attribution_method.title() == "Lime" and self.score is None:
+        if (self.attribution_method is None or self.attribution_method.title() != "Lime") and self.score is not None:
+            logger.warning("Score should not be provided for non-LIME attributes")
+        if self.attribution_method is not None and self.attribution_method.title() == "Lime" and self.score is None:
             raise ValueError("Score must be provided for LIME attributes")
-        if self.attribution_method.title() != "Integrated Gradients" and self.approximation_error is not None:
-            raise ValueError("Approximation error should only be provided for IG attributes")
+        if (
+            self.attribution_method is None or self.attribution_method.title() != "Integrated Gradients"
+        ) and self.approximation_error is not None:
+            logger.warning("Approximation error should not be provided for non-IG attributes")
         return self
 
     def to(self, device: str | torch.device) -> Self:
@@ -372,6 +380,40 @@ class HSIAttributes(BaseModel):
         self.device = self.hsi.device
         return self
 
+    def change_orientation(self, target_orientation: tuple[str, str, str] | list[str] | str, inplace=False) -> Self:
+        """Changes the orientation of the image data along with the attributions to the target orientation.
+
+        Args:
+            target_orientation (tuple[str, str, str] | list[str] | str): The target orientation for the attribution data.
+                This should be a tuple of three one-letter strings in any order: "C", "H", "W".
+            inplace (bool, optional): Whether to modify the data in place or return a new object.
+
+        Returns:
+            Self: The updated Image object with the new orientation.
+
+        Raises:
+            ValueError: If the target orientation is not a valid tuple of three one-letter strings.
+        """
+        current_orientation = self.orientation
+        hsi = self.hsi.change_orientation(target_orientation, inplace=inplace)
+        if inplace:
+            attrs = self
+        else:
+            attrs = self.model_copy()
+            attrs.hsi = hsi
+
+        # now change the orientation of the attributes
+        if current_orientation == target_orientation:
+            return attrs
+
+        permute_dims = [current_orientation.index(dim) for dim in target_orientation]
+
+        attrs.attributes = attrs.attributes.permute(permute_dims)
+
+        if attrs.mask is not None:
+            attrs.mask = attrs.mask.permute(permute_dims)
+        return attrs
+
 
 class HSISpatialAttributes(HSIAttributes):
     """Represents spatial attributes of an hsi used for explanation.
@@ -384,28 +426,27 @@ class HSISpatialAttributes(HSIAttributes):
             Defaults to None.
         model_config (ConfigDict): Configuration dictionary for the model.
         segmentation_mask (torch.Tensor): Spatial (Segmentation) mask used for the explanation.
+        attribution_method (str | None): The method used to generate the explanation. Defaults to None.
     """
 
-    segmentation_mask: Annotated[
-        torch.Tensor,
-        BeforeValidator(validate_and_convert_segmentation_mask),
-        Field(
-            description="Spatial (Segmentation) mask used for the explanation.",
-        ),
-    ]
-    attribution_method: Annotated[
-        str,
-        Literal["Lime"],
-        Field(
-            description="The method used to generate the explanation.",
-        ),
-    ] = "Lime"
+    @property
+    def segmentation_mask(self) -> torch.Tensor:
+        """Returns the 3D spatial segmentation mask that has the same size as the hsi image.
+
+        Returns:
+            torch.Tensor: The segmentation mask tensor.
+        Raises:
+            ValueError: If the segmentation mask is not provided in the attributes.
+        """
+        if self.mask is None:
+            raise ValueError("Segmentation mask is not provided")
+        return self.mask
 
     @property
-    def spatial_segmentation_mask(self) -> torch.Tensor:
-        """Returns the spatial segmentation mask.
+    def flattened_segmentation_mask(self) -> torch.Tensor:
+        """Returns the flattened segmentation mask as a flattened 2D tensor, with removed repeated dimensions.
 
-        This method selects the segmentation mask along the specified dimension
+        This method selects the segmentation mask along the specified dimension (spectral axis)
         and returns the first index.
 
         Returns:
@@ -414,7 +455,7 @@ class HSISpatialAttributes(HSIAttributes):
         Examples:
             >>> segmentation_mask = torch.zeros((3, 2, 2))
             >>> attrs = HSISpatialAttributes(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
-            >>> attrs.spatial_segmentation_mask
+            >>> attrs.segmentation_mask
             tensor([[0., 0.],
                     [0., 0.]])
         """
@@ -422,9 +463,9 @@ class HSISpatialAttributes(HSIAttributes):
 
     @property
     def flattened_attributes(self) -> torch.Tensor:
-        """Returns a flattened tensor of attributes.
+        """Returns a flattened tensor of attributes, with removed repeated dimensions.
 
-        In the case of spatial attributes, the flattened attributes are the same as the `spatial_segmentation_mask`
+        In the case of spatial attributes, the flattened attributes are 2D spatial attributes of shape (rows, columns) and the spectral dimension is removed.
 
         Returns:
             torch.Tensor: A flattened tensor of attributes.
@@ -434,45 +475,7 @@ class HSISpatialAttributes(HSIAttributes):
             tensor([[0., 0.],
                     [0., 0.]])
         """
-        return self.spatial_segmentation_mask
-
-    @model_validator(mode="after")
-    def validate_hsi_attributions(self) -> Self:
-        """Validates the hsi attributions.
-
-        This method is responsible for validating the hsi attributions
-        and performing any necessary operations on the segmentation mask.
-
-        Returns:
-            Self: The current instance of the class.
-        """
-        super()._validate_hsi_attributions()
-        self.segmentation_mask = self.segmentation_mask.to(self.device)
-        return self
-
-    def to(self, device: str | torch.device) -> Self:
-        """Move the Lime object and its segmentation mask to the specified device.
-
-        Args:
-            device (str or torch.device): The device to move the object and mask to.
-
-        Returns:
-            Self: The Lime object itself.
-
-        Examples:
-            >>> attrs = HSISpatialAttributes(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
-            >>> attrs.to("cpu")
-            >>> attrs.segmentation_mask.device
-            device(type='cpu')
-            >>> attrs.hsi.device
-            device(type='cpu')
-            >>> attrs.to("cuda")
-            >>> attrs.segmentation_mask.device
-            device(type='cuda')
-        """
-        super().to(device)
-        self.segmentation_mask = self.segmentation_mask.to(device)
-        return self
+        return self.attributes.select(dim=self.hsi.spectral_axis, index=0)
 
 
 class HSISpectralAttributes(HSIAttributes):
@@ -487,32 +490,20 @@ class HSISpectralAttributes(HSIAttributes):
         model_config (ConfigDict): Configuration dictionary for the model.
         band_mask (torch.Tensor): Band mask used for the explanation.
         band_names (dict[str, int]): Dictionary that translates the band names into the band segment ids.
+        attribution_method (str | None): The method used to generate the explanation. Defaults to None.
     """
 
-    band_mask: Annotated[
-        torch.Tensor,
-        BeforeValidator(validate_and_convert_band_mask),
-        Field(
-            description="Band mask used for the explanation.",
-        ),
-    ]
     band_names: Annotated[
         dict[str, int],
         Field(
             description="Dictionary that translates the band names into the band segment ids.",
         ),
     ]
-    attribution_method: Annotated[
-        str,
-        Literal["Lime"],
-        Field(
-            description="The method used to generate the explanation.",
-        ),
-    ] = "Lime"
 
     @property
-    def spectral_band_mask(self) -> torch.Tensor:
-        """Returns a spectral band mask.
+    def flattened_band_mask(self) -> torch.Tensor:
+        """Returns a flattened band mask - a band mask with removed repeated dimensions
+        The flattened_band_mask is a 1D tensor of shape (num_bands, ), where num_bands is the number of bands in the hsi image.
 
         The method selects the appropriate dimensions from the `band_mask` tensor
         based on the `axis_to_select` and returns a flattened version of the selected
@@ -524,7 +515,7 @@ class HSISpectralAttributes(HSIAttributes):
         Examples:
             >>> band_names = {"R": 0, "G": 1, "B": 2}
             >>> attrs = HSISpectralAttributes(hsi, attributes, score=0.5, band_mask=band_mask)
-            >>> attrs.spectral_band_mask
+            >>> attrs.flattened_band_mask
             torch.tensor([0, 1, 2])
         """
         axis_to_select = HSI_AXIS_ORDER.copy()
@@ -532,52 +523,28 @@ class HSISpectralAttributes(HSIAttributes):
         return self.band_mask.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1], index=0)
 
     @property
-    def flattened_attributes(self) -> torch.Tensor:
-        """Returns a flattened tensor of attributes.
+    def band_mask(self) -> torch.Tensor:
+        """Returns a band mask that has the full size - the same size as the hsi image.
 
-        In the case of spectral attributes, the flattened attributes are the same as the `spectral_band_mask`
+        Returns:
+            torch.Tensor: The band mask tensor.
+        Raises:
+            ValueError: If the band mask is not provided in the attributes.
+
+        """
+        if self.mask is None:
+            raise ValueError("Band mask is not provided")
+        return self.mask
+
+    @property
+    def flattened_attributes(self) -> torch.Tensor:
+        """Returns a flattened tensor of attributes with removed repeated dimensions.
+
+        In the case of spectral attributes, the flattened attributes are 1D tensor of shape (num_bands, ), where num_bands is the number of bands in the hsi image.
 
         Returns:
             torch.Tensor: A flattened tensor of attributes.
         """
-        return self.spectral_band_mask
-
-    @model_validator(mode="after")
-    def validate_hsi_attributions(self) -> Self:
-        """Validates the hsi attributions.
-
-        This method performs validation on the hsi attributions by calling the
-        base class's `_validate_hsi_attributions` method. It also converts the
-        `band_mask` attribute to the device specified by `self.device`.
-
-        Returns:
-            Self: The current instance of the class.
-        """
-        super()._validate_hsi_attributions()
-        self.band_mask = self.band_mask.to(self.device)
-        return self
-
-    def to(self, device: str | torch.device) -> Self:
-        """Move the Lime object to the specified device.
-
-        Args:
-            device (str or torch.device): The device to move the object to.
-
-        Returns:
-            Self: The Lime object itself.
-
-        Examples:
-            >>> attrs = HSISpectralAttributes(hsi, attributes, score=0.5, band_mask=band_mask)
-            >>> attrs.to("cpu")
-            >>> attrs.band_mask.device
-            device(type='cpu')
-            >>> attrs.hsi.device
-            device(type='cpu')
-            >>> attrs.to("cuda")
-            >>> attrs.band_mask.device
-            device(type='cuda')
-        """
-        super().to(device)
-        self.band_mask = self.band_mask.to(device)
-        self.band_names = align_band_names_with_mask(self.band_names, self.band_mask)
-        return self
+        axis = list(range(self.attributes.ndim))
+        axis.remove(self.hsi.spectral_axis)
+        return self.attributes.select(dim=axis[0], index=0).select(dim=axis[1] - 1, index=0)

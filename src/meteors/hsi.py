@@ -27,11 +27,11 @@ def get_channel_axis(orientation: tuple[str, str, str]) -> int:
     return orientation.index("C")
 
 
-def validate_orientation(value: tuple[str, str, str] | list[str]) -> tuple[str, str, str]:
+def validate_orientation(value: tuple[str, str, str] | list[str] | str) -> tuple[str, str, str]:
     """Validates the orientation tuple.
 
     Args:
-        value (tuple[str, str, str] | list[str]):
+        value (tuple[str, str, str] | list[str] | str):
             The orientation value to be validated. It should be a tuple of three one-letter strings.
 
     Returns:
@@ -214,7 +214,10 @@ def process_and_validate_binary_mask(
         binary_mask = mask.bool().to(device)
 
     if binary_mask.shape != image.shape:
-        raise ValueError(f"Binary mask shape {binary_mask.shape} does not match image shape {image.shape}")
+        try:
+            binary_mask = binary_mask.expand_as(image)
+        except RuntimeError:
+            raise ValueError(f"Binary mask shape {binary_mask.shape} does not match image shape {image.shape}")
 
     return binary_mask
 
@@ -282,7 +285,7 @@ class HSI(BaseModel):
 
         Note:
             The orientation is typically represented as a string where:
-            - 'C' or 'W' represents the spectral/wavelength dimension
+            - 'C' represents the spectral/wavelength dimension
             - 'H' represents the height (rows) of the image
             - 'W' represents the width (columns) of the image
 
@@ -298,7 +301,7 @@ class HSI(BaseModel):
         return get_channel_axis(self.orientation)
 
     @property
-    def spatial_mask(self) -> torch.Tensor:
+    def spatial_binary_mask(self) -> torch.Tensor:
         """Returns a 2D spatial representation of the binary mask.
 
         This property extracts a single 2D slice from the 3D binary mask, assuming that
@@ -317,21 +320,15 @@ class HSI(BaseModel):
         Examples:
             >>> # If self.binary_mask has shape (100, 100, 5) with spectral_axis=2:
             >>> hsi_image = HSI(binary_mask=torch.rand(100, 100, 5), orientation=("H", "W", "C"))
-            >>> hsi_image.spatial_mask.shape
+            >>> hsi_image.spatial_binary_mask.shape
             torch.Size([100, 100])
             >>> If self.binary_mask has shape (5, 100, 100) with spectral_axis=0:
             >>> hsi_image = HSI(binary_mask=torch.rand(5, 100, 100), orientation=("C", "H", "W"))
-            >>> hsi_image.spatial_mask.shape
+            >>> hsi_image.spatial_binary_mask.shape
             torch.Size([100, 100])
         """
-        # Ensure the spectral dimension is the last dimension
-        if self.spectral_axis != 2:
-            transposed_mask = torch.moveaxis(self.binary_mask, self.spectral_axis, 2)
-        else:
-            transposed_mask = self.binary_mask
-
-        # Return the first 2D slice, which represents the spatial mask
-        return transposed_mask[..., 0]
+        mask = self.binary_mask if self.binary_mask is not None else torch.ones_like(self.image)
+        return mask.select(dim=self.spectral_axis, index=0)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -602,13 +599,13 @@ class HSI(BaseModel):
                 f"Selection method '{selection_method}' is not supported. Only 'center' is currently available."
             )
 
-    def change_orientation(self, target_orientation: tuple[str, str, str], inplace=False) -> Self:
-        """Changes the orientation of the image data to the target orientation.
+    def change_orientation(self, target_orientation: tuple[str, str, str] | list[str] | str, inplace=False) -> Self:
+        """Changes the orientation of the hsi data to the target orientation.
 
         Args:
-            target_orientation (tuple[str, str, str]): The target orientation for the image data.
+            target_orientation (tuple[str, str, str], list[str], str): The target orientation for the hsi data.
                 This should be a tuple of three one-letter strings in any order: "C", "H", "W".
-            inplace (bool, optional): Whether to modify the image data in place or return a new object.
+            inplace (bool, optional): Whether to modify the hsi data in place or return a new object.
 
         Returns:
             Self: The updated HSI object with the new orientation.

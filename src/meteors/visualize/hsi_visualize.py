@@ -7,7 +7,7 @@ from meteors import HSI
 from meteors.attr import HSIAttributes
 
 
-def visualize_image(image_or_attributes: HSI | HSIAttributes, ax: Axes | None) -> Axes:
+def visualize_hsi(image_or_attributes: HSI | HSIAttributes, ax: Axes | None) -> Axes:
     """Visualizes a Hyperspectral image object on the given axes. It uses either the object from HSI class or a field
     from the HSIAttributes class.
 

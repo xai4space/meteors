@@ -253,7 +253,11 @@ def validate_mask_shape(mask_type: Literal["segmentation", "band"], hsi: HSI, ma
     image_shape = hsi.image.shape
     mask_shape = mask.shape
 
-    if len(mask_shape) != 3:
+    if len(mask_shape) == 2 and mask_type == "segmentation":
+        logger.warning("The segmentation mask is 2D, adding a new dimension to match the image shape")
+        mask = mask.unsqueeze(hsi.spectral_axis)
+        mask_shape = mask.shape
+    elif len(mask_shape) != 3:
         raise ValueError(f"Mask should be a 3D tensor, but got shape: {mask_shape}")
 
     try:
@@ -1089,9 +1093,10 @@ class Lime(Explainer):
 
         spatial_attribution = HSISpatialAttributes(
             hsi=hsi,
-            attributes=lime_attributes[0],
-            segmentation_mask=segmentation_mask,
+            attributes=lime_attributes.squeeze(0),
+            mask=segmentation_mask.expand_as(hsi.image),
             score=score,
+            attribution_method="Lime",
         )
 
         return spatial_attribution
@@ -1185,6 +1190,8 @@ class Lime(Explainer):
         if band_mask is None:
             band_mask, band_names = self.get_band_mask(hsi, band_names)
         band_mask = ensure_torch_tensor(band_mask, "Band mask should be None, numpy array, or torch tensor")
+        if band_mask.ndim != hsi.image.ndim:
+            band_mask = Lime._expand_band_mask(hsi, band_mask, repeat_dimensions=False)
         band_mask = band_mask.int()
 
         if band_names is None:
@@ -1215,10 +1222,11 @@ class Lime(Explainer):
 
         spectral_attribution = HSISpectralAttributes(
             hsi=hsi,
-            attributes=lime_attributes[0],
-            band_mask=band_mask,
+            attributes=lime_attributes.squeeze(0),
+            mask=band_mask.expand_as(hsi.image),
             band_names=band_names,
             score=score,
+            attribution_method="Lime",
         )
 
         return spectral_attribution
@@ -1241,7 +1249,7 @@ class Lime(Explainer):
         segmentation_mask = slic(
             hsi.get_image().cpu().detach().numpy(),
             n_segments=num_interpret_features,
-            mask=hsi.spatial_mask.cpu().detach().numpy(),
+            mask=hsi.spatial_binary_mask.cpu().detach().numpy(),
             channel_axis=hsi.spectral_axis,
             *args,
             **kwargs,
@@ -1285,7 +1293,7 @@ class Lime(Explainer):
         idx_mask += 1
         segmentation_mask = torch.repeat_interleave(idx_mask, patch_size, dim=0)
         segmentation_mask = torch.repeat_interleave(segmentation_mask, patch_size, dim=1)
-        segmentation_mask = segmentation_mask * hsi.spatial_mask
+        segmentation_mask = segmentation_mask * hsi.spatial_binary_mask
         # segmentation_mask = torch.repeat_interleave(
         # torch.unsqueeze(segmentation_mask, dim=hsi.spectral_axis),
         # repeats=hsi.image.shape[hsi.spectral_axis], dim=hsi.spectral_axis)

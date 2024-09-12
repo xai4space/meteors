@@ -6,6 +6,7 @@ import numpy as np
 
 import meteors as mt
 import meteors.attr as mt_attr
+from meteors.attr import HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
 
 
 # Temporary solution for wavelengths
@@ -134,52 +135,33 @@ def test_validate_and_convert_attributes():
         mt_attr.attributes.validate_and_convert_attributes(123)
 
 
-def test_validate_and_convert_segmentation_mask():
-    # Test case 1: Valid segmentation mask (numpy array)
+def test_validate_and_convert_mask():
+    # Test case 1: Valid mask (numpy array)
     segmentation_mask_np = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-    result_np = mt_attr.attributes.validate_and_convert_segmentation_mask(segmentation_mask_np)
+    result_np = mt_attr.attributes.validate_and_convert_mask(segmentation_mask_np)
     assert isinstance(result_np, torch.Tensor)
     assert torch.all(torch.eq(result_np, torch.tensor(segmentation_mask_np)))
 
-    # Test case 2: Valid segmentation mask (torch tensor)
+    # Test case 2: Valid mask (torch tensor)
     segmentation_mask_tensor = torch.tensor([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-    result_tensor = mt_attr.attributes.validate_and_convert_segmentation_mask(segmentation_mask_tensor)
+    result_tensor = mt_attr.attributes.validate_and_convert_mask(segmentation_mask_tensor)
     assert isinstance(result_tensor, torch.Tensor)
     assert torch.all(torch.eq(result_tensor, segmentation_mask_tensor))
 
-    # Test case 3: Invalid segmentation mask (wrong type)
+    # Test case 3: Invalid mask (wrong type)
     invalid_segmentation_mask = "invalid"
     with pytest.raises(TypeError):
-        mt_attr.attributes.validate_and_convert_segmentation_mask(invalid_segmentation_mask)
+        mt_attr.attributes.validate_and_convert_mask(invalid_segmentation_mask)
 
-    # Test case 4: Invalid segmentation mask (wrong type)
+    # Test case 4: Invalid mask (wrong type)
     invalid_segmentation_mask = 123
     with pytest.raises(TypeError):
-        mt_attr.attributes.validate_and_convert_segmentation_mask(invalid_segmentation_mask)
+        mt_attr.attributes.validate_and_convert_mask(invalid_segmentation_mask)
 
-
-def test_validate_and_convert_band_mask():
-    # Test case 1: Valid band mask (numpy array)
-    band_mask_np = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-    result_np = mt_attr.attributes.validate_and_convert_band_mask(band_mask_np)
-    assert isinstance(result_np, torch.Tensor)
-    assert torch.all(torch.eq(result_np, torch.tensor(band_mask_np)))
-
-    # Test case 2: Valid band mask (torch tensor)
-    band_mask_tensor = torch.tensor([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-    result_tensor = mt_attr.attributes.validate_and_convert_band_mask(band_mask_tensor)
-    assert isinstance(result_tensor, torch.Tensor)
-    assert torch.all(torch.eq(result_tensor, band_mask_tensor))
-
-    # Test case 3: Invalid band mask (wrong type)
-    invalid_band_mask = "invalid"
-    with pytest.raises(TypeError):
-        mt_attr.attributes.validate_and_convert_band_mask(invalid_band_mask)
-
-    # Test case 4: Invalid band mask (wrong type)
-    invalid_band_mask = 123
-    with pytest.raises(TypeError):
-        mt_attr.attributes.validate_and_convert_band_mask(invalid_band_mask)
+    # Test case 5: None mask
+    segmentation_mask_none = None
+    result_none = mt_attr.attributes.validate_and_convert_mask(segmentation_mask_none)
+    assert result_none is None
 
 
 def test_validate_shapes():
@@ -241,14 +223,14 @@ def test_align_band_names_with_mask():
         mt_attr.attributes.align_band_names_with_mask(band_names, invalid_band_mask)
 
 
-def test_validate_image_attributions():
+def test_validate_hsi_attributions():
     # Create a sample HSIAttributes object
     image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     score = 0.8
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    image_attributes = mt_attr.HSIAttributes(
+    image_attributes = HSIAttributes(
         hsi=image,
         attributes=attributes,
         score=score,
@@ -272,24 +254,13 @@ def test_validate_image_attributions():
     # Validate invalid shape
     invalid_attributes = torch.ones((1, 4, 4))
     with pytest.raises(ValueError):
-        mt_attr.HSIAttributes(
+        HSIAttributes(
             hsi=image,
             attributes=invalid_attributes,
             score=score,
             device=device,
             model_config=model_config,
             attribution_method="lime",
-        )
-
-    # validate invalid attribution method
-    with pytest.raises(ValueError):
-        mt_attr.HSIAttributes(
-            hsi=image,
-            attributes=attributes,
-            score=score,
-            attribution_method="invalid",
-            device=device,
-            model_config=model_config,
         )
 
     # Not implemented yet functions
@@ -348,15 +319,13 @@ def test_spatial_attributes():
     # Create a sample HSISpatialAttributes object
     image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
-    score = 0.8
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spatial_attributes = mt_attr.HSISpatialAttributes(
+    spatial_attributes = HSISpatialAttributes(
         hsi=image,
         attributes=attributes,
-        score=score,
-        segmentation_mask=segmentation_mask,
+        mask=segmentation_mask,
         device=device,
         model_config=model_config,
     )
@@ -379,28 +348,27 @@ def test_spatial_attributes():
     # Validate invalid shape
     invalid_attributes = torch.ones((1, 4, 4))
     with pytest.raises(ValueError):
-        mt_attr.HSISpatialAttributes(
+        HSISpatialAttributes(
             hsi=image,
             attributes=invalid_attributes,
-            score=score,
-            segmentation_mask=segmentation_mask,
+            mask=segmentation_mask,
             device=device,
             model_config=model_config,
         )
 
 
-def test_to_image_spatial_attributes():
+def test_to_hsi_spatial_attributes():
     # Create dummy data
     image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
 
     # Create HSISpatialAttributes object
-    spatial_attributes = mt_attr.HSISpatialAttributes(
+    spatial_attributes = HSISpatialAttributes(
         hsi=image,
         attributes=attributes,
         score=0.8,
-        segmentation_mask=segmentation_mask,
+        mask=segmentation_mask,
     )
 
     # Move to a different device
@@ -423,39 +391,36 @@ def test_to_image_spatial_attributes():
         assert spatial_attributes.segmentation_mask.device == device
 
 
-def test_spatial_segmentation_mask_spacial_attributes():
+def test_segmentation_mask_spacial_attributes():
     # Create a sample HSISpatialAttributes object
     image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
-    score = 0.8
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spatial_attributes = mt_attr.HSISpatialAttributes(
+    spatial_attributes = HSISpatialAttributes(
         hsi=image,
         attributes=attributes,
-        score=score,
-        segmentation_mask=segmentation_mask,
+        mask=segmentation_mask,
         device=device,
         model_config=model_config,
     )
 
-    assert spatial_attributes.spatial_segmentation_mask.shape == segmentation_mask.shape[1:]
+    assert spatial_attributes.segmentation_mask.shape == segmentation_mask.shape
+    assert spatial_attributes.flattened_segmentation_mask.shape == segmentation_mask.shape[1:]
 
 
 def test_flattened_attributes_spacial_attributes():
     # Create a sample HSISpatialAttributes object
     image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
-    score = 0.8
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spatial_attributes = mt_attr.HSISpatialAttributes(
+    spatial_attributes = HSISpatialAttributes(
         hsi=image,
         attributes=attributes,
-        score=score,
-        segmentation_mask=segmentation_mask,
+        mask=segmentation_mask,
         device=device,
         model_config=model_config,
     )
@@ -467,7 +432,6 @@ def test_spectral_attributes():
     # Create a sample HSISpectralAttributes object
     image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
-    score = 0.8
     band_mask = torch.empty_like(attributes)
     band_mask[0] = 0
     band_mask[1] = 1
@@ -475,12 +439,11 @@ def test_spectral_attributes():
     band_names = {"R": 0, "G": 1, "B": 2}
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spectral_attributes = mt_attr.HSISpectralAttributes(
+    spectral_attributes = HSISpectralAttributes(
         hsi=image,
         attributes=attributes,
-        score=score,
         band_names=band_names,
-        band_mask=band_mask,
+        mask=band_mask,
         device=device,
         model_config=model_config,
     )
@@ -503,18 +466,17 @@ def test_spectral_attributes():
     # Validate invalid shape
     invalid_attributes = torch.ones((1, 4, 4))
     with pytest.raises(ValueError):
-        mt_attr.HSISpectralAttributes(
+        HSISpectralAttributes(
             hsi=image,
             attributes=invalid_attributes,
-            score=score,
             band_names=band_names,
-            band_mask=band_mask,
+            mask=band_mask,
             device=device,
             model_config=model_config,
         )
 
 
-def test_to_image_spectral_attributes():
+def test_to_hsi_spectral_attributes():
     # Create dummy data
     image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
@@ -525,11 +487,11 @@ def test_to_image_spectral_attributes():
     band_names = {"R": 0, "G": 1, "B": 2}
 
     # Create HSISpectralAttributes object
-    spectral_attributes = mt_attr.HSISpectralAttributes(
+    spectral_attributes = HSISpectralAttributes(
         hsi=image,
         attributes=attributes,
         score=0.8,
-        band_mask=band_mask,
+        mask=band_mask,
         band_names=band_names,
     )
 
@@ -547,7 +509,6 @@ def test_flattened_band_mask_spectral_attributes():
     # Create a sample HSISpectralAttributes object
     image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
-    score = 0.8
     band_mask = torch.empty_like(attributes)
     band_mask[0] = 0
     band_mask[1] = 1
@@ -555,24 +516,22 @@ def test_flattened_band_mask_spectral_attributes():
     band_names = {"R": 0, "G": 1, "B": 2}
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spectral_attributes = mt_attr.HSISpectralAttributes(
+    spectral_attributes = HSISpectralAttributes(
         hsi=image,
         attributes=attributes,
-        score=score,
         band_names=band_names,
-        band_mask=band_mask,
+        mask=band_mask,
         device=device,
         model_config=model_config,
     )
 
-    assert torch.equal(spectral_attributes.spectral_band_mask, torch.tensor([0, 1, 2]))
+    assert torch.equal(spectral_attributes.flattened_band_mask, torch.tensor([0, 1, 2]))
 
 
 def test_flattened_attributes_spectral_attributes():
     # Create a sample HSISpectralAttributes object
     image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
-    score = 0.8
     band_mask = torch.empty_like(attributes)
     band_mask[0] = 0
     band_mask[1] = 1
@@ -580,14 +539,14 @@ def test_flattened_attributes_spectral_attributes():
     band_names = {"R": 0, "G": 1, "B": 2}
     device = torch.device("cpu")
     model_config = {"param1": 1, "param2": 2}
-    spectral_attributes = mt_attr.HSISpectralAttributes(
+    spectral_attributes = HSISpectralAttributes(
         hsi=image,
         attributes=attributes,
-        score=score,
         band_names=band_names,
-        band_mask=band_mask,
+        mask=band_mask,
         device=device,
         model_config=model_config,
     )
 
-    assert torch.equal(spectral_attributes.flattened_attributes, torch.tensor([0, 1, 2]))
+    assert torch.equal(spectral_attributes.flattened_attributes, torch.ones((band_mask.shape[0],)))
+    assert torch.equal(spectral_attributes.flattened_band_mask, torch.tensor([0, 1, 2]))

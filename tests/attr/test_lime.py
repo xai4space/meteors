@@ -10,6 +10,9 @@ import meteors.attr.lime_base as mt_lime_base
 from meteors.utils.models import ExplainableModel, SkLearnLasso
 from meteors.utils.utils import agg_segmentation_postprocessing
 
+from meteors import HSI
+from meteors.attr import HSISpatialAttributes, HSISpectralAttributes
+
 # Temporary solution for wavelengths
 wavelengths = [
     462.08,
@@ -335,7 +338,7 @@ def test_adjust_and_validate_segment_ranges():
 def test_validate_mask_shape():
     # validation of the function
 
-    hsi = mt.HSI(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47])
+    hsi = HSI(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47])
     segmentation_mask = torch.randint(0, 3, (1, 240, 240))
 
     validated_segmentation_mask = mt_lime.validate_mask_shape("segmentation", hsi=hsi, mask=segmentation_mask)
@@ -364,22 +367,9 @@ def test_validate_mask_shape():
         mt_lime.validate_mask_shape("band", hsi=hsi, mask=unbroadcastable_band_mask)
 
     incorrectly_broadcastable_band_mask = torch.randint(0, 3, (3, 240, 1))
-    incorrectly_broadcastable_hsi = mt.HSI(image=torch.randn(1, 240, 240), wavelengths=[462.08])
+    incorrectly_broadcastable_hsi = HSI(image=torch.randn(1, 240, 240), wavelengths=[462.08])
     with pytest.raises(ValueError):
         mt_lime.validate_mask_shape("band", hsi=incorrectly_broadcastable_hsi, mask=incorrectly_broadcastable_band_mask)
-
-    # orientation mismatches
-    incorrect_band_mask = torch.randint(
-        0, 3, (1, 240, 240)
-    )  # this band mask can be broadcasted, but on the channel axis
-
-    with pytest.raises(ValueError):
-        mt_lime.validate_mask_shape("band", hsi=hsi, mask=incorrect_band_mask)
-
-    incorrect_segmentation_mask = torch.randint(0, 3, (1, 240, 1))
-
-    with pytest.raises(ValueError):
-        mt_lime.validate_mask_shape("segmentation", hsi=hsi, mask=incorrect_segmentation_mask)
 
 
 ###################################################################
@@ -435,7 +425,7 @@ def test_lime_explainer():
 
 def test__get_slick_segmentation_mask():
     # Create a sample hsi
-    hsi = mt.HSI(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47])
+    hsi = HSI(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47])
 
     # Call the method
     segmentation_mask = mt_lime.Lime._get_slick_segmentation_mask(hsi, num_interpret_features=10)
@@ -446,10 +436,26 @@ def test__get_slick_segmentation_mask():
     assert torch.all(segmentation_mask >= 0)
     assert torch.all(segmentation_mask < 10)
 
+    # Check mask slic
+    mask = torch.ones_like(hsi.image)
+    mask[0, 10, 10] = 0
+    mask[0, 20, 20] = 0
+
+    hsi = HSI(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47], binary_mask=mask)
+    segmentation_mask = mt_lime.Lime._get_slick_segmentation_mask(hsi, num_interpret_features=10)
+
+    # Check the output
+    assert isinstance(segmentation_mask, torch.Tensor)
+    assert segmentation_mask.shape == (1, 240, 240)
+    assert torch.all(segmentation_mask >= 0)
+    assert torch.all(segmentation_mask < 10)
+    assert segmentation_mask[0, 10, 10] == 0
+    assert segmentation_mask[0, 20, 20] == 0
+
 
 def test__get_patch_segmentation_mask():
     # Create a sample hsi
-    hsi = mt.HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
+    hsi = HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
 
     # Call the _get_patch_segmentation_mask method
     patch_size = 10
@@ -483,22 +489,36 @@ def test__get_patch_segmentation_mask():
     with pytest.raises(ValueError):
         mt_lime.Lime._get_patch_segmentation_mask(hsi, patch_size=patch_size)
 
+    # Test case 4: Mask
+    mask = torch.ones_like(hsi.image)
+    mask[0, 10, 10] = 0
+    mask[0, 20, 20] = 0
+
+    hsi = HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47], binary_mask=mask)
+    segmentation_mask = mt_lime.Lime._get_patch_segmentation_mask(hsi, patch_size=10)
+
+    # Check the output
+    assert isinstance(segmentation_mask, torch.Tensor)
+    assert segmentation_mask.shape == (1, 240, 240)
+    assert segmentation_mask[0, 10, 10] == 0
+    assert segmentation_mask[0, 20, 20] == 0
+
 
 def test_get_segmentation_mask():
     # Test case 1: Valid segmentation method (slic)
-    hsi = mt.HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
+    hsi = HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
     segmentation_mask = mt_lime.Lime.get_segmentation_mask(hsi, segmentation_method="slic")
     assert isinstance(segmentation_mask, torch.Tensor)
     assert segmentation_mask.shape == (1, 240, 240)
 
     # Test case 2: Valid segmentation method (patch)
-    hsi = mt.HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
+    hsi = HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
     segmentation_mask = mt_lime.Lime.get_segmentation_mask(hsi, segmentation_method="patch")
     assert isinstance(segmentation_mask, torch.Tensor)
     assert segmentation_mask.shape == (1, 240, 240)
 
     # Test case 3: Invalid segmentation method
-    hsi = mt.HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
+    hsi = HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
     with pytest.raises(ValueError):
         mt_lime.Lime.get_segmentation_mask(hsi, segmentation_method="invalid")
 
@@ -920,7 +940,7 @@ def test__get_band_wavelengths_indices_from_band_names():
 def test__check_overlapping_segments(caplog):
     # Create a sample hsi
     wavelengths = torch.tensor([400, 500, 600, 700])
-    hsi = mt.HSI(image=torch.ones((4, 4, 4)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((4, 4, 4)), wavelengths=wavelengths)
 
     # Create a sample dictionary mapping segment labels to indices
     dict_labels_to_indices = {
@@ -1010,7 +1030,7 @@ def test__validate_and_create_dict_labels_to_segment_ids():
 def test__create_single_dim_band_mask():
     # Create a sample hsi
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths)
 
     # Create sample segment labels and indices
     dict_labels_to_indices = {
@@ -1048,7 +1068,7 @@ def test__create_single_dim_band_mask():
 def test__expand_band_mask():
     # Create a sample hsi
     wavelengths = torch.tensor([400, 450, 500, 550, 600])
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths, orientation=("C", "H", "W"))
+    hsi = HSI(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths, orientation=("C", "H", "W"))
 
     # Create a sample band mask
     band_mask_single_dim = torch.tensor([1, 2, 3, 4, 5])
@@ -1073,7 +1093,7 @@ def test__expand_band_mask():
 
     # Test case 2: Repeat dimensions is True and band axis is 0
     repeat_dimensions = True
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths, orientation=("C", "H", "W"))
+    hsi = HSI(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths, orientation=("C", "H", "W"))
     expanded_band_mask = mt_lime.Lime._expand_band_mask(hsi, band_mask_single_dim, repeat_dimensions)
 
     expected_shape = (5, 3, 3)
@@ -1092,7 +1112,7 @@ def test__expand_band_mask():
 
     # Test case 3: Repeat dimensions is True and band axis is 1
     repeat_dimensions = True
-    hsi = mt.HSI(image=torch.ones((3, len(wavelengths), 3)), wavelengths=wavelengths, orientation=("H", "C", "W"))
+    hsi = HSI(image=torch.ones((3, len(wavelengths), 3)), wavelengths=wavelengths, orientation=("H", "C", "W"))
     expanded_band_mask = mt_lime.Lime._expand_band_mask(hsi, band_mask_single_dim, repeat_dimensions)
 
     expected_shape = (3, 5, 3)
@@ -1109,7 +1129,7 @@ def test__expand_band_mask():
 
     # Test case 4: Repeat dimensions is True and band axis is 2
     repeat_dimensions = True
-    hsi = mt.HSI(image=torch.ones((3, 3, len(wavelengths))), wavelengths=wavelengths, orientation=("H", "W", "C"))
+    hsi = HSI(image=torch.ones((3, 3, len(wavelengths))), wavelengths=wavelengths, orientation=("H", "W", "C"))
     expanded_band_mask = mt_lime.Lime._expand_band_mask(hsi, band_mask_single_dim, repeat_dimensions)
 
     expected_shape = (3, 3, 5)
@@ -1127,7 +1147,7 @@ def test__expand_band_mask():
 
 def test__create_tensor_band_mask():
     # Test case 1: Default parameters
-    hsi = mt.HSI(image=torch.ones((3, 240, 240)), wavelengths=[400, 500, 600])
+    hsi = HSI(image=torch.ones((3, 240, 240)), wavelengths=[400, 500, 600])
     dict_labels_to_indices = {"label1": [0], "label2": [1, 2]}
     band_mask, dict_labels_to_segment_ids = mt_lime.Lime._create_tensor_band_mask(hsi, dict_labels_to_indices)
     assert isinstance(band_mask, torch.Tensor)
@@ -1168,7 +1188,7 @@ def test__create_tensor_band_mask():
 
 def test_get_band_mask():
     # Test case 1: Valid input with band names
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_names = ["R", "G"]
     band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
     assert isinstance(band_mask, torch.Tensor)
@@ -1176,7 +1196,7 @@ def test_get_band_mask():
     assert dict_labels_to_segment_ids == {"R": 1, "G": 2}
 
     # Test case 2: Valid input with band indices
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_indices = {"RGB": 0}
     band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices)
     assert isinstance(band_mask, torch.Tensor)
@@ -1184,7 +1204,7 @@ def test_get_band_mask():
     assert dict_labels_to_segment_ids == {"RGB": 1}
 
     # Test case 3: Valid input with band indices list
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_indices = {"RGB": [0, 1, 2]}
     band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices)
     assert isinstance(band_mask, torch.Tensor)
@@ -1192,7 +1212,7 @@ def test_get_band_mask():
     assert dict_labels_to_segment_ids == {"RGB": 1}
 
     # Test case 4: Valid input with band ranges (indices)
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_ranges_indices = {"RGB": [(0, 2)]}
     band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_indices=band_ranges_indices)
     assert isinstance(band_mask, torch.Tensor)
@@ -1200,7 +1220,7 @@ def test_get_band_mask():
     assert dict_labels_to_segment_ids == {"RGB": 1}
 
     # Test case 5: Valid input with band wavelengths
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_wavelengths = {"RGB": 500.43}
     band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_wavelengths=band_wavelengths)
     assert isinstance(band_mask, torch.Tensor)
@@ -1208,7 +1228,7 @@ def test_get_band_mask():
     assert dict_labels_to_segment_ids == {"RGB": 1}
 
     # Test case 6: Valid input with band wavelengths list
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_wavelengths = {"RGB": [500.43, 554.78]}
     band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_wavelengths=band_wavelengths)
     assert isinstance(band_mask, torch.Tensor)
@@ -1216,7 +1236,7 @@ def test_get_band_mask():
     assert dict_labels_to_segment_ids == {"RGB": 1}
 
     # Test case 7: Valid input with band ranges (wavelengths)
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_ranges_wavelengths = {"RGB": [(400, 600)]}
     band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_wavelengths=band_ranges_wavelengths)
     assert isinstance(band_mask, torch.Tensor)
@@ -1228,24 +1248,24 @@ def test_get_band_mask():
     mt_lime.Lime.get_band_mask(hsi, band_wavelengths=band_ranges_wavelengths, band_indices=band_indices)
 
     # Test case 8: Invalid input (no band names, groups, or ranges provided)
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     with pytest.raises(AssertionError):
         mt_lime.Lime.get_band_mask(hsi)
 
     # Test case 9: Invalid input (incorrect band names)
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_names = ["R", "G", "B", "Invalid"]
     with pytest.raises(ValueError):
         mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
 
     # Test case 10: Invalid input (incorrect band ranges wavelengths)
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_wavelengths = {"RGB": [(wavelengths[-1] + 10, wavelengths[-1] + 20)]}
     with pytest.raises(ValueError):
         mt_lime.Lime.get_band_mask(hsi, band_wavelengths=band_wavelengths)
 
     # Test case 11: Invalid input (incorrect band ranges indices)
-    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_indices = {"RGB": [(len(wavelengths), len(wavelengths) + 1)]}
     with pytest.raises(ValueError):
         mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices)
@@ -1266,10 +1286,11 @@ def test_get_spatial_attributes_regression():
 
     # Create a sample hsi
     wavelengths = torch.tensor([400, 450, 500, 550, 600])
-    hsi = mt.HSI(image=torch.randn(5, 10, 10), wavelengths=wavelengths)
+    hsi = HSI(image=torch.randn(5, 10, 10), wavelengths=wavelengths)
 
     # Create a sample segmentation mask
     segmentation_mask = torch.randint(1, 4, (1, 10, 10))
+    segmentation_mask_smaller = segmentation_mask[0]
 
     # Create a sample Lime object
     lime = mt_lime.Lime(
@@ -1282,14 +1303,22 @@ def test_get_spatial_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert spatial_attributes.score <= 1.0
+    assert spatial_attributes.attributes.shape == hsi.image.shape
+
+    # Assert smaller segmentation mask
+    spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_mask_smaller, target=0)
+    assert isinstance(spatial_attributes, HSISpatialAttributes)
+    assert spatial_attributes.hsi == hsi
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
     # Test case 1: Different target
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_mask, target=1)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1328,7 +1357,7 @@ def test_get_spatial_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1341,7 +1370,7 @@ def test_get_spatial_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1355,7 +1384,7 @@ def test_get_spatial_attributes_classification():
 
     # Create a sample hsi
     wavelengths = torch.tensor([400, 450, 500, 550, 600])
-    hsi = mt.HSI(image=torch.randn(5, 10, 10), wavelengths=wavelengths)
+    hsi = HSI(image=torch.randn(5, 10, 10), wavelengths=wavelengths)
 
     # Create a sample segmentation mask
     segmentation_mask = torch.randint(1, 4, (1, 10, 10))
@@ -1371,14 +1400,14 @@ def test_get_spatial_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
     # Test case 1: Different target
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_mask, target=1)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1417,7 +1446,7 @@ def test_get_spatial_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1430,7 +1459,7 @@ def test_get_spatial_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1438,7 +1467,7 @@ def test_get_spatial_attributes_classification():
 def test_get_spatial_attributes_segmentation():
     # Create a sample image
     wavelengths = [400, 450, 500, 550, 600, 650, 700]
-    hsi = mt.HSI(image=torch.randn(len(wavelengths), 10, 10), wavelengths=wavelengths)
+    hsi = HSI(image=torch.randn(len(wavelengths), 10, 10), wavelengths=wavelengths)
 
     # Dumb model
     def dumb_model(image: torch.Tensor) -> torch.Tensor:
@@ -1473,7 +1502,7 @@ def test_get_spatial_attributes_segmentation():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1485,7 +1514,7 @@ def test_get_spatial_attributes_segmentation():
         postprocessing_segmentation_output=postprocessing,
     )
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1540,7 +1569,7 @@ def test_get_spatial_attributes_segmentation():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1561,12 +1590,14 @@ def test_get_spectral_attributes_regression():
 
     # Create a sample image
     wavelengths = [400, 450, 500, 550, 600, 650, 700]
-    hsi = mt.HSI(image=torch.randn(len(wavelengths), 240, 240), wavelengths=wavelengths)
+    hsi = HSI(image=torch.randn(len(wavelengths), 240, 240), wavelengths=wavelengths)
 
     # Create a sample band mask
     band_mask = torch.zeros_like(hsi.image, dtype=int)
     band_mask[0] = 1
     band_mask[1] = 2
+
+    band_mask_smaller = band_mask[:, 0, 0]
 
     # Create a sample band names dictionary
     band_names = {"R": 0, "G": 1, "B": 2}
@@ -1581,6 +1612,16 @@ def test_get_spectral_attributes_regression():
 
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
+    assert spectral_attributes.hsi == hsi
+    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert spectral_attributes.band_names == band_names
+    assert spectral_attributes.score <= 1.0
+    assert isinstance(spectral_attributes.score, float)
+    assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Assert smaller band mask
+    spectral_attributes = lime.get_spectral_attributes(hsi, band_mask_smaller, band_names=band_names, target=0)
+    assert isinstance(spectral_attributes, HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
     assert torch.equal(spectral_attributes.band_mask, band_mask)
     assert spectral_attributes.band_names == band_names
@@ -1661,6 +1702,9 @@ def test_get_spectral_attributes_regression():
     assert spectral_attributes.attributes.shape == hsi.image.shape
 
 
+test_get_spectral_attributes_regression()
+
+
 def test_get_spectral_attributes_classification():
     # Dumb model
     def dumb_model(image: torch.Tensor) -> torch.Tensor:
@@ -1670,7 +1714,7 @@ def test_get_spectral_attributes_classification():
 
     # Create a sample image
     wavelengths = [400, 450, 500, 550, 600, 650, 700]
-    hsi = mt.HSI(image=torch.randn(len(wavelengths), 240, 240), wavelengths=wavelengths)
+    hsi = HSI(image=torch.randn(len(wavelengths), 240, 240), wavelengths=wavelengths)
 
     # Create a sample band mask
     band_mask = torch.zeros_like(hsi.image, dtype=int)
@@ -1773,7 +1817,7 @@ def test_get_spectral_attributes_classification():
 def test_get_spectral_attributes_segmentation():
     # Create a sample image
     wavelengths = [400, 450, 500, 550, 600, 650, 700]
-    hsi = mt.HSI(image=torch.randn(len(wavelengths), 10, 10), wavelengths=wavelengths)
+    hsi = HSI(image=torch.randn(len(wavelengths), 10, 10), wavelengths=wavelengths)
 
     # Dumb model
     def dumb_model(image: torch.Tensor) -> torch.Tensor:
@@ -1912,7 +1956,7 @@ def test_attribute_wrapper():
 
     # Create a sample hsi image
     wavelengths = [400, 450, 500, 550, 600, 650, 700]
-    hsi = mt.HSI(image=torch.randn(len(wavelengths), 240, 240), wavelengths=wavelengths)
+    hsi = HSI(image=torch.randn(len(wavelengths), 240, 240), wavelengths=wavelengths)
 
     # Create a sample band mask
     band_mask = torch.zeros_like(hsi.image, dtype=int)
@@ -1954,10 +1998,10 @@ def test_attribute_wrapper():
 
     # Create a sample hsi
     wavelengths = torch.tensor([400, 450, 500, 550, 600])
-    hsi = mt.HSI(image=torch.randn(5, 10, 10), wavelengths=wavelengths)
+    hsi = HSI(image=torch.randn(5, 10, 10), wavelengths=wavelengths)
 
     # Create a sample segmentation mask
-    segmentation_mask = torch.randint(1, 4, (1, 10, 10))
+    segmentation_mask = torch.randint(1, 4, (1, 10, 10)).expand_as(hsi.image)
 
     spatial_attributes = lime.attribute("spatial", hsi, segmentation_mask=segmentation_mask, target=0)
 

@@ -85,107 +85,107 @@ wavelengths_main = [
 ]
 
 
-def test_visualize_image_with_image_object():
-    # Create an HSI object
-    image = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+def test_visualize_hsi_with_hsi_object():
+    # Create an hsi object
+    hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
 
     # Call the visualize_image function
-    ax = visualize.visualize_image(image, None)
+    ax = visualize.visualize_hsi(hsi, None)
 
     # Check if the axes object is returned
     assert isinstance(ax, plt.Axes)
 
 
-def test_visualize_image_with_image_attributes_object():
+def test_visualize_hsi_with_hsi_attributes_object():
     # Create an HSIAttributes object
-    image = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
-    attributes = torch.ones_like(image.image)
+    hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    attributes = torch.ones_like(hsi.image)
     score = 0.5
-    image_attributes = HSIAttributes(hsi=image, attributes=attributes, score=score, attribution_method="Lime")
+    hsi_attributes = HSIAttributes(hsi=hsi, attributes=attributes, score=score, attribution_method="Lime")
     # Call the visualize_image function
-    ax = visualize.visualize_image(image_attributes, None)
+    ax = visualize.visualize_hsi(hsi_attributes, None)
 
     # Check if the axes object is returned
     assert isinstance(ax, plt.Axes)
 
     # Create an HSISpatialAttributes object
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    image_attributes_spatial = HSISpatialAttributes(
-        hsi=image, segmentation_mask=segmentation_mask, attributes=attributes, score=score
+    hsi_attributes_spatial = HSISpatialAttributes(
+        hsi=hsi, mask=segmentation_mask, attributes=attributes, score=score, attribution_method="Lime"
     )
     # Call the visualize_image function
-    ax = visualize.visualize_image(image_attributes_spatial, None)
+    ax = visualize.visualize_hsi(hsi_attributes_spatial, None)
 
     # Check if the axes object is returned
     assert isinstance(ax, plt.Axes)
 
     # Create an HSISpectralAttributes object
     band_names = {"R": 0, "G": 1, "B": 2}
-    band_mask = torch.zeros_like(image.image)
+    band_mask = torch.zeros_like(hsi.image)
     band_mask[0] = 1
     band_mask[1] = 2
-    image_attributes_spectral = HSISpectralAttributes(
-        hsi=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
+    hsi_attributes_spectral = HSISpectralAttributes(
+        hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask
     )
 
     # Call the visualize_image function
-    ax = visualize.visualize_image(image_attributes_spectral, None)
+    ax = visualize.visualize_hsi(hsi_attributes_spectral, None)
 
     # Check if the axes object is returned
     assert isinstance(ax, plt.Axes)
 
 
-def test_visualize_image_with_image_object_and_ax():
-    # Create an HSI object
-    image = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+def test_visualize_hsi_with_hsi_object_and_ax():
+    # Create an hsi object
+    hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
 
     # Create an Axes object
     ax = plt.gca()
 
-    # Call the visualize_image function
-    returned_ax = visualize.visualize_image(image, ax)
+    # Call the visualize_hsi function
+    returned_ax = visualize.visualize_hsi(hsi, ax)
 
     # Check if the same axes object is returned
     assert returned_ax is ax
 
 
-def test_visualize_image_with_image_attributes_object_and_ax():
+def test_visualize_hsi_with_hsi_attributes_object_and_ax():
     # Create an HSIAttributes object
-    image = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
-    attributes = torch.ones_like(image.image)
-    score = 0.5
-    image_attributes = HSIAttributes(hsi=image, attributes=attributes, score=score, attribution_method="Lime")
+    hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    attributes = torch.ones_like(hsi.image)
+    hsi_attributes = HSIAttributes(hsi=hsi, attributes=attributes)
 
     # Create an Axes object
     ax = plt.gca()
 
     # Call the visualize_image function
-    returned_ax = visualize.visualize_image(image_attributes, ax)
+    returned_ax = visualize.visualize_hsi(hsi_attributes, ax)
 
     # Check if the same axes object is returned
     assert returned_ax is ax
 
     # Create an HSISpatialAttributes object
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    image_attributes_spatial = HSISpatialAttributes(
-        hsi=image, segmentation_mask=segmentation_mask, attributes=attributes, score=score
-    )
+    hsi_attributes_spatial = HSISpatialAttributes(hsi=hsi, mask=segmentation_mask, attributes=attributes)
     # Call the visualize_image function
-    returned_ax = visualize.visualize_image(image_attributes_spatial, ax)
+    returned_ax = visualize.visualize_hsi(hsi_attributes_spatial, ax)
 
     # Check if the same axes object is returned
     assert returned_ax is ax
 
     # Create an HSISpectralAttributes object
     band_names = {"R": 0, "G": 1, "B": 2}
-    band_mask = torch.zeros_like(image.image)
+    band_mask = torch.zeros_like(hsi.image)
     band_mask[0] = 1
     band_mask[1] = 2
-    image_attributes_spectral = HSISpectralAttributes(
-        hsi=image, attributes=attributes, score=score, band_names=band_names, band_mask=band_mask
+    hsi_attributes_spectral = HSISpectralAttributes(
+        hsi=hsi, attributes=attributes, band_names=band_names, band_mask=band_mask
     )
-    # Call the visualize_image function
-    returned_ax = visualize.visualize_image(image_attributes_spectral, ax)
+    # Call the visualize_hsi function
+    returned_ax = visualize.visualize_hsi(hsi_attributes_spectral, ax)
 
     # Check if the same axes object is returned
     assert returned_ax is ax
+
+
+test_visualize_hsi_with_hsi_attributes_object_and_ax()
