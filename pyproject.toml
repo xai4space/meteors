@@ -61,6 +61,9 @@ plugins = [
 ]
 
 [tool.codespell]
+skip = [
+    "src/examples/*",
+]
 ignore-words-list = "hsi,HSI"
 
 [tool.ruff]

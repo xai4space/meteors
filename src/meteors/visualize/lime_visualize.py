@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import torch
+from loguru import logger
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.axes import Axes
+from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.figure import Figure
 from captum.attr import visualization as viz
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from meteors import (
     HSI,
@@ -54,27 +57,57 @@ def visualize_spatial_attributes(  # noqa: C901
             If use_pyplot is False, returns the figure and axes objects.
             If use_pyplot is True, returns None.
     """
-    fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+    mask_enabled = spatial_attributes.segmentation_mask is not None
+    fig, ax = plt.subplots(1, 3 if mask_enabled else 2, figsize=(15, 5))
     fig.suptitle("Spatial Attributes Visualization")
-    ax[0].imshow(spatial_attributes.hsi.get_rgb_image(output_channel_axis=2).cpu())
-    ax[0].set_title("Original image")
+    spatial_attributes = spatial_attributes.change_orientation("HWC", inplace=False)
 
-    viz.visualize_image_attr(
-        spatial_attributes.attributes.cpu().numpy(),  # height, width, channels
-        method="heat_map",
-        sign="all",
-        plt_fig_axis=(fig, ax[1]),
-        show_colorbar=True,
-        use_pyplot=False,
-    )
-
-    if spatial_attributes.segmentation_mask is not None:
+    if mask_enabled:
         mask = spatial_attributes.segmentation_mask.cpu()
+
+        group_names = mask.unique().tolist()
+        colors = sns.color_palette("hsv", len(group_names))
+        color_map = dict(zip(group_names, colors))
+
+        for unique in group_names:
+            segment_indices = torch.argwhere(mask == unique)
+
+            y_center, x_center = segment_indices.numpy().mean(axis=0).astype(int)
+            ax[1].text(x_center, y_center, str(unique), color=color_map[unique], fontsize=8, ha="center", va="center")
+            ax[2].text(x_center, y_center, str(unique), color=color_map[unique], fontsize=8, ha="center", va="center")
+
         if mask.ndim == 3:
             mask = mask[0]
-        ax[2].imshow(mask / mask.max(), cmap="gray")
+        ax[2].imshow(mask.numpy() / mask.max(), cmap="gray")
         ax[2].set_title("Mask")
         ax[2].grid(False)
+        ax[2].axis("off")
+
+    ax[0].imshow(spatial_attributes.hsi.get_rgb_image(output_channel_axis=2).cpu())
+    ax[0].set_title("Original image")
+    ax[0].grid(False)
+    ax[0].axis("off")
+
+    attrs = spatial_attributes.attributes.cpu().numpy()
+    if torch.all(spatial_attributes.attributes == 0):
+        logger.warning("All spatial attributes are zero.")
+        cmap = LinearSegmentedColormap.from_list("RdWhGn", ["red", "white", "green"])
+        heat_map = ax[1].imshow(attrs.sum(axis=-1), cmap=cmap, vmin=-1, vmax=1)
+
+        axis_separator = make_axes_locatable(ax[1])
+        colorbar_axis = axis_separator.append_axes("bottom", size="5%", pad=0.1)
+        fig.colorbar(heat_map, orientation="horizontal", cax=colorbar_axis)
+    else:
+        viz.visualize_image_attr(
+            attrs,
+            method="heat_map",
+            sign="all",
+            plt_fig_axis=(fig, ax[1]),
+            show_colorbar=True,
+            use_pyplot=False,
+        )
+    ax[1].set_title("Attribution Map")
+    ax[1].axis("off")
 
     if use_pyplot:
         plt.show()
@@ -127,6 +160,7 @@ def visualize_spectral_attributes(
         ax[0],
         color_palette=color_palette,
         show_not_included=show_not_included,
+        show_legend=False,
     )
 
     visualize_spectral_attributes_by_magnitude(
@@ -188,6 +222,7 @@ def visualize_spectral_attributes_by_waveband(
     ax: Axes | None,
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
+    show_legend: bool = True,
 ) -> Axes:
     """Visualizes spectral attributes by waveband.
 
@@ -200,6 +235,7 @@ def visualize_spectral_attributes_by_waveband(
             If None, a default color palette will be used.
         show_not_included (bool): Whether to show the "not_included" band in the visualization.
             Default is True.
+        show_legend (bool): Whether to show the legend in the visualization.
 
     Returns:
         Axes: The matplotlib axes object containing the visualization.
@@ -227,42 +263,60 @@ def visualize_spectral_attributes_by_waveband(
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
-    spectral_band_mask = spectral_attributes[0].spectral_band_mask.cpu()
+    band_mask = spectral_attributes[0].band_mask.cpu()
     attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
 
     for idx, (band_name, segment_id) in enumerate(band_names.items()):
-        current_wavelengths = wavelengths[spectral_band_mask == segment_id]
-        current_attribution_map = attribution_map[:, spectral_band_mask == segment_id]
+        current_wavelengths = wavelengths[band_mask == segment_id]
+        current_attribution_map = attribution_map[:, band_mask == segment_id]
 
+        current_mean = current_attribution_map.numpy().mean(axis=0)
         if aggregate_results:
+            lolims = current_attribution_map.numpy().min(axis=0)
+            uplims = current_attribution_map.numpy().max(axis=0)
+
             ax.errorbar(
                 current_wavelengths,
-                current_attribution_map.mean(dim=0),
-                yerr=current_attribution_map.std(dim=0),
+                current_mean,
+                yerr=[current_mean - lolims, uplims - current_mean],
                 label=band_name,
                 color=color_palette[idx],
-                markersize=100,
+                linestyle="--",
+                marker="o",
+                markersize=5,
             )
         else:
-            ax.scatter(
+            ax.plot(
                 current_wavelengths,
-                current_attribution_map.mean(dim=0),
+                current_mean,
                 label=band_name,
-                s=50,
                 color=color_palette[idx],
-            )  # Increased marker size
+                linestyle="--",
+                marker="o",
+                markersize=5,
+            )
+            # ax.scatter(
+            #     current_wavelengths,
+            #     current_attribution_map.mean(dim=0),
+            #     label=band_name,
+            #     s=50,
+            #     color=color_palette[idx],
+            # )  # Increased marker size
+
+    if show_legend:
+        ax.legend(title="SuperBand")
 
     return ax
 
 
 def calculate_average_magnitudes(
-    band_names: dict[str, int], spectral_band_mask: torch.Tensor, attribution_map: torch.Tensor
+    band_names: dict[str, int], band_mask: torch.Tensor, attribution_map: torch.Tensor
 ) -> torch.Tensor:
     """Calculates the average magnitudes for each segment ID in the attribution map.
 
     Args:
         band_names (dict[str, int]): A dictionary mapping band names to segment IDs.
-        spectral_band_mask (torch.Tensor): A tensor representing the spectral band mask.
+        band_mask (torch.Tensor): A tensor representing the spectral band mask.
         attribution_map (torch.Tensor): A tensor representing the attribution map.
 
     Returns:
@@ -271,7 +325,7 @@ def calculate_average_magnitudes(
     """
     avg_magnitudes = []
     for segment_id in band_names.values():
-        band = attribution_map[:, spectral_band_mask == segment_id]
+        band = attribution_map[:, band_mask == segment_id]
         if band.numel() != 0:
             avg_magnitude = band.mean(dim=1)
             avg_magnitudes.append(avg_magnitude)
@@ -330,9 +384,9 @@ def visualize_spectral_attributes_by_magnitude(
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
-    spectral_band_mask = spectral_attributes[0].spectral_band_mask.cpu()
+    band_mask = spectral_attributes[0].band_mask.cpu()
     attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
-    avg_magnitudes = calculate_average_magnitudes(band_names, spectral_band_mask, attribution_map)
+    avg_magnitudes = calculate_average_magnitudes(band_names, band_mask, attribution_map)
 
     if aggregate_results:
         boxplot = ax.boxplot(avg_magnitudes, labels=labels, patch_artist=True)
