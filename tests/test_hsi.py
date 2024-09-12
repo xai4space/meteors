@@ -302,6 +302,16 @@ def test_process_and_validate_binary_mask():
     assert result.shape == torch.Size([3, 5, 5])
     assert torch.equal(result, torch.ones_like(info.data["image"]))
 
+    # Test valid binary mask with dim image - 1
+    mask = torch.ones(5, 5)
+    info = ValidationInfoMock(
+        data={"image": torch.randn(3, 5, 5), "orientation": ("C", "H", "W"), "device": torch.device("cpu")}
+    )
+    result = mt_image.process_and_validate_binary_mask(mask, info)
+    assert isinstance(result, torch.Tensor)
+    assert result.shape == torch.Size([3, 5, 5])
+    assert torch.equal(result, mask.unsqueeze(0).repeat(3, 1, 1))
+
     # Test invalid binary mask type
     mask = 123
     info = ValidationInfoMock(
@@ -477,11 +487,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
-    data = mt_image.HSI(
-        image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask
-    )
-    result = data.validate_image_data()
-    assert result == data
+    mt_image.HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid image data with mismatched wavelengths and image shape
     image = torch.randn(3, 5, 5)
@@ -490,7 +496,7 @@ def test_validate_image_data():
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
     with pytest.raises(ValidationError):
-        data = mt_image.HSI(
+        mt_image.HSI(
             image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask
         )
 
@@ -501,7 +507,29 @@ def test_validate_image_data():
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
     with pytest.raises(ValidationError):
-        data = mt_image.HSI(
+        mt_image.HSI(
+            image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask
+        )
+
+    # Test invalid mask shape
+    image = torch.randn(3, 5, 5)
+    wavelengths = torch.tensor([400, 500, 600])
+    orientation = ("C", "H", "W")
+    device = torch.device("cpu")
+    binary_mask = torch.ones(3, 5, 10)
+    with pytest.raises(ValidationError):
+        mt_image.HSI(
+            image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask
+        )
+
+    # Test invalid binary mask shape
+    image = torch.randn(3, 5, 5)
+    wavelengths = torch.tensor([400, 500, 600])
+    orientation = ("C", "H", "W")
+    device = torch.device("cpu")
+    binary_mask = torch.ones(3, 6, 5)
+    with pytest.raises(ValidationError):
+        mt_image.HSI(
             image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask
         )
 

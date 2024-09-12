@@ -215,7 +215,6 @@ def test_visualize_spatial_attributes():
     assert ax[0].get_title() == "Original image"
     assert ax[1].get_title() == "Attribution Map"
     assert ax[2].get_title() == "Mask"
-    assert ax[2].get_legend() is not None
 
     # Cleanup
     plt.close(fig)
@@ -351,6 +350,7 @@ def test_visualize_spectral_attributes_by_waveband():
     assert ax.get_title() == "Attributions by Waveband"
     assert ax.get_xlabel() == "Wavelength (nm)"
     assert ax.get_ylabel() == "Correlation with Output"
+    assert ax.get_legend() is not None
 
     # Cleanup
     ax.clear()
@@ -366,6 +366,7 @@ def test_visualize_spectral_attributes_by_waveband():
     assert ax.get_title() == "Attributions by Waveband"
     assert ax.get_xlabel() == "Wavelength (nm)"
     assert ax.get_ylabel() == "Correlation with Output"
+    assert ax.get_legend() is not None
 
     # Test multiple spectral attributes
     spectral_attributes = [
@@ -394,6 +395,7 @@ def test_visualize_spectral_attributes_by_waveband():
     assert ax.get_title() == "Attributions by Waveband"
     assert ax.get_xlabel() == "Wavelength (nm)"
     assert ax.get_ylabel() == "Correlation with Output"
+    assert ax.get_legend() is not None
 
     # Test invalid input
     with pytest.raises(ValueError):
@@ -434,6 +436,14 @@ def test_visualize_spectral_attributes_by_waveband():
 
     # Assert the output
     assert isinstance(ax, plt.Axes)
+
+    # Test show_legend False
+    fig, ax = plt.subplots()
+    ax = visualize.visualize_spectral_attributes_by_waveband(spectral_attributes, ax, show_legend=False)
+
+    # Assert the output
+    assert isinstance(ax, plt.Axes)
+    assert ax.get_legend() is None
 
     # Cleanup
     ax.clear()

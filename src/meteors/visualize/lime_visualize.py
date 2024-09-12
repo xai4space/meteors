@@ -60,6 +60,7 @@ def visualize_spatial_attributes(  # noqa: C901
     mask_enabled = spatial_attributes.segmentation_mask is not None
     fig, ax = plt.subplots(1, 3 if mask_enabled else 2, figsize=(15, 5))
     fig.suptitle("Spatial Attributes Visualization")
+    spatial_attributes = spatial_attributes.change_orientation("HWC", inplace=False)
 
     if mask_enabled:
         mask = spatial_attributes.segmentation_mask.cpu()
@@ -80,22 +81,14 @@ def visualize_spatial_attributes(  # noqa: C901
         ax[2].imshow(mask.numpy() / mask.max(), cmap="gray")
         ax[2].set_title("Mask")
         ax[2].grid(False)
-        ax[2].legend()
+        ax[2].axis("off")
 
     ax[0].imshow(spatial_attributes.hsi.get_rgb_image(output_channel_axis=2).cpu())
     ax[0].set_title("Original image")
     ax[0].grid(False)
+    ax[0].axis("off")
 
-    spatial_attributes.hsi.orientation
-    attrs = (
-        spatial_attributes.attributes.cpu()
-        .permute(
-            spatial_attributes.hsi.orientation.index("H"),
-            spatial_attributes.hsi.orientation.index("W"),
-            spatial_attributes.hsi.orientation.index("C"),
-        )
-        .numpy()
-    )
+    attrs = spatial_attributes.attributes.cpu().numpy()
     if torch.all(spatial_attributes.attributes == 0):
         logger.warning("All spatial attributes are zero.")
         cmap = LinearSegmentedColormap.from_list("RdWhGn", ["red", "white", "green"])
@@ -167,6 +160,7 @@ def visualize_spectral_attributes(
         ax[0],
         color_palette=color_palette,
         show_not_included=show_not_included,
+        show_legend=False,
     )
 
     visualize_spectral_attributes_by_magnitude(
@@ -228,6 +222,7 @@ def visualize_spectral_attributes_by_waveband(
     ax: Axes | None,
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
+    show_legend: bool = True,
 ) -> Axes:
     """Visualizes spectral attributes by waveband.
 
@@ -240,6 +235,7 @@ def visualize_spectral_attributes_by_waveband(
             If None, a default color palette will be used.
         show_not_included (bool): Whether to show the "not_included" band in the visualization.
             Default is True.
+        show_legend (bool): Whether to show the legend in the visualization.
 
     Returns:
         Axes: The matplotlib axes object containing the visualization.
@@ -274,23 +270,41 @@ def visualize_spectral_attributes_by_waveband(
         current_wavelengths = wavelengths[band_mask == segment_id]
         current_attribution_map = attribution_map[:, band_mask == segment_id]
 
+        current_mean = current_attribution_map.numpy().mean(axis=0)
         if aggregate_results:
+            lolims = current_attribution_map.numpy().min(axis=0)
+            uplims = current_attribution_map.numpy().max(axis=0)
+
             ax.errorbar(
                 current_wavelengths,
-                current_attribution_map.mean(dim=0),
-                yerr=current_attribution_map.std(dim=0),
+                current_mean,
+                yerr=[current_mean - lolims, uplims - current_mean],
                 label=band_name,
                 color=color_palette[idx],
-                markersize=100,
+                linestyle="--",
+                marker="o",
+                markersize=5,
             )
         else:
-            ax.scatter(
+            ax.plot(
                 current_wavelengths,
-                current_attribution_map.mean(dim=0),
+                current_mean,
                 label=band_name,
-                s=50,
                 color=color_palette[idx],
-            )  # Increased marker size
+                linestyle="--",
+                marker="o",
+                markersize=5,
+            )
+            # ax.scatter(
+            #     current_wavelengths,
+            #     current_attribution_map.mean(dim=0),
+            #     label=band_name,
+            #     s=50,
+            #     color=color_palette[idx],
+            # )  # Increased marker size
+
+    if show_legend:
+        ax.legend(title="SuperBand")
 
     return ax
 

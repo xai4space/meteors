@@ -637,6 +637,52 @@ def test_spatial_attributes():
         )
 
 
+def test_change_orientation_spatial_attributes():
+    # Create a sample HSI and attributes
+    hsi = mt.HSI(image=torch.randn(3, 4, 5), wavelengths=[400, 500, 600], orientation=("C", "H", "W"))
+    assert hsi.orientation == ("C", "H", "W")
+
+    attributes = torch.randn(3, 4, 5)
+    mask = torch.randint(0, 2, (3, 4, 5))
+
+    # Create HSISpatialAttributes object
+    attrs = mt.HSISpatialAttributes(hsi=hsi, attributes=attributes, score=0.5, mask=mask)
+    assert attrs.hsi.orientation == ("C", "H", "W")
+
+    # Change orientation to ('H', 'W', 'C')
+    new_orientation = ("H", "W", "C")
+    attrs_changed = attrs.change_orientation(new_orientation, False)
+    assert attrs.hsi.orientation != attrs_changed.hsi.orientation
+    assert attrs_changed.hsi.orientation == new_orientation
+    assert attrs_changed.hsi.image.shape == (4, 5, 3)
+    assert attrs_changed.attributes.shape == (4, 5, 3)
+    assert attrs_changed.mask.shape == (4, 5, 3)
+
+    # change of orientation inplace
+    new_orientation = ("H", "C", "W")
+    attrs.change_orientation(new_orientation, True)
+    assert attrs.hsi.orientation == new_orientation
+    assert attrs.hsi.orientation == new_orientation
+    assert attrs.hsi.image.shape == (4, 3, 5)
+    assert attrs.attributes.shape == (4, 3, 5)
+    assert attrs.mask.shape == (4, 3, 5)
+
+    # test the case where the orientation is the same
+    new_new_orientation = ("H", "C", "W")
+    attrs.change_orientation(new_new_orientation, True)
+    assert new_new_orientation == new_orientation
+    assert attrs.hsi.orientation == new_new_orientation
+    assert attrs.hsi.orientation == new_new_orientation
+    assert attrs.hsi.image.shape == (4, 3, 5)
+    assert attrs.attributes.shape == (4, 3, 5)
+    assert attrs.mask.shape == (4, 3, 5)
+
+    # test case with invalid orientation
+    new_orientation = ("H", "C", "A")
+    with pytest.raises(ValueError):
+        attrs.change_orientation(new_orientation, True)
+
+
 def test_to_hsi_spatial_attributes():
     # Create dummy data
     hsi = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
@@ -965,6 +1011,22 @@ def test__get_slick_segmentation_mask():
     assert torch.all(segmentation_mask >= 0)
     assert torch.all(segmentation_mask < 10)
 
+    # Check mask slic
+    mask = torch.ones_like(hsi.image)
+    mask[0, 10, 10] = 0
+    mask[0, 20, 20] = 0
+
+    hsi = mt.HSI(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47], binary_mask=mask)
+    segmentation_mask = mt_lime.Lime._get_slick_segmentation_mask(hsi, num_interpret_features=10)
+
+    # Check the output
+    assert isinstance(segmentation_mask, torch.Tensor)
+    assert segmentation_mask.shape == (1, 240, 240)
+    assert torch.all(segmentation_mask >= 0)
+    assert torch.all(segmentation_mask < 10)
+    assert segmentation_mask[0, 10, 10] == 0
+    assert segmentation_mask[0, 20, 20] == 0
+
 
 def test__get_patch_segmentation_mask():
     # Create a sample hsi
@@ -1001,6 +1063,20 @@ def test__get_patch_segmentation_mask():
     patch_size = 241
     with pytest.raises(ValueError):
         mt_lime.Lime._get_patch_segmentation_mask(hsi, patch_size=patch_size)
+
+    # Test case 4: Mask
+    mask = torch.ones_like(hsi.image)
+    mask[0, 10, 10] = 0
+    mask[0, 20, 20] = 0
+
+    hsi = mt.HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47], binary_mask=mask)
+    segmentation_mask = mt_lime.Lime._get_patch_segmentation_mask(hsi, patch_size=10)
+
+    # Check the output
+    assert isinstance(segmentation_mask, torch.Tensor)
+    assert segmentation_mask.shape == (1, 240, 240)
+    assert segmentation_mask[0, 10, 10] == 0
+    assert segmentation_mask[0, 20, 20] == 0
 
 
 def test_get_segmentation_mask():

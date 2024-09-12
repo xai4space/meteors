@@ -29,8 +29,6 @@ try:
 except ImportError:
     from skimage.segmentation import slic
 
-# Constants
-HSI_AXIS_ORDER = [2, 1, 0]  # (bands, rows, columns)
 
 # Types
 IntOrFloat = TypeVar("IntOrFloat", int, float)
@@ -588,6 +586,45 @@ class HSIAttributes(BaseModel):
             self.mask = self.mask.to(device)
         return self
 
+    def change_orientation(self, target_orientation: tuple[str, str, str] | list[str] | str, inplace=False) -> Self:
+        """Changes the orientation of the image data along with the attributions to the target orientation.
+
+        Args:
+            target_orientation (tuple[str, str, str] | list[str] | str): The target orientation for the attribution data.
+                This should be a tuple of three one-letter strings in any order: "C", "H", "W".
+            inplace (bool, optional): Whether to modify the data in place or return a new object.
+
+        Returns:
+            Self: The updated Image object with the new orientation.
+
+        Raises:
+            ValueError: If the target orientation is not a valid tuple of three one-letter strings.
+        """
+        current_orientation = self.hsi.orientation
+        hsi = self.hsi.change_orientation(target_orientation, inplace=inplace)
+        if inplace:
+            attrs = self
+        else:
+            attrs = self.model_copy()
+            attrs.hsi = hsi
+
+        if current_orientation != attrs.hsi.orientation:
+            new_orientation = attrs.hsi.orientation
+            attrs.attributes = attrs.attributes.permute(
+                current_orientation.index(new_orientation[0]),
+                current_orientation.index(new_orientation[1]),
+                current_orientation.index(new_orientation[2]),
+            )
+
+            if self.mask is not None:
+                attrs.mask = self.mask.permute(
+                    current_orientation.index(new_orientation[0]),
+                    current_orientation.index(new_orientation[1]),
+                    current_orientation.index(new_orientation[2]),
+                )
+
+        return attrs
+
 
 class HSISpatialAttributes(HSIAttributes):
     """Represents spatial attributes of an hsi used for explanation.
@@ -689,9 +726,9 @@ class HSISpectralAttributes(HSIAttributes):
         """
         if self.mask is None:
             raise ValueError("Band mask is not provided")
-        axis_to_select = HSI_AXIS_ORDER.copy()
-        axis_to_select.remove(self.hsi.spectral_axis)
-        return self.mask.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1], index=0)
+        axis = list(range(self.mask.ndim))
+        axis.remove(self.hsi.spectral_axis)
+        return self.mask.select(dim=axis[0], index=0).select(dim=axis[1] - 1, index=0)
 
     @property
     def flattened_attributes(self) -> torch.Tensor:
@@ -702,9 +739,9 @@ class HSISpectralAttributes(HSIAttributes):
         Returns:
             torch.Tensor: A flattened tensor of attributes.
         """
-        axis_to_select = HSI_AXIS_ORDER.copy()
-        axis_to_select.remove(self.hsi.spectral_axis)
-        return self.attributes.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1], index=0)
+        axis = list(range(self.attributes.ndim))
+        axis.remove(self.hsi.spectral_axis)
+        return self.attributes.select(dim=axis[0], index=0).select(dim=axis[1] - 1, index=0)
 
 
 ###################################################################
@@ -1517,7 +1554,6 @@ class Lime(Explainer):
             return_input_shape=True,
         )
 
-        print(lime_attributes.shape)
         spatial_attribution = HSISpatialAttributes(
             hsi=hsi,
             attributes=lime_attributes.squeeze(0),
@@ -1642,7 +1678,6 @@ class Lime(Explainer):
             return_input_shape=True,
         )
 
-        print(lime_attributes.shape)
         spectral_attribution = HSISpectralAttributes(
             hsi=hsi,
             attributes=lime_attributes.squeeze(0),
