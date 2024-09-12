@@ -32,8 +32,3 @@ class InputXGradient(Explainer):
         attributes = HSIAttributes(hsi=hsi, attributes=gradient_attribution, attribution_method=self.get_name())
 
         return attributes
-
-    def has_convergence_delta(self) -> bool:
-        if self._attribution_method is None:
-            return False
-        return self._attribution_method.has_convergence_delta()

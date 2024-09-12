@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from meteors.attr import HyperNoiseTunnel, IntegratedGradients
+from meteors.attr import HyperNoiseTunnel, IntegratedGradients, Saliency
 from meteors.utils.models.models import ExplainableModel
 
 from meteors.attr.hyper_noise_tunnel import BaseHyperNoiseTunnel
@@ -79,6 +79,10 @@ def test_perturb_input():
     with pytest.raises(ValueError):
         BaseHyperNoiseTunnel.perturb_input(torch.ones((5, 5)), baselines, n_samples=5)
 
+    # try to perturb with incorrect baselines
+    with pytest.raises(ValueError):
+        BaseHyperNoiseTunnel.perturb_input(input, torch.ones((5, 5)), n_samples=5)
+
 
 def test_attribute():
     model = ExplainableToyModel()
@@ -120,3 +124,37 @@ def test_attribute():
     # incorrect explainer class
     with pytest.raises(TypeError):
         HyperNoiseTunnel(model)
+
+    # different explanation method
+    saliency = Saliency(model)
+
+    hyper_noise_tunnel = HyperNoiseTunnel(saliency)
+    attributes = hyper_noise_tunnel.attribute(image, n_samples=1)
+
+    assert attributes is not None
+    assert attributes.attributes.shape == (5, 5, 5)
+
+
+def test_base_hyper_noise_tunnel_class():
+    tensor_image = torch.rand((5, 5, 5))
+    baselines = torch.zeros((1, 5, 5, 5))
+
+    ig = IntegratedGradients(ExplainableToyModel())
+    base_hyper_noise_tunnel = BaseHyperNoiseTunnel(ig._attribution_method)
+
+    tensor_attributes = base_hyper_noise_tunnel.attribute(tensor_image, baselines=baselines, n_samples=1)
+
+    assert tensor_attributes is not None
+    assert tensor_attributes.shape == (1, 5, 5, 5)
+
+    tensor_image_with_incorrect_shape = torch.rand((5, 5))
+
+    with pytest.raises(ValueError):
+        base_hyper_noise_tunnel.attribute(tensor_image_with_incorrect_shape, baselines=baselines, n_samples=1)
+
+    integer_baselines = 0
+    base_hyper_noise_tunnel.attribute(tensor_image, baselines=integer_baselines, n_samples=1)
+
+    incorrect_baselines = torch.zeros((1, 5))
+    with pytest.raises(ValueError):
+        base_hyper_noise_tunnel.attribute(tensor_image, baselines=incorrect_baselines, n_samples=1)

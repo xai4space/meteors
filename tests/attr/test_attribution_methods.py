@@ -102,6 +102,8 @@ def test_integrated_gradients():
     attributions = ig.attribute(image)
     assert attributions.attributes.shape == image.image.shape
 
+    assert ig.has_convergence_delta()
+
 
 def test_saliency():
     toy_model = ExplainableToyModel()
@@ -113,6 +115,9 @@ def test_saliency():
     attributions = saliency.attribute(image)
     assert attributions.attributes.shape == image.image.shape
 
+    assert not saliency.has_convergence_delta()
+    assert not saliency.multiplies_by_inputs
+
 
 def test_input_x_gradient():
     toy_model = ExplainableToyModel()
@@ -123,6 +128,8 @@ def test_input_x_gradient():
     image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
     attributions = input_x_gradient.attribute(image)
     assert attributions.attributes.shape == image.image.shape
+
+    assert not input_x_gradient.has_convergence_delta()
 
 
 def test_noise_tunnel():

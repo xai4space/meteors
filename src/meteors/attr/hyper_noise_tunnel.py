@@ -137,8 +137,11 @@ class BaseHyperNoiseTunnel(Attribution):
         elif inputs.dim() != 4:
             raise ValueError("Input must be in the format (N, C, H, W)")
 
-        if isinstance(baselines, (int, float)):
-            baselines = torch.zeros_like(inputs, device=inputs.device) + baselines
+        if not isinstance(baselines, Tensor) and not isinstance(baselines, int) and not isinstance(baselines, float):
+            raise ValueError("Baselines must be a tensor or a scalar")
+
+        if isinstance(baselines, int) or isinstance(baselines, float):
+            baselines = torch.zeros_like(inputs, device=inputs.device).squeeze(0) + baselines
         elif baselines.dim() == 4:
             baselines = baselines.squeeze(0)
         elif baselines.dim() != 3:
