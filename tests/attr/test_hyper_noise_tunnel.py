@@ -110,11 +110,12 @@ def test_attribute():
     assert attributes is not None
     assert attributes.attributes.shape == (5, 5, 5)
 
+    # test changing the image orientation
+    image.orientation = ("W", "C", "H")
+    attributes = hyper_noise_tunnel.attribute(image, n_samples=1)
+    assert attributes.orientation == ("W", "C", "H")
+
     # test validation
-    # test with incorrect orientation
-    image.orientation = ("H", "W", "C")
-    with pytest.raises(ValueError):
-        hyper_noise_tunnel.attribute(image, n_samples=1)
 
     # test with incorrect method
     image.orientation = ("C", "H", "W")

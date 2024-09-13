@@ -195,12 +195,14 @@ class HyperNoiseTunnel(Explainer):
         num_perturbed_bands: int | None = None,
         method: Literal["smoothgrad", "smoothgrad_sq", "vargrad"] = "smoothgrad",
     ):
+        change_orientation = False
+        original_orientation = ("C", "H", "W")
+
         if hsi.orientation != ("C", "H", "W"):
+            change_orientation = True
+            original_orientation = hsi.orientation
             logger.warning(f"The hsi orientation is {hsi.orientation}. Switching the orientation to ('C', 'H', 'W')")
-            # hsi.change_orientation("CHW", inplace=True)
-            raise ValueError(
-                "The hsi orientation must be ('C', 'H', 'W'), the orientation change is not reviewed yet (pls come back Vladimir)"
-            )
+            hsi = hsi.change_orientation("CHW")
 
         baselines = validate_and_transform_baseline(baselines, hsi)
 
@@ -217,4 +219,9 @@ class HyperNoiseTunnel(Explainer):
         attributes = attributes.squeeze(0)
 
         hsi_attributes = HSIAttributes(hsi=hsi, attributes=attributes, attribution_method=self.get_name())
+
+        # change back the attributes orientation
+        if change_orientation:
+            hsi_attributes = hsi_attributes.change_orientation(original_orientation)
+
         return hsi_attributes
