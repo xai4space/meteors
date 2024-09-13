@@ -14,8 +14,67 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
-from .downstream_task import TaskType
-from clip.headers import ArcMarginProduct, MLPHead, HyperHead, HyperDimensionReduction
+
+
+class HyperHead(nn.Module):
+    """THIS FUNCTION IMPLEMENTS 2-LAYER MLP HEAD MODULE."""
+
+    def __init__(self, n_inputs, n_outputs):
+        super(HyperHead, self).__init__()
+
+        # First hidden layer
+        self.hidden1 = nn.Linear(n_inputs, int(n_inputs))
+        torch.nn.init.kaiming_uniform_(self.hidden1.weight, nonlinearity="relu")
+        self.act1 = nn.Hardswish()  # TODO: RELU
+
+        # First hidden layer
+        self.hidden2 = nn.Linear(n_inputs, int(n_inputs / 2))
+        torch.nn.init.kaiming_uniform_(self.hidden2.weight, nonlinearity="relu")
+        self.act2 = nn.Hardswish()  # TODO: RELU
+
+        # Second hidden layer
+        self.hidden3 = nn.Linear(int(n_inputs / 2), n_outputs)
+        torch.nn.init.kaiming_uniform_(self.hidden3.weight, nonlinearity="relu")
+        self.act3 = nn.Hardsigmoid()  # TODO SOFTMAX
+
+    def forward(self, X):
+        X = self.hidden1(X)
+        X = self.act1(X)
+
+        X = self.hidden2(X)
+        X = self.act2(X)
+
+        X = self.hidden3(X)
+        X = self.act3(X)
+
+        return X
+
+
+class HyperDimensionReduction(nn.Module):
+    """THIS FUNCTION IMPLEMENTS 2-LAYER DIMENSION REDUCTION MODULE."""
+
+    def __init__(self):
+        super(HyperDimensionReduction, self).__init__()
+
+        # First hidden layer
+        self.dim1 = nn.Conv2d(150, 64, kernel_size=(1, 1))
+        torch.nn.init.kaiming_uniform_(self.dim1.weight, nonlinearity="relu")
+        self.act1 = nn.Hardswish()  # TODO: RELU
+
+        # First hidden layer
+        self.dim2 = nn.Conv2d(64, 3, kernel_size=(1, 1))
+        torch.nn.init.kaiming_uniform_(self.dim2.weight, nonlinearity="relu")
+        self.act2 = nn.Hardswish()  # TODO: RELU
+
+    def forward(self, X):
+        # X=X.permute(0, 3, 1, 2)
+        X = self.dim1(X)
+        X = self.act1(X)
+
+        X = self.dim2(X)
+        X = self.act2(X)  #
+
+        return X
 
 
 class Bottleneck(nn.Module):
@@ -71,7 +130,7 @@ class Bottleneck(nn.Module):
 
 
 class AttentionPool2d(nn.Module):
-    def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None):
+    def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: Union[int, None] = None):
         super().__init__()
         self.positional_embedding = nn.Parameter(torch.randn(spacial_dim**2 + 1, embed_dim) / embed_dim**0.5)
         self.k_proj = nn.Linear(embed_dim, embed_dim)
@@ -284,8 +343,8 @@ class CLIP(nn.Module):
         transformer_width: int,
         transformer_heads: int,
         transformer_layers: int,
-        downstream_task: TaskType,
-        mlp_head_out_dim: int = None,
+        downstream_task: int,
+        mlp_head_out_dim: Union[int, None] = None,
     ):
         super().__init__()
 
@@ -297,20 +356,8 @@ class CLIP(nn.Module):
         self.external_text_arch_header = None
         self.external_image_mlp_header = None
 
-        if downstream_task == TaskType.ARC_MLP_HEAD:
-            self.external_image_arch_header = ArcMarginProduct(embed_dim, embed_dim)
-            self.external_image_mlp_header = MLPHead(embed_dim, mlp_head_out_dim)
-
-        elif downstream_task == TaskType.ARC_HEAD:
-            self.external_image_arch_header = ArcMarginProduct(embed_dim, embed_dim)
-            self.external_text_arch_header = ArcMarginProduct(embed_dim, embed_dim)
-
-        elif downstream_task == TaskType.MLP_HEAD:
-            self.external_image_mlp_header = MLPHead(embed_dim, mlp_head_out_dim)
-
-        elif downstream_task == TaskType.HYPERVIEW:
-            self.external_dim_reduction = HyperDimensionReduction()
-            self.external_image_mlp_header = HyperHead(embed_dim, mlp_head_out_dim)
+        self.external_dim_reduction = HyperDimensionReduction()
+        self.external_image_mlp_header = HyperHead(embed_dim, mlp_head_out_dim)
 
         if isinstance(vision_layers, (tuple, list)):
             vision_heads = vision_width * 32 // 64
@@ -455,30 +502,31 @@ class CLIP(nn.Module):
 def convert_weights(model: nn.Module):
     """Convert applicable model parameters to fp16."""
 
-    def _convert_weights_to_fp16(l):
-        if isinstance(l, (nn.Conv1d, nn.Conv2d, nn.Linear)):
-            l.weight.data = l.weight.data.half()
-            if l.bias is not None:
-                l.bias.data = l.bias.data.half()
+    def _convert_weights_to_fp16(layer):
+        if isinstance(layer, (nn.Conv1d, nn.Conv2d, nn.Linear)):
+            layer.weight.data = layer.weight.data.half()
+            if layer.bias is not None:
+                layer.bias.data = layer.bias.data.half()
 
-        if isinstance(l, nn.MultiheadAttention):
+        if isinstance(layer, nn.MultiheadAttention):
             for attr in [*[f"{s}_proj_weight" for s in ["in", "q", "k", "v"]], "in_proj_bias", "bias_k", "bias_v"]:
-                tensor = getattr(l, attr)
+                tensor = getattr(layer, attr)
                 if tensor is not None:
                     tensor.data = tensor.data.half()
 
         for name in ["text_projection", "proj"]:
-            if hasattr(l, name):
-                attr = getattr(l, name)
+            if hasattr(layer, name):
+                attr = getattr(layer, name)
                 if attr is not None:
                     attr.data = attr.data.half()
 
     model.apply(_convert_weights_to_fp16)
 
 
-def build_model(state_dict: dict, downstream_task: TaskType = TaskType.DEFAULT, class_num=100):
+def build_model(state_dict: dict, downstream_task: int = 4, class_num=100):
     vit = "visual.proj" in state_dict
 
+    vision_layers: Union[tuple[int, int, int, int], int] = 0
     if vit:
         vision_width = state_dict["visual.conv1.weight"].shape[0]
         vision_layers = len(
