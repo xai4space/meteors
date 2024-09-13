@@ -4,7 +4,7 @@ import torch
 import numpy as np
 
 
-import meteors as mt
+from meteors import HSI
 import meteors.attr as mt_attr
 from meteors.attr import HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
 
@@ -167,7 +167,7 @@ def test_validate_and_convert_mask():
 def test_validate_shapes():
     shape = (len(wavelengths), 240, 240)
     attributes = torch.ones(shape)
-    image = mt.HSI(image=torch.ones(shape), wavelengths=wavelengths)
+    image = HSI(image=torch.ones(shape), wavelengths=wavelengths)
 
     # Test case 1: Valid shapes
     mt_attr.attributes.validate_shapes(attributes, image)  # No exception should be raised
@@ -177,7 +177,7 @@ def test_validate_shapes():
     with pytest.raises(ValueError):
         mt_attr.attributes.validate_shapes(invalid_attributes, image)
 
-    invalid_image = mt.HSI(image=torch.ones((len(wavelengths), 240, 241)), wavelengths=wavelengths)
+    invalid_image = HSI(image=torch.ones((len(wavelengths), 240, 241)), wavelengths=wavelengths)
     with pytest.raises(ValueError):
         mt_attr.attributes.validate_shapes(attributes, invalid_image)
 
@@ -225,7 +225,7 @@ def test_align_band_names_with_mask():
 
 def test_validate_hsi_attributions():
     # Create a sample HSIAttributes object
-    image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     score = 0.8
     device = torch.device("cpu")
@@ -271,7 +271,7 @@ def test_validate_hsi_attributions():
 def test_resolve_inference_device_attributes():
     # Test device as string
     device = "cpu"
-    hsi = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    hsi = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
 
     info = ValidationInfoMock(data={"hsi": hsi})
     result = mt_attr.attributes.resolve_inference_device_attributes(device, info)
@@ -310,6 +310,57 @@ def test_resolve_inference_device_attributes():
         mt_attr.attributes.resolve_inference_device_attributes(device, info)
 
 
+def test_validate_attribution_method():
+    # Test valid attribution method
+    method = mt_attr.attributes.validate_attribution_method("lime")  # No exception should be raised
+    assert method == "Lime"
+
+    method = mt_attr.attributes.validate_attribution_method(None)  # No exception should be raised
+    assert method is None
+
+    # this should raise a loguru warning, but pass
+    method = mt_attr.attributes.validate_attribution_method("invalid")
+
+
+def test_validate_score_and_error():
+    # Test valid score
+    hsi = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    score = 0.8
+
+    HSISpatialAttributes(
+        hsi=hsi,
+        attributes=torch.ones((3, 4, 4)),
+        score=score,
+        mask=torch.randint(0, 2, (3, 4, 4)),
+        attribution_method="Lime",
+    )
+
+    # incorrect score
+    with pytest.raises(ValueError):
+        HSISpatialAttributes(
+            hsi=hsi,
+            attributes=torch.ones((3, 4, 4)),
+            score=1.1,
+            mask=torch.randint(0, 2, (3, 4, 4)),
+            attribution_method="Lime",
+        )
+
+    # no score provided for Lime method
+    with pytest.raises(ValueError):
+        HSISpatialAttributes(
+            hsi=hsi, attributes=torch.ones((3, 4, 4)), mask=torch.randint(0, 2, (3, 4, 4)), attribution_method="Lime"
+        )
+
+    # raised warning - approximation error passed for non-IG method
+    HSISpatialAttributes(
+        hsi=hsi,
+        attributes=torch.ones((3, 4, 4)),
+        approximation_error=0.1,
+        mask=torch.randint(0, 2, (3, 4, 4)),
+        attribution_method="different method",
+    )
+
+
 ######################################################################
 ############################ EXPLANATIONS ############################
 ######################################################################
@@ -317,7 +368,7 @@ def test_resolve_inference_device_attributes():
 
 def test_spatial_attributes():
     # Create a sample HSISpatialAttributes object
-    image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
     device = torch.device("cpu")
@@ -356,10 +407,20 @@ def test_spatial_attributes():
             model_config=model_config,
         )
 
+    # no segmentation mask passed
+    with pytest.raises(ValueError):
+        attributes = HSISpatialAttributes(
+            hsi=image,
+            attributes=attributes,
+            device=device,
+            model_config=model_config,
+        )
+        attributes.segmentation_mask
+
 
 def test_to_hsi_spatial_attributes():
     # Create dummy data
-    image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
 
@@ -393,7 +454,7 @@ def test_to_hsi_spatial_attributes():
 
 def test_segmentation_mask_spacial_attributes():
     # Create a sample HSISpatialAttributes object
-    image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
     device = torch.device("cpu")
@@ -412,7 +473,7 @@ def test_segmentation_mask_spacial_attributes():
 
 def test_flattened_attributes_spacial_attributes():
     # Create a sample HSISpatialAttributes object
-    image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     segmentation_mask = torch.randint(0, 2, (3, 4, 4))
     device = torch.device("cpu")
@@ -430,7 +491,7 @@ def test_flattened_attributes_spacial_attributes():
 
 def test_spectral_attributes():
     # Create a sample HSISpectralAttributes object
-    image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     band_mask = torch.empty_like(attributes)
     band_mask[0] = 0
@@ -475,10 +536,21 @@ def test_spectral_attributes():
             model_config=model_config,
         )
 
+    # no band mask passed
+    with pytest.raises(ValueError):
+        attributes = HSISpectralAttributes(
+            hsi=image,
+            attributes=attributes,
+            band_names=band_names,
+            device=device,
+            model_config=model_config,
+        )
+        attributes.band_mask
+
 
 def test_to_hsi_spectral_attributes():
     # Create dummy data
-    image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     band_mask = torch.empty_like(attributes)
     band_mask[0] = 0
@@ -507,7 +579,7 @@ def test_to_hsi_spectral_attributes():
 
 def test_flattened_band_mask_spectral_attributes():
     # Create a sample HSISpectralAttributes object
-    image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     band_mask = torch.empty_like(attributes)
     band_mask[0] = 0
@@ -530,7 +602,7 @@ def test_flattened_band_mask_spectral_attributes():
 
 def test_flattened_attributes_spectral_attributes():
     # Create a sample HSISpectralAttributes object
-    image = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
+    image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     band_mask = torch.empty_like(attributes)
     band_mask[0] = 0
@@ -550,3 +622,49 @@ def test_flattened_attributes_spectral_attributes():
 
     assert torch.equal(spectral_attributes.flattened_attributes, torch.ones((band_mask.shape[0],)))
     assert torch.equal(spectral_attributes.flattened_band_mask, torch.tensor([0, 1, 2]))
+
+
+def test_change_orientation_spatial_attributes():
+    # Create a sample HSI and attributes
+    hsi = HSI(image=torch.randn(3, 4, 5), wavelengths=[400, 500, 600], orientation=("C", "H", "W"))
+    assert hsi.orientation == ("C", "H", "W")
+
+    attributes = torch.randn(3, 4, 5)
+    mask = torch.randint(0, 2, (3, 4, 5))
+
+    # Create HSISpatialAttributes object
+    attrs = HSISpatialAttributes(hsi=hsi, attributes=attributes, score=0.5, mask=mask)
+    assert attrs.hsi.orientation == ("C", "H", "W")
+
+    # Change orientation to ('H', 'W', 'C')
+    new_orientation = ("H", "W", "C")
+    attrs_changed = attrs.change_orientation(new_orientation, False)
+    assert attrs.hsi.orientation != attrs_changed.hsi.orientation
+    assert attrs_changed.hsi.orientation == new_orientation
+    assert attrs_changed.hsi.image.shape == (4, 5, 3)
+    assert attrs_changed.attributes.shape == (4, 5, 3)
+    assert attrs_changed.mask.shape == (4, 5, 3)
+
+    # change of orientation inplace
+    new_orientation = ("H", "C", "W")
+    attrs.change_orientation(new_orientation, True)
+    assert attrs.hsi.orientation == new_orientation
+    assert attrs.hsi.orientation == new_orientation
+    assert attrs.hsi.image.shape == (4, 3, 5)
+    assert attrs.attributes.shape == (4, 3, 5)
+    assert attrs.mask.shape == (4, 3, 5)
+
+    # test the case where the orientation is the same
+    new_new_orientation = ("H", "C", "W")
+    attrs.change_orientation(new_new_orientation, True)
+    assert new_new_orientation == new_orientation
+    assert attrs.hsi.orientation == new_new_orientation
+    assert attrs.hsi.orientation == new_new_orientation
+    assert attrs.hsi.image.shape == (4, 3, 5)
+    assert attrs.attributes.shape == (4, 3, 5)
+    assert attrs.mask.shape == (4, 3, 5)
+
+    # test case with invalid orientation
+    new_orientation = ("H", "C", "A")
+    with pytest.raises(ValueError):
+        attrs.change_orientation(new_orientation, True)

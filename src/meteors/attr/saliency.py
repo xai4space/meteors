@@ -36,8 +36,10 @@ class Saliency(Explainer):
         logger.debug("Applying Saliency on the image")
 
         saliency_attributions = self._attribution_method.attribute(
-            hsi.get_image(), target=target, abs=abs, additional_forward_args=additional_forward_args
+            hsi.get_image().unsqueeze(0), target=target, abs=abs, additional_forward_args=additional_forward_args
         )
-        attributes = HSIAttributes(hsi=hsi, attributes=saliency_attributions, attribution_method=self.get_name())
+        attributes = HSIAttributes(
+            hsi=hsi, attributes=saliency_attributions.squeeze(0), attribution_method=self.get_name()
+        )
 
         return attributes

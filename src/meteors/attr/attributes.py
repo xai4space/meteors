@@ -260,7 +260,6 @@ class HSIAttributes(BaseModel):
     approximation_error: Annotated[
         float | None,
         Field(
-            ge=1.0,
             description="Approximation error of the explanation. Also known as convergence delta. Used only for IG attributes",
         ),
     ] = None

@@ -2016,3 +2016,7 @@ def test_attribute_wrapper():
     assert torch.equal(spatial_attributes.attributes, spatial_attributes_get_method.attributes)
     assert spatial_attributes.score == spatial_attributes_get_method.score
     assert torch.equal(spatial_attributes.segmentation_mask, spatial_attributes_get_method.segmentation_mask)
+
+    # Test case 3: Invalid attribute type
+    with pytest.raises(ValueError):
+        lime.attribute("invalid", hsi, band_mask=band_mask, band_names=band_names, target=0)

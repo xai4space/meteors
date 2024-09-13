@@ -42,7 +42,7 @@ class Occlusion(Explainer):
             + sliding_window_shapes,  # I'am not sure about this scaling method - need to check how exactly occlusion modifies the image shape
             strides=(1,) + strides,
             target=target,
-            baselines=baseline,
+            baselines=baseline.unsqueeze(0),
             additional_forward_args=additional_forward_args,
             perturbations_per_eval=perturbations_per_eval,
             show_progress=show_progress,

@@ -38,20 +38,26 @@ class IntegratedGradients(Explainer):
         logger.debug("Applying IntegratedGradients on the image")
 
         ig_attributions = self._attribution_method.attribute(
-            hsi.get_image(),
-            baselines=baseline,
+            hsi.get_image().unsqueeze(0),
+            baselines=baseline.unsqueeze(0),
             target=target,
             method=method,
             return_convergence_delta=return_convergence_delta,
         )
         if return_convergence_delta:
-            attributions, approximation_error = ig_attributions
+            attributions, approximation_error_tensor = ig_attributions
+
+            # ig_attributions is a tuple of attributions and approximation_error_tensor, where tensor has the same length as the number of example inputs
+            approximation_error = (
+                approximation_error_tensor.item() if target is None else approximation_error_tensor[target].item()
+            )
+
         else:
             attributions, approximation_error = ig_attributions, None
 
         attributes = HSIAttributes(
             hsi=hsi,
-            attributes=attributions,
+            attributes=attributions.squeeze(0),
             approximation_error=approximation_error,
             attribution_method=self.get_name(),
         )
