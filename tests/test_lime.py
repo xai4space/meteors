@@ -5,6 +5,8 @@ from loguru import logger
 import torch
 import numpy as np
 
+from pydantic import ValidationError
+
 import meteors as mt
 import meteors.lime as mt_lime
 import meteors.lime_base as mt_lime_base
@@ -842,6 +844,18 @@ def test_spectral_attributes():
         "G": 1,
         "B": 2,
     }
+
+    # Test `not_included` added but there is not covered ids
+    band_mask = torch.empty_like(attributes)
+    band_mask[1] = 1
+    band_mask[2] = 2
+    band_mask[2, 0] = 3
+    band_names = {"G": 1, "B": 2, "not_included": 3}
+
+    with pytest.raises(ValidationError):
+        mt.HSISpectralAttributes(
+            hsi=hsi, attributes=attributes, score=score, band_names=band_names, mask=band_mask, device=device
+        )
 
 
 def test_to_hsi_spectral_attributes():
