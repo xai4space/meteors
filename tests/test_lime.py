@@ -808,6 +808,41 @@ def test_spectral_attributes():
             hsi=hsi, attributes=invalid_attributes, score=score, band_names=band_names, mask=band_mask, device=device
         )
 
+    # Add `_not_included`
+    band_mask = torch.empty_like(attributes)
+    band_mask[1] = 1
+    band_mask[2] = 2
+    band_names = {"G": 1, "B": 2}
+
+    spectral_attributes = mt.HSISpectralAttributes(
+        hsi=hsi, attributes=attributes, score=score, band_names=band_names, mask=band_mask, device=device
+    )
+
+    # Assert that the attributes tensor has been moved to the specified device
+    assert spectral_attributes.attributes.device == device
+
+    # Assert that the hsi tensor has been moved to the specified device
+    assert spectral_attributes.hsi.device == device
+
+    # Assert that the segmentation mask tensor has been moved to the specified device
+    assert spectral_attributes.band_mask.device == device
+
+    # Assert that the shapes of the attributes and hsi tensors match
+    assert spectral_attributes.attributes.shape == spectral_attributes.hsi.image.shape
+
+    # Assert that the device of the hsi object has been updated
+    assert spectral_attributes.hsi.device == device
+
+    # Assert that the mask is the same as the band mask
+    assert torch.equal(spectral_attributes.mask, band_mask)
+
+    # Assert `not_included` band name
+    assert spectral_attributes.band_names == {
+        "not_included": 0,
+        "G": 1,
+        "B": 2,
+    }
+
 
 def test_to_hsi_spectral_attributes():
     # Create dummy data
@@ -1465,6 +1500,21 @@ def test__get_band_wavelengths_indices_from_band_names():
     # Test indices
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700, 750, 800])
     band_names = ["AVI"]
+    band_indices, dict_labels_to_segment_ids = mt_lime.Lime._get_band_wavelengths_indices_from_band_names(
+        wavelengths, band_names
+    )
+
+    expected_band_indices = {
+        ("AVI"): [8, 5],
+    }
+
+    expected_dict_labels_to_segment_ids = {
+        ("AVI"): 1,
+    }
+
+    # Test string
+    wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700, 750, 800])
+    band_names = "AVI"
     band_indices, dict_labels_to_segment_ids = mt_lime.Lime._get_band_wavelengths_indices_from_band_names(
         wavelengths, band_names
     )

@@ -18,13 +18,14 @@ from meteors import (
 )
 
 
-def visualize_hsi(hsi: HSI | HSIAttributes, ax: Axes | None) -> Axes:
+def visualize_hsi(hsi: HSI | HSIAttributes, ax: Axes | None, use_mask: bool = True) -> Axes:
     """Visualizes an LIME hsi object on the given axes.
 
     Parameters:
         hsi (HSI | HSIAttributes): The HSI object to visualize.
         ax (matplotlib.axes.Axes | None): The axes on which the image will be plotted.
             If None, the current axes will be used.
+        use_mask (bool): Whether to use the image mask if provided for the visualization.
 
     Returns:
         matplotlib.figure.Figure | None:
@@ -34,7 +35,7 @@ def visualize_hsi(hsi: HSI | HSIAttributes, ax: Axes | None) -> Axes:
     if isinstance(hsi, HSIAttributes):
         hsi = hsi.hsi
 
-    rgb = hsi.get_rgb_image(output_channel_axis=2)
+    rgb = hsi.get_rgb_image(output_channel_axis=2, apply_mask=use_mask).cpu().numpy()
     ax = ax or plt.gca()
     ax.imshow(rgb)
 
@@ -116,7 +117,7 @@ def visualize_spatial_attributes(  # noqa: C901
         return fig, ax
 
 
-def visualize_spectral_attributes(
+def visualize_spectral_attributes(  # TODO:
     spectral_attributes: HSISpectralAttributes | list[HSISpectralAttributes],
     use_pyplot: bool = False,
     color_palette: list[str] | None = None,
@@ -144,15 +145,12 @@ def visualize_spectral_attributes(
             If use_pyplot is False, returns the figure and axes objects.
             If use_pyplot is True, returns None.
     """
-    band_names = (
-        spectral_attributes.band_names
-        if isinstance(spectral_attributes, HSISpectralAttributes)
-        else spectral_attributes[0].band_names
-    )
+    agg = True if isinstance(spectral_attributes, list) else False
+    band_names = spectral_attributes[0].band_names if agg else spectral_attributes.band_names  # type: ignore
 
     color_palette = color_palette or sns.color_palette("hsv", len(band_names.keys()))
 
-    fig, ax = plt.subplots(1, 2, figsize=(15, 5))
+    fig, ax = plt.subplots(1, 3 if agg else 2, figsize=(15, 5))
     fig.suptitle("Spectral Attributes Visualization")
 
     visualize_spectral_attributes_by_waveband(
@@ -169,6 +167,16 @@ def visualize_spectral_attributes(
         color_palette=color_palette,
         show_not_included=show_not_included,
     )
+
+    if agg:
+        scores = [attr.score for attr in spectral_attributes]  # type: ignore
+        mean_score = sum(scores) / len(scores)
+        ax[2].hist(scores, bins=50, color="steelblue", alpha=0.7)
+        ax[2].axvline(mean_score, color="darkred", linestyle="dashed")
+
+        ax[2].set_title("Distribution of Score Values")
+        ax[2].set_xlabel("Score")
+        ax[2].set_ylabel("Frequency")
 
     if use_pyplot:
         plt.show()
@@ -286,22 +294,21 @@ def visualize_spectral_attributes_by_waveband(
                 markersize=5,
             )
         else:
-            ax.plot(
+            # ax.plot(
+            #     current_wavelengths,
+            #     current_mean,
+            #     label=band_name,
+            #     color=color_palette[idx],
+            #     linestyle="--",
+            #     marker="o",
+            #     markersize=5,
+            # )
+            ax.scatter(
                 current_wavelengths,
                 current_mean,
                 label=band_name,
                 color=color_palette[idx],
-                linestyle="--",
-                marker="o",
-                markersize=5,
             )
-            # ax.scatter(
-            #     current_wavelengths,
-            #     current_attribution_map.mean(dim=0),
-            #     label=band_name,
-            #     s=50,
-            #     color=color_palette[idx],
-            # )  # Increased marker size
 
     if show_legend:
         ax.legend(title="SuperBand")

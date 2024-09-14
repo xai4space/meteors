@@ -182,6 +182,10 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
             "Band mask contains `0` values which are not covered by the provided band names. "
             "Adding 'not_included' to band names."
         )
+        if "not_included" in band_names:
+            raise ValueError(
+                "Band names should not contain 'not_included' if 0 is present in the mask and not in band names"
+            )
         band_names["not_included"] = 0
         band_name_values.add(0)
 
@@ -743,6 +747,11 @@ class HSISpectralAttributes(HSIAttributes):
         axis.remove(self.hsi.spectral_axis)
         return self.attributes.select(dim=axis[0], index=0).select(dim=axis[1] - 1, index=0)
 
+    def _validate_hsi_attributions_and_mask(self) -> None:
+        super()._validate_hsi_attributions_and_mask()
+        if self.mask is not None:
+            align_band_names_with_mask(self.band_names, self.mask)
+
 
 ###################################################################
 ############################ EXPLAINER ############################
@@ -1096,6 +1105,8 @@ class Lime(Explainer):
                 A tuple containing the dictionary with mapping segment labels into wavelength indices and the mapping
                 from segment labels into segment ids.
         """
+        if isinstance(band_names, str):
+            band_names = [band_names]
         if isinstance(band_names, list):
             logger.debug("band_names is a list of segments, creating a dictionary of segments")
             band_names_hashed = [Lime._make_band_names_indexable(segment) for segment in band_names]
@@ -1662,7 +1673,9 @@ class Lime(Explainer):
             # unique_segments = torch.unique(band_mask)
             # if isinstance(band_names, dict):
             #     assert set(unique_segments).issubset(set(band_names.values())), "Incorrect band names"
-            logger.debug("Band names are provided, using them. In future it there should be an option to validate them")
+            logger.debug(
+                "Band names are provided and will be used. In the future, there should be an option to validate them."
+            )
 
         hsi = hsi.to(self.device)
         band_mask = band_mask.to(self.device)
@@ -1734,8 +1747,6 @@ class Lime(Explainer):
         Returns:
             torch.Tensor: An output segmentation mask.
         """
-        logger.warning("Patch segmentation only works for band_index = 0 now")
-
         if patch_size < 1 or not isinstance(patch_size, (int, float)):
             raise ValueError("Invalid patch_size. patch_size must be a positive integer")
 
