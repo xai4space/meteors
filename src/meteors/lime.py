@@ -173,7 +173,7 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
         - All unique values in the mask must be present in the band_names dictionary
           after the alignment process.
     """
-    unique_mask_values = set(band_mask.unique().tolist())
+    unique_mask_values = set(band_mask.unique().int().tolist())
     band_name_values = set(band_names.values())
 
     # Check if 0 is in the mask but not in band_names
