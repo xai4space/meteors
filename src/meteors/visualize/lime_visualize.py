@@ -1,6 +1,8 @@
 from __future__ import annotations
+from typing import Callable
 
 import torch
+import numpy as np
 from loguru import logger
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -16,6 +18,8 @@ from meteors import (
     HSISpectralAttributes,
     HSISpatialAttributes,
 )
+from meteors.lime import align_band_names_with_mask
+from meteors.utils.utils import aggregate_by_mask
 
 
 def visualize_hsi(hsi: HSI | HSIAttributes, ax: Axes | None, use_mask: bool = True) -> Axes:
@@ -90,7 +94,7 @@ def visualize_spatial_attributes(  # noqa: C901
     ax[0].axis("off")
 
     attrs = spatial_attributes.attributes.cpu().numpy()
-    if torch.all(spatial_attributes.attributes == 0):
+    if np.all(attrs == 0):
         logger.warning("All spatial attributes are zero.")
         cmap = LinearSegmentedColormap.from_list("RdWhGn", ["red", "white", "green"])
         heat_map = ax[1].imshow(attrs.sum(axis=-1), cmap=cmap, vmin=-1, vmax=1)
@@ -414,3 +418,170 @@ def visualize_spectral_attributes_by_magnitude(
                     va="bottom",
                 )
     return ax
+
+
+def visualize_spatial_aggregated_attributes(
+    attributes: HSIAttributes,
+    aggregated_mask: torch.Tensor | np.ndarray,
+    use_pyplot: bool = False,
+    aggregate_func: Callable[[torch.Tensor], torch.Tensor] = torch.mean,
+) -> tuple[Figure, Axes] | None:
+    """Visualizes the spatial attributes of an hsi object aggregated by a custom mask.
+
+    Args:
+        attributes (HSIAttributes): The spatial attributes of the hsi object to visualize.
+        aggregated_mask (torch.Tensor | np.ndarray): The mask used to aggregate the spatial attributes.
+        use_pyplot (bool, optional): If True, displays the visualization using pyplot.
+            If False, returns the figure and axes objects. Defaults to False.
+        aggregate_func (Callable[[torch.Tensor], torch.Tensor], optional): The aggregation function to be applied.
+            The function should take a tensor as input and return a tensor as output.
+            We recommend using torch functions. Defaults to torch.mean.
+
+    Raises:
+        ValueError: If the shape of the aggregated mask does not match the shape of the spatial attributes.
+
+    Returns:
+        tuple[Figure, Axes] | None: If use_pyplot is False, returns the figure and axes objects.
+    """
+    if isinstance(aggregated_mask, np.ndarray):
+        aggregated_mask = torch.from_numpy(aggregated_mask)
+
+    if aggregated_mask.shape != attributes.hsi.image.shape:
+        aggregated_mask = aggregated_mask.expand_as(attributes.attributes)
+
+    new_attrs = aggregate_by_mask(attributes.attributes, aggregated_mask, aggregate_func)
+
+    new_spatial_attributes = HSISpatialAttributes(
+        hsi=attributes.hsi,
+        attributes=new_attrs,
+        mask=aggregated_mask,
+        score=attributes.score,
+    )
+
+    fig, ax = visualize_spatial_attributes(new_spatial_attributes, use_pyplot=False)  # type: ignore
+    fig.suptitle("Spatial Attributes Visualization Aggregated")
+
+    if use_pyplot:
+        plt.show()
+        return None
+    else:
+        return fig, ax
+
+
+def visualize_spectral_aggregated_attributes(
+    attributes: HSIAttributes | list[HSIAttributes],
+    band_names: dict[str, int],
+    band_mask: torch.Tensor | np.ndarray,
+    use_pyplot: bool = False,
+    color_palette: list[str] | None = None,
+    show_not_included: bool = True,
+    aggregate_func: Callable[[torch.Tensor], torch.Tensor] = torch.mean,
+) -> tuple[Figure, Axes] | None:
+    """Visualizes the spectral attributes of an hsi object aggregated by a custom band mask.
+
+    Args:
+        attributes (HSIAttributes | list[HSIAttributes]): The spectral attributes of the hsi object to visualize.
+        band_names (dict[str, int]): A dictionary mapping band names to their indices.
+        band_mask (torch.Tensor | np.ndarray): The mask used to aggregate the spectral attributes.
+        use_pyplot (bool, optional): If True, displays the visualization using pyplot.
+            If False, returns the figure and axes objects. Defaults to False.
+        color_palette (list[str] | None, optional): The color palette to use for visualizing different spectral bands.
+            If None, a default color palette is used. Defaults to None.
+        show_not_included (bool, optional): If True, includes the spectral bands that are not included in the visualization.
+            If False, only includes the spectral bands that are included in the visualization. Defaults to True.
+        aggregate_func (Callable[[torch.Tensor], torch.Tensor], optional): The aggregation function to be applied.
+            The function should take a tensor as input and return a tensor as output.
+            We recommend using torch functions. Defaults to torch.mean.
+
+    Raises:
+        ValueError: If the shape of the band mask does not match the shape of the spectral attributes.
+
+    Returns:
+        tuple[Figure, Axes] | None: If use_pyplot is False, returns the figure and axes objects.
+    """
+    attributes_example = attributes if isinstance(attributes, HSIAttributes) else attributes[0]
+    if isinstance(band_mask, np.ndarray):
+        band_mask = torch.from_numpy(band_mask)
+
+    if band_mask.shape != attributes_example.hsi.image.shape:
+        band_mask = band_mask.expand_as(attributes_example.attributes)
+
+    band_names = align_band_names_with_mask(band_names, band_mask)
+
+    new_attrs = aggregate_by_mask(attributes_example.attributes, band_mask, aggregate_func)
+
+    new_spectral_attributes: HSISpectralAttributes | list[HSISpectralAttributes]
+    if isinstance(attributes, HSIAttributes):
+        new_spectral_attributes = HSISpectralAttributes(
+            hsi=attributes.hsi,
+            attributes=new_attrs,
+            mask=band_mask,
+            band_names=band_names,
+            score=attributes.score,
+        )
+    else:
+        new_spectral_attributes = [
+            HSISpectralAttributes(
+                hsi=attr.hsi,
+                attributes=new_attrs,
+                mask=band_mask,
+                band_names=band_names,
+                score=attr.score,
+            )
+            for attr in attributes
+        ]
+
+    fig, ax = visualize_spectral_attributes(  # type: ignore
+        new_spectral_attributes, use_pyplot=False, color_palette=color_palette, show_not_included=show_not_included
+    )
+
+    if use_pyplot:
+        plt.show()
+        return None
+    else:
+        return fig, ax
+
+
+def visualize_aggregated_attributes(
+    attributes: HSIAttributes | list[HSIAttributes],
+    mask: torch.Tensor | np.ndarray,
+    band_names: dict[str, int] | None = None,
+    use_pyplot: bool = False,
+    color_palette: list[str] | None = None,
+    show_not_included: bool = True,
+    aggregate_func: Callable[[torch.Tensor], torch.Tensor] = torch.mean,
+) -> tuple[Figure, Axes] | None:
+    """Visualizes the aggregated attributes of an hsi object.
+
+    Args:
+        attributes (HSIAttributes | list[HSIAttributes]): The attributes of the hsi object to visualize.
+        mask (torch.Tensor | np.ndarray): The mask used to aggregate the attributes.
+        band_names (dict[str, int] | None, optional): A dictionary mapping band names to their indices.
+            If None, the visualization will be spatially aggregated. Defaults to None.
+        use_pyplot (bool, optional): If True, displays the visualization using pyplot.
+            If False, returns the figure and axes objects. Defaults to False.
+        color_palette (list[str] | None, optional): The color palette to use for visualizing different spectral bands.
+            If None, a default color palette is used. Defaults to None.
+        show_not_included (bool, optional): If True, includes the spectral bands that are not included in the visualization.
+            If False, only includes the spectral bands that are included in the visualization. Defaults to True.
+        aggregate_func (Callable[[torch.Tensor], torch.Tensor], optional): The aggregation function to be applied.
+            The function should take a tensor as input and return a tensor as output.
+            We recommend using torch functions. Defaults to torch.mean.
+
+    Raises:
+        ValueError: If the shape of the mask does not match the shape of the attributes.
+        AssertionError: If band_names is None and attributes is a list of HSIAttributes objects.
+
+    Returns:
+        tuple[Figure, Axes] | None: If use_pyplot is False, returns the figure and axes objects.
+    """
+    agg = False if isinstance(attributes, HSIAttributes) else True
+    if band_names is None:
+        logger.info("Band names not provided. Using Spatial Analysis.")
+        assert not agg, "In Spatial Analysis, attributes must be a single HSIAttributes object."
+        return visualize_spatial_aggregated_attributes(attributes, mask, use_pyplot, aggregate_func)  # type: ignore
+    else:
+        logger.info("Band names provided. Using Spectral Analysis.")
+        return visualize_spectral_aggregated_attributes(
+            attributes, band_names, mask, use_pyplot, color_palette, show_not_included, aggregate_func
+        )

@@ -92,3 +92,44 @@ def test_adjust_shape():
     expected_result = torch.tensor([[5, 6], [5, 6]])
     result = utils.adjust_shape(target, source)
     assert torch.allclose(result, expected_result)
+
+
+def test_aggregate_by_mask():
+    # Test case 1: Aggregating data by mask with mean
+    data = torch.tensor([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]], dtype=torch.float32)
+    mask = torch.tensor([[[0, 0, 1], [1, 1, 2]], [[2, 2, 0], [0, 1, 2]]])
+    expected_result = torch.tensor(
+        [[[5.5, 5.5, 5.75], [5.75, 5.75, 8.25]], [[8.25, 8.25, 5.5], [5.5, 5.75, 8.25]]], dtype=torch.float32
+    )
+    result = utils.aggregate_by_mask(data, mask, torch.mean)
+    assert torch.allclose(result, expected_result)
+
+    # Test case 2: Aggregating data by mask with max
+    expected_result = torch.tensor([[[10, 10, 11], [11, 11, 12]], [[12, 12, 10], [10, 11, 12]]], dtype=torch.float32)
+    result = utils.aggregate_by_mask(data, mask, torch.max)
+    assert torch.allclose(result, expected_result)
+
+    # Test case 3: Aggregating data by mask with min
+    expected_result = torch.tensor([[[1, 1, 3], [3, 3, 6]], [[6, 6, 1], [1, 3, 6]]], dtype=torch.float32)
+    result = utils.aggregate_by_mask(data, mask, torch.min)
+    assert torch.allclose(result, expected_result)
+
+    # Test case 4: Mismatched shapes
+    data = torch.randn(3, 3, 3)
+    mask = torch.zeros((3, 3, 2), dtype=torch.long)
+    with pytest.raises(ValueError):
+        utils.aggregate_by_mask(data, mask, torch.mean)
+
+    # Test case 5: Single value per mask
+    data = torch.tensor([[[1], [2]], [[3], [4]]], dtype=torch.float32)
+    mask = torch.tensor([[[0], [1]], [[2], [3]]])
+    result = utils.aggregate_by_mask(data, mask, torch.mean)
+    expected_result = torch.tensor([[[1], [2]], [[3], [4]]], dtype=torch.float32)
+    assert torch.allclose(result, expected_result)
+
+    # Test case 6: Empty mask
+    data = torch.tensor([])
+    mask = torch.tensor([])
+    result = utils.aggregate_by_mask(data, mask, torch.mean)
+    expected_result = torch.tensor([])
+    assert torch.allclose(result, expected_result)

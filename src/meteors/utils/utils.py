@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from typing_extensions import Type, Any, TypeVar, Callable, Iterable
 
 import torch
@@ -162,3 +161,47 @@ def agg_segmentation_postprocessing(
         return final_counts
 
     return postprocessing_function
+
+
+def aggregate_by_mask(
+    data: torch.Tensor, mask: torch.Tensor, agg_func: Callable[[torch.Tensor], torch.Tensor]
+) -> torch.Tensor:
+    """Aggregate data by mask.
+
+    This function aggregates the data tensor by the mask tensor (with IDs) using the aggregation function provided.
+
+    Args:
+        data (torch.Tensor): The data tensor to be aggregated.
+        mask (torch.Tensor): The mask tensor used to aggregate the data.
+        agg_func (Callable[[torch.Tensor], torch.Tensor]): The aggregation function to be applied to the data tensor.
+
+    Raises:
+        ValueError: If the data and mask tensors have different shapes.
+
+    Returns:
+        torch.Tensor: The aggregated data tensor.
+    """
+    if data.shape != mask.shape:
+        raise ValueError("The data and mask tensors must have the same shapes")
+
+    # Get unique values in the mask
+    unique_ids = torch.unique(mask)
+
+    # Initialize the result tensor
+    result = torch.zeros_like(data, dtype=data.dtype)
+
+    # Aggregate for each unique id
+    for id in unique_ids:
+        # Create a boolean mask for the current id
+        id_mask = mask == id
+
+        # Use the mask to select values from data
+        selected_values = data[id_mask]
+
+        # Get the aggregated result for the selected values
+        agg_result = agg_func(selected_values)
+
+        # Assign the aggregated result to the result tensor
+        result[id_mask] = agg_result
+
+    return result
