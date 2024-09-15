@@ -113,8 +113,8 @@ def visualize_spatial_attributes(  # noqa: C901
     ax[1].axis("off")
 
     if use_pyplot:
-        plt.show() # pragma: no cover
-        return None # pragma: no cover
+        plt.show()  # pragma: no cover
+        return None  # pragma: no cover
     else:
         return fig, ax
 
@@ -181,8 +181,8 @@ def visualize_spectral_attributes(
         ax[2].set_ylabel("Frequency")
 
     if use_pyplot:
-        plt.show() # pragma: no cover
-        return None # pragma: no cover
+        plt.show()  # pragma: no cover
+        return None  # pragma: no cover
     else:
         return fig, ax
 
@@ -451,8 +451,8 @@ def visualize_spatial_aggregated_attributes(
     fig.suptitle("Spatial Attributes Visualization Aggregated")
 
     if use_pyplot:
-        plt.show() # pragma: no cover
-        return None # pragma: no cover
+        plt.show()  # pragma: no cover
+        return None  # pragma: no cover
     else:
         return fig, ax
 
@@ -525,8 +525,8 @@ def visualize_spectral_aggregated_attributes(
     )
 
     if use_pyplot:
-        plt.show() # pragma: no cover
-        return None # pragma: no cover
+        plt.show()  # pragma: no cover
+        return None  # pragma: no cover
     else:
         return fig, ax
 

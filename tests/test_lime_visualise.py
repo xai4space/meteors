@@ -865,7 +865,7 @@ def test_visualize_spatial_aggregated_attributes():
         a.clear()
     plt.close("all")
     del ax, fig
-    
+
     # Smaller dimensions
     new_segmentation_mask = new_segmentation_mask[0]
     fig, ax = visualize.visualize_spatial_aggregated_attributes(hsi_attributes_spatial, new_segmentation_mask)
@@ -885,7 +885,6 @@ def test_visualize_spatial_aggregated_attributes():
         a.clear()
     plt.close("all")
     del ax, fig
-    
 
 
 def test_visualize_spectral_aggregated_attributes():
@@ -968,9 +967,9 @@ def test_visualize_spectral_aggregated_attributes():
         a.clear()
     plt.close("all")
     del ax, fig
-    
+
     # Smaller dimensions
-    new_band_mask = new_band_mask[:,0,0]
+    new_band_mask = new_band_mask[:, 0, 0]
     fig, ax = visualize.visualize_spectral_aggregated_attributes(
         spectral_attributes, band_names, new_band_mask, use_pyplot=False
     )
@@ -1007,11 +1006,11 @@ def test_visualize_spectral_aggregated_attributes():
         band_names=band_names,
         mask=band_mask,
     )
-    
+
     fig, ax = visualize.visualize_spectral_aggregated_attributes(
         [spectral_attributes, spectral_attributes_new], band_names, new_band_mask, use_pyplot=False
     )
-    
+
     # Assert that the figure and axes objects are returned
     assert isinstance(fig, plt.Figure)
     assert len(ax) == 3
@@ -1029,7 +1028,7 @@ def test_visualize_spectral_aggregated_attributes():
     assert ax[1].get_title() == "Attributions by Magnitude"
     assert ax[1].get_xlabel() == "Group"
     assert ax[1].get_ylabel() == "Average Attribution Magnitude"
-    
+
     # Assert that the third subplot shows the score distribution
     assert ax[2].get_title() == "Distribution of Score Values"
     assert ax[2].get_xlabel() == "Score"

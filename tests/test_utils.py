@@ -109,7 +109,7 @@ def test_expand_spectral_mask():
         ]
     )
     assert torch.equal(expanded_band_mask, expected_values)
-    
+
     expanded_band_mask = utils.expand_spectral_mask(hsi, band_mask_single_dim.unsqueeze(1), repeat_dimensions)
     assert expanded_band_mask.shape == expected_shape
     assert torch.equal(expanded_band_mask, expected_values)
@@ -130,7 +130,7 @@ def test_expand_spectral_mask():
         ]
     )
     assert torch.equal(expanded_band_mask, expected_values)
-    
+
     expanded_band_mask = utils.expand_spectral_mask(hsi, band_mask_single_dim.unsqueeze(0), repeat_dimensions)
     assert expanded_band_mask.shape == expected_shape
     assert torch.equal(expanded_band_mask, expected_values)
@@ -151,9 +151,8 @@ def test_expand_spectral_mask():
         ]
     )
     assert torch.equal(expanded_band_mask, expected_values)
-    
+
     expanded_band_mask = utils.expand_spectral_mask(hsi, band_mask_single_dim.unsqueeze(0), repeat_dimensions)
-    
 
 
 def test_adjust_shape():

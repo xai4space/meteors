@@ -47,37 +47,36 @@ def change_dtype_of_list(original_list: list[Any] | Any, dtype: Callable[[Any], 
 
 
 def expand_spectral_mask(hsi: HSI, spectral_mask_single_dim: torch.Tensor, repeat_dimensions: bool) -> torch.Tensor:
-        """Expands the spectral mask to match the dimensions of the input hsi.
+    """Expands the spectral mask to match the dimensions of the input hsi.
 
-        Args:
-            hsi (HSI): The input hsi.
-            spectral_mask_single_dim (torch.Tensor): The mask tensor with a single dimension.
-            repeat_dimensions (bool): Whether to repeat the dimensions of the mask to match the hsi.
+    Args:
+        hsi (HSI): The input hsi.
+        spectral_mask_single_dim (torch.Tensor): The mask tensor with a single dimension.
+        repeat_dimensions (bool): Whether to repeat the dimensions of the mask to match the hsi.
 
-        Returns:
-            torch.Tensor: The expanded mask tensor.
-        """
-        spectral_mask = spectral_mask_single_dim
-        if hsi.spectral_axis == 0:
-            if spectral_mask_single_dim.ndim == 1:
-                spectral_mask = spectral_mask_single_dim.unsqueeze(-1).unsqueeze(-1)
-            elif spectral_mask_single_dim.ndim == 2:
-                spectral_mask = spectral_mask_single_dim.unsqueeze(-1)
-        elif hsi.spectral_axis == 1:
-            if spectral_mask_single_dim.ndim == 1:
-                spectral_mask = spectral_mask_single_dim.unsqueeze(0).unsqueeze(-1)
-            elif spectral_mask_single_dim.ndim == 2:
-                spectral_mask = spectral_mask_single_dim.unsqueeze(-1)
-        elif hsi.spectral_axis == 2:
-            if spectral_mask_single_dim.ndim == 1:
-                spectral_mask = spectral_mask_single_dim.unsqueeze(0).unsqueeze(0)
-            elif spectral_mask_single_dim.ndim == 2:
-                spectral_mask = spectral_mask_single_dim.unsqueeze(0)
-        if repeat_dimensions:
-            spectral_mask = spectral_mask.expand_as(hsi.image)
+    Returns:
+        torch.Tensor: The expanded mask tensor.
+    """
+    spectral_mask = spectral_mask_single_dim
+    if hsi.spectral_axis == 0:
+        if spectral_mask_single_dim.ndim == 1:
+            spectral_mask = spectral_mask_single_dim.unsqueeze(-1).unsqueeze(-1)
+        elif spectral_mask_single_dim.ndim == 2:
+            spectral_mask = spectral_mask_single_dim.unsqueeze(-1)
+    elif hsi.spectral_axis == 1:
+        if spectral_mask_single_dim.ndim == 1:
+            spectral_mask = spectral_mask_single_dim.unsqueeze(0).unsqueeze(-1)
+        elif spectral_mask_single_dim.ndim == 2:
+            spectral_mask = spectral_mask_single_dim.unsqueeze(-1)
+    elif hsi.spectral_axis == 2:
+        if spectral_mask_single_dim.ndim == 1:
+            spectral_mask = spectral_mask_single_dim.unsqueeze(0).unsqueeze(0)
+        elif spectral_mask_single_dim.ndim == 2:
+            spectral_mask = spectral_mask_single_dim.unsqueeze(0)
+    if repeat_dimensions:
+        spectral_mask = spectral_mask.expand_as(hsi.image)
 
-        return spectral_mask
-
+    return spectral_mask
 
 
 def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> torch.Tensor:
