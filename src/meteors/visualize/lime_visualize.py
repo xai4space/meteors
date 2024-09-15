@@ -19,7 +19,7 @@ from meteors import (
     HSISpatialAttributes,
 )
 from meteors.lime import align_band_names_with_mask
-from meteors.utils.utils import aggregate_by_mask
+from meteors.utils.utils import aggregate_by_mask, expand_spectral_mask
 
 
 def visualize_hsi(hsi: HSI | HSIAttributes, ax: Axes | None, use_mask: bool = True) -> Axes:
@@ -81,8 +81,6 @@ def visualize_spatial_attributes(  # noqa: C901
             ax[1].text(x_center, y_center, str(unique), color=color_map[unique], fontsize=8, ha="center", va="center")
             ax[2].text(x_center, y_center, str(unique), color=color_map[unique], fontsize=8, ha="center", va="center")
 
-        if mask.ndim == 3:
-            mask = mask[0]
         ax[2].imshow(mask.numpy() / mask.max(), cmap="gray")
         ax[2].set_title("Mask")
         ax[2].grid(False)
@@ -115,13 +113,13 @@ def visualize_spatial_attributes(  # noqa: C901
     ax[1].axis("off")
 
     if use_pyplot:
-        plt.show()
-        return None
+        plt.show() # pragma: no cover
+        return None # pragma: no cover
     else:
         return fig, ax
 
 
-def visualize_spectral_attributes(  # TODO:
+def visualize_spectral_attributes(
     spectral_attributes: HSISpectralAttributes | list[HSISpectralAttributes],
     use_pyplot: bool = False,
     color_palette: list[str] | None = None,
@@ -183,8 +181,8 @@ def visualize_spectral_attributes(  # TODO:
         ax[2].set_ylabel("Frequency")
 
     if use_pyplot:
-        plt.show()
-        return None
+        plt.show() # pragma: no cover
+        return None # pragma: no cover
     else:
         return fig, ax
 
@@ -298,15 +296,6 @@ def visualize_spectral_attributes_by_waveband(
                 markersize=5,
             )
         else:
-            # ax.plot(
-            #     current_wavelengths,
-            #     current_mean,
-            #     label=band_name,
-            #     color=color_palette[idx],
-            #     linestyle="--",
-            #     marker="o",
-            #     markersize=5,
-            # )
             ax.scatter(
                 current_wavelengths,
                 current_mean,
@@ -462,8 +451,8 @@ def visualize_spatial_aggregated_attributes(
     fig.suptitle("Spatial Attributes Visualization Aggregated")
 
     if use_pyplot:
-        plt.show()
-        return None
+        plt.show() # pragma: no cover
+        return None # pragma: no cover
     else:
         return fig, ax
 
@@ -504,7 +493,7 @@ def visualize_spectral_aggregated_attributes(
         band_mask = torch.from_numpy(band_mask)
 
     if band_mask.shape != attributes_example.hsi.image.shape:
-        band_mask = band_mask.expand_as(attributes_example.attributes)
+        band_mask = expand_spectral_mask(attributes_example.hsi, band_mask, repeat_dimensions=True)
 
     band_names = align_band_names_with_mask(band_names, band_mask)
 
@@ -536,8 +525,8 @@ def visualize_spectral_aggregated_attributes(
     )
 
     if use_pyplot:
-        plt.show()
-        return None
+        plt.show() # pragma: no cover
+        return None # pragma: no cover
     else:
         return fig, ax
 

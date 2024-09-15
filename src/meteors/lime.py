@@ -22,7 +22,7 @@ from pydantic.functional_validators import BeforeValidator
 from meteors import HSI
 from meteors.lime_base import Lime as LimeBase
 from meteors.utils.models import ExplainableModel, InterpretableModel, SkLearnLasso
-from meteors.utils.utils import torch_dtype_to_python_dtype, change_dtype_of_list
+from meteors.utils.utils import torch_dtype_to_python_dtype, change_dtype_of_list, expand_spectral_mask
 
 try:
     from fast_slic import Slic as slic
@@ -1377,33 +1377,6 @@ class Lime(Explainer):
         return band_mask_single_dim
 
     @staticmethod
-    def _expand_band_mask(hsi: HSI, band_mask_single_dim: torch.Tensor, repeat_dimensions: bool) -> torch.Tensor:
-        """Expands the band mask to match the dimensions of the input hsi.
-
-        Args:
-            hsi (HSI): The input hsi.
-            band_mask_single_dim (torch.Tensor): The band mask tensor with a single dimension.
-            repeat_dimensions (bool): Whether to repeat the dimensions of the band mask to match the hsi.
-
-        Returns:
-            torch.Tensor: The expanded band mask tensor.
-        """
-        if hsi.spectral_axis == 0:
-            band_mask = band_mask_single_dim.unsqueeze(-1).unsqueeze(-1)
-        elif hsi.spectral_axis == 1:
-            band_mask = band_mask_single_dim.unsqueeze(0).unsqueeze(-1)
-        elif hsi.spectral_axis == 2:
-            band_mask = band_mask_single_dim.unsqueeze(0).unsqueeze(0)
-        if repeat_dimensions:
-            size_image = hsi.image.size()
-            size_mask = band_mask.size()
-
-            repeat_dims = [s2 // s1 for s1, s2 in zip(size_mask, size_image)]
-            band_mask = band_mask.repeat(repeat_dims)
-
-        return band_mask
-
-    @staticmethod
     def _create_tensor_band_mask(
         hsi: HSI,
         dict_labels_to_indices: dict[str | tuple[str, ...], list[int]],
@@ -1451,7 +1424,7 @@ class Lime(Explainer):
         )
 
         # Expand band mask to match image dimensions
-        band_mask = Lime._expand_band_mask(hsi, band_mask_single_dim, repeat_dimensions)
+        band_mask = expand_spectral_mask(hsi, band_mask_single_dim, repeat_dimensions)
 
         if return_dict_labels_to_segment_ids:
             return band_mask, dict_labels_to_segment_ids
@@ -1661,8 +1634,8 @@ class Lime(Explainer):
         if band_mask is None:
             band_mask, band_names = self.get_band_mask(hsi, band_names)
         band_mask = ensure_torch_tensor(band_mask, "Band mask should be None, numpy array, or torch tensor")
-        if band_mask.ndim != hsi.image.ndim:
-            band_mask = Lime._expand_band_mask(hsi, band_mask, repeat_dimensions=False)
+        if band_mask.shape != hsi.image.shape:
+            band_mask = expand_spectral_mask(hsi, band_mask, repeat_dimensions=True)
         band_mask = band_mask.int()
 
         if band_names is None:

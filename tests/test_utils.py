@@ -3,6 +3,7 @@ import pytest
 import torch
 
 from meteors.utils import utils
+from meteors import HSI
 
 
 def test_torch_dtype_to_python_dtype():
@@ -62,6 +63,97 @@ def test_change_dtype_of_list():
     expected_result = []
     result = utils.change_dtype_of_list(original_list, dtype)
     assert result == expected_result
+
+
+def test_expand_spectral_mask():
+    # Create a sample hsi
+    wavelengths = torch.tensor([400, 450, 500, 550, 600])
+    hsi = HSI(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths, orientation=("C", "H", "W"))
+
+    # Create a sample band mask
+    band_mask_single_dim = torch.tensor([1, 2, 3, 4, 5])
+
+    # Test case 1: Repeat dimensions is False
+    repeat_dimensions = False
+    expanded_band_mask = utils.expand_spectral_mask(hsi, band_mask_single_dim, repeat_dimensions)
+
+    expected_shape = (5, 1, 1)
+    assert expanded_band_mask.shape == expected_shape
+
+    expected_values = torch.tensor(
+        [
+            [[1]],
+            [[2]],
+            [[3]],
+            [[4]],
+            [[5]],
+        ]
+    )
+    assert torch.equal(expanded_band_mask, expected_values)
+
+    # Test case 2: Repeat dimensions is True and band axis is 0
+    repeat_dimensions = True
+    hsi = HSI(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths, orientation=("C", "H", "W"))
+    expanded_band_mask = utils.expand_spectral_mask(hsi, band_mask_single_dim, repeat_dimensions)
+
+    expected_shape = (5, 3, 3)
+    assert expanded_band_mask.shape == expected_shape
+
+    expected_values = torch.tensor(
+        [
+            [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+            [[2, 2, 2], [2, 2, 2], [2, 2, 2]],
+            [[3, 3, 3], [3, 3, 3], [3, 3, 3]],
+            [[4, 4, 4], [4, 4, 4], [4, 4, 4]],
+            [[5, 5, 5], [5, 5, 5], [5, 5, 5]],
+        ]
+    )
+    assert torch.equal(expanded_band_mask, expected_values)
+    
+    expanded_band_mask = utils.expand_spectral_mask(hsi, band_mask_single_dim.unsqueeze(1), repeat_dimensions)
+    assert expanded_band_mask.shape == expected_shape
+    assert torch.equal(expanded_band_mask, expected_values)
+
+    # Test case 3: Repeat dimensions is True and band axis is 1
+    repeat_dimensions = True
+    hsi = HSI(image=torch.ones((3, len(wavelengths), 3)), wavelengths=wavelengths, orientation=("H", "C", "W"))
+    expanded_band_mask = utils.expand_spectral_mask(hsi, band_mask_single_dim, repeat_dimensions)
+
+    expected_shape = (3, 5, 3)
+    assert expanded_band_mask.shape == expected_shape
+
+    expected_values = torch.tensor(
+        [
+            [[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]],
+            [[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]],
+            [[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]],
+        ]
+    )
+    assert torch.equal(expanded_band_mask, expected_values)
+    
+    expanded_band_mask = utils.expand_spectral_mask(hsi, band_mask_single_dim.unsqueeze(0), repeat_dimensions)
+    assert expanded_band_mask.shape == expected_shape
+    assert torch.equal(expanded_band_mask, expected_values)
+
+    # Test case 4: Repeat dimensions is True and band axis is 2
+    repeat_dimensions = True
+    hsi = HSI(image=torch.ones((3, 3, len(wavelengths))), wavelengths=wavelengths, orientation=("H", "W", "C"))
+    expanded_band_mask = utils.expand_spectral_mask(hsi, band_mask_single_dim, repeat_dimensions)
+
+    expected_shape = (3, 3, 5)
+    assert expanded_band_mask.shape == expected_shape
+
+    expected_values = torch.tensor(
+        [
+            [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]],
+            [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]],
+            [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]],
+        ]
+    )
+    assert torch.equal(expanded_band_mask, expected_values)
+    
+    expanded_band_mask = utils.expand_spectral_mask(hsi, band_mask_single_dim.unsqueeze(0), repeat_dimensions)
+    
 
 
 def test_adjust_shape():
