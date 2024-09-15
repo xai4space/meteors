@@ -775,8 +775,7 @@ def test_spectral_attributes():
     hsi = mt.HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     attributes = torch.ones((3, 4, 4))
     score = 0.8
-    band_mask = torch.empty_like(attributes)
-    band_mask[0] = 0
+    band_mask = torch.zeros_like(attributes)
     band_mask[1] = 1
     band_mask[2] = 2
     band_names = {"R": 0, "G": 1, "B": 2}
@@ -811,7 +810,7 @@ def test_spectral_attributes():
         )
 
     # Add `_not_included`
-    band_mask = torch.empty_like(attributes)
+    band_mask = torch.zeros_like(attributes)
     band_mask[1] = 1
     band_mask[2] = 2
     band_names = {"G": 1, "B": 2}
@@ -846,7 +845,7 @@ def test_spectral_attributes():
     }
 
     # Test `not_included` added but there is not covered ids
-    band_mask = torch.empty_like(attributes)
+    band_mask = torch.zeros_like(attributes)
     band_mask[1] = 1
     band_mask[2] = 2
     band_mask[2, 0] = 3
