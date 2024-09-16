@@ -3,6 +3,7 @@ import pytest
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 
 from meteors import (
     HSI,
@@ -101,19 +102,27 @@ def test_visualize_hsi_with_hsi_object():
     ax = visualize.visualize_hsi(hsi, None)
 
     # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
 
 def test_visualize_hsi_with_hsi_attributes_object():
     # Create an HSIAttributes object
-    hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    binary_mask = torch.ones((len(wavelengths_main), 240, 240))
+    binary_mask[0, 0, 0] = 0
+    hsi = HSI(
+        image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main, binary_mask=binary_mask
+    )
     attributes = torch.ones_like(hsi.image)
     score = 0.5
     hsi_attributes = HSIAttributes(hsi=hsi, attributes=attributes, score=score)
     # Call the visualize_image function
-    ax = visualize.visualize_hsi(hsi_attributes, None)
+    ax = visualize.visualize_hsi(hsi_attributes, None, use_mask=False)
 
     # Check if the axes object is returned
+    assert isinstance(ax, Axes)
+
+    # Check mask applied
+    ax = visualize.visualize_hsi(hsi_attributes, None, use_mask=True)
     assert isinstance(ax, plt.Axes)
 
     # Create an HSISpatialAttributes object
@@ -123,7 +132,7 @@ def test_visualize_hsi_with_hsi_attributes_object():
     ax = visualize.visualize_hsi(hsi_attributes_spatial, None)
 
     # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
     # Create an HSISpectralAttributes object
     band_names = {"R": 0, "G": 1, "B": 2}
@@ -138,7 +147,7 @@ def test_visualize_hsi_with_hsi_attributes_object():
     ax = visualize.visualize_hsi(hsi_attributes_spectral, None)
 
     # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
 
 def test_visualize_hsi_with_hsi_object_and_ax():
@@ -208,8 +217,8 @@ def test_visualize_spatial_attributes():
 
     # Check if the figure and axes objects are returned
     assert isinstance(fig, plt.Figure)
-    assert isinstance(ax, np.ndarray)
     assert len(ax) == 3
+    assert isinstance(ax[0], Axes)
 
     assert fig._suptitle.get_text() == "Spatial Attributes Visualization"
     assert ax[0].get_title() == "Original image"
@@ -233,8 +242,8 @@ def test_visualize_empty_spatial_attributes():
 
     # Check if the figure and axes objects are returned
     assert isinstance(fig, plt.Figure)
-    assert isinstance(ax, np.ndarray)
     assert len(ax) == 3
+    assert isinstance(ax[0], Axes)
     assert fig._suptitle.get_text() == "Spatial Attributes Visualization"
     assert ax[0].get_title() == "Original image"
     assert ax[1].get_title() == "Attribution Map"
@@ -280,6 +289,9 @@ def test_validate_consistent_band_and_wavelengths():
     # Test case 3: Inconsistent wavelengths
     inconsistent_wavelengths = wavelengths_main + [1000.0]
     inconsistent_hsi = torch.ones((len(inconsistent_wavelengths), 240, 240))
+    inconsistent_mask = torch.zeros_like(inconsistent_hsi)
+    inconsistent_mask[0] = 1
+    inconsistent_mask[1] = 2
     spectral_attributes = [
         HSISpectralAttributes(hsi=hsi, attributes=attributes, score=score, band_names=band_names, mask=band_mask),
         HSISpectralAttributes(
@@ -287,7 +299,7 @@ def test_validate_consistent_band_and_wavelengths():
             attributes=torch.ones_like(inconsistent_hsi),
             score=score,
             band_names=band_names,
-            mask=torch.zeros_like(inconsistent_hsi),
+            mask=inconsistent_mask,
         ),
     ]
 
@@ -314,7 +326,7 @@ def test_setup_visualization():
         "Y Label",
         "X Label",
     )
-    assert isinstance(result_ax, plt.Axes)
+    assert isinstance(result_ax, Axes)
     assert result_ax.get_title() == "Test Title 2"
     assert result_ax.get_xlabel() == "Y Label"
     assert result_ax.get_ylabel() == "X Label"
@@ -346,7 +358,7 @@ def test_visualize_spectral_attributes_by_waveband():
     ax = visualize.visualize_spectral_attributes_by_waveband(spectral_attributes, None)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
     assert ax.get_title() == "Attributions by Waveband"
     assert ax.get_xlabel() == "Wavelength (nm)"
     assert ax.get_ylabel() == "Correlation with Output"
@@ -362,7 +374,7 @@ def test_visualize_spectral_attributes_by_waveband():
     ax = visualize.visualize_spectral_attributes_by_waveband(spectral_attributes, ax)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
     assert ax.get_title() == "Attributions by Waveband"
     assert ax.get_xlabel() == "Wavelength (nm)"
     assert ax.get_ylabel() == "Correlation with Output"
@@ -391,7 +403,7 @@ def test_visualize_spectral_attributes_by_waveband():
     ax = visualize.visualize_spectral_attributes_by_waveband(spectral_attributes, ax)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
     assert ax.get_title() == "Attributions by Waveband"
     assert ax.get_xlabel() == "Wavelength (nm)"
     assert ax.get_ylabel() == "Correlation with Output"
@@ -410,12 +422,12 @@ def test_visualize_spectral_attributes_by_waveband():
     ax = visualize.visualize_spectral_attributes_by_waveband(spectral_attributes, ax, color_palette=custom_palette)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
     # Test show_not_included True
-    with_not_included_band_names = {"R": 0, "G": 1, "B": 2, "not_included": 3}
+    with_not_included_band_names = {"not_included": 0, "R": 1, "G": 2, "B": 3}
     with_not_included_band_mask = band_mask.clone()
-    with_not_included_band_mask[3] = 1
+    with_not_included_band_mask[3] = 3
     spectral_attributes = HSISpectralAttributes(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
@@ -429,20 +441,20 @@ def test_visualize_spectral_attributes_by_waveband():
     ax = visualize.visualize_spectral_attributes_by_waveband(spectral_attributes, ax, show_not_included=True)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
     # Test show_not_included True
     fig, ax = plt.subplots()
     ax = visualize.visualize_spectral_attributes_by_waveband(spectral_attributes, ax, show_not_included=False)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
     # Test show_legend False
     fig, ax = plt.subplots()
     ax = visualize.visualize_spectral_attributes_by_waveband(spectral_attributes, ax, show_legend=False)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
     assert ax.get_legend() is None
 
     # Cleanup
@@ -527,7 +539,7 @@ def test_visualize_spectral_attributes_by_magnitude():
     ax = visualize.visualize_spectral_attributes_by_magnitude(spectral_attributes, None)
 
     # Assert that the plot is correct
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
     assert ax.get_title() == "Attributions by Magnitude"
     assert ax.get_xlabel() == "Group"
     assert ax.get_ylabel() == "Average Attribution Magnitude"
@@ -548,7 +560,7 @@ def test_visualize_spectral_attributes_by_magnitude():
     ax = visualize.visualize_spectral_attributes_by_magnitude(spectral_attributes, ax)
 
     # Assert that the plot is correct
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
     assert ax.get_title() == "Attributions by Magnitude"
     assert ax.get_xlabel() == "Group"
     assert ax.get_ylabel() == "Average Attribution Magnitude"
@@ -587,7 +599,7 @@ def test_visualize_spectral_attributes_by_magnitude():
     ax = visualize.visualize_spectral_attributes_by_magnitude(spectral_attributes, ax)
 
     # Assert that the plot is correct
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
     assert ax.get_title() == "Attributions by Magnitude"
     assert ax.get_xlabel() == "Group"
     assert ax.get_ylabel() == "Average Attribution Magnitude"
@@ -624,7 +636,8 @@ def test_visualize_spectral_attributes_by_magnitude():
     assert isinstance(ax, plt.Axes)
 
     # Test show_not_included True
-    with_not_included_band_names = {"R": 0, "G": 1, "B": 2, "not_included": 3}
+    with_not_included_band_names = {"not_included": 0, "R": 1, "G": 2, "B": 3}
+    band_mask[3] = 3
     spectral_attributes = HSISpectralAttributes(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
@@ -638,7 +651,7 @@ def test_visualize_spectral_attributes_by_magnitude():
     ax = visualize.visualize_spectral_attributes_by_magnitude(spectral_attributes, ax, show_not_included=True)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
     # Test show_not_included True
     with_not_included_band_names = {"R": 0, "G": 1, "B": 2, "not_included": 3}
@@ -657,7 +670,7 @@ def test_visualize_spectral_attributes_by_magnitude():
     ax = visualize.visualize_spectral_attributes_by_magnitude(spectral_attributes, ax, show_not_included=False)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
     # Cleanup
     ax.clear()
@@ -689,8 +702,8 @@ def test_visualize_spectral_attributes():
 
     # Assert that the figure and axes objects are returned
     assert isinstance(fig, plt.Figure)
-    assert isinstance(ax, np.ndarray)
     assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
 
     # Assert that the title is set correctly
     assert fig._suptitle.get_text() == "Spectral Attributes Visualization"
@@ -704,6 +717,60 @@ def test_visualize_spectral_attributes():
     assert ax[1].get_title() == "Attributions by Magnitude"
     assert ax[1].get_xlabel() == "Group"
     assert ax[1].get_ylabel() == "Average Attribution Magnitude"
+
+
+def test_visualize_spectral_attributes_global():
+    # Create sample spectral attributes
+    image = torch.ones((len(wavelengths_main), 240, 240))
+    band_names = {"R": 0, "G": 1, "B": 2}
+    attribution_map = torch.rand((image.shape))
+    score = 0.5
+    band_names = {"R": 0, "G": 1, "B": 2}
+    band_mask = torch.zeros_like(image)
+    band_mask[0] = 1
+    band_mask[1] = 2
+
+    spectral_attributes_1 = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
+        attributes=attribution_map,
+        score=score,
+        band_names=band_names,
+        mask=band_mask,
+    )
+
+    spectral_attributes_2 = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
+        attributes=attribution_map,
+        score=score,
+        band_names=band_names,
+        mask=band_mask,
+    )
+
+    # Call the function
+    fig, ax = visualize.visualize_spectral_attributes([spectral_attributes_1, spectral_attributes_2], use_pyplot=False)
+
+    # Assert that the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert isinstance(ax, np.ndarray)
+    assert len(ax) == 3
+
+    # Assert that the title is set correctly
+    assert fig._suptitle.get_text() == "Spectral Attributes Visualization"
+
+    # Assert that the first subplot shows the visualization by waveband
+    assert ax[0].get_title() == "Attributions by Waveband"
+    assert ax[0].get_xlabel() == "Wavelength (nm)"
+    assert ax[0].get_ylabel() == "Correlation with Output"
+
+    # Assert that the second subplot shows the visualization by magnitude
+    assert ax[1].get_title() == "Attributions by Magnitude"
+    assert ax[1].get_xlabel() == "Group"
+    assert ax[1].get_ylabel() == "Average Attribution Magnitude"
+
+    # Assert that the third subplot shows the distribution of score values
+    assert ax[2].get_title() == "Distribution of Score Values"
+    assert ax[2].get_xlabel() == "Score"
+    assert ax[2].get_ylabel() == "Frequency"
 
 
 def test_visualize_spectral_empty_attributes():
@@ -730,8 +797,8 @@ def test_visualize_spectral_empty_attributes():
 
     # Assert that the figure and axes objects are returned
     assert isinstance(fig, plt.Figure)
-    assert isinstance(ax, np.ndarray)
     assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
 
     # Assert that the title is set correctly
     assert fig._suptitle.get_text() == "Spectral Attributes Visualization"
@@ -745,3 +812,310 @@ def test_visualize_spectral_empty_attributes():
     assert ax[1].get_title() == "Attributions by Magnitude"
     assert ax[1].get_xlabel() == "Group"
     assert ax[1].get_ylabel() == "Average Attribution Magnitude"
+
+    # Cleanup
+    plt.close(fig)
+
+
+def test_visualize_spatial_aggregated_attributes():
+    # Create an HSISpatialAttributes object
+    hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    attributes = torch.ones_like(hsi.image)
+    score = 0.5
+    segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
+    hsi_attributes_spatial = HSISpatialAttributes(hsi=hsi, mask=segmentation_mask, attributes=attributes, score=score)
+    new_segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
+    new_segmentation_mask[0, 0, 0] = 0
+
+    # Call the visualize_spatial_attributes function
+    fig, ax = visualize.visualize_spatial_aggregated_attributes(hsi_attributes_spatial, new_segmentation_mask)
+
+    # Check if the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 3
+    assert isinstance(ax[0], Axes)
+
+    assert fig._suptitle.get_text() == "Spatial Attributes Visualization Aggregated"
+    assert ax[0].get_title() == "Original image"
+    assert ax[1].get_title() == "Attribution Map"
+    assert ax[2].get_title() == "Mask"
+
+    # Cleanup
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
+
+    # Numpy array
+    new_segmentation_mask = new_segmentation_mask.numpy()
+    fig, ax = visualize.visualize_spatial_aggregated_attributes(hsi_attributes_spatial, new_segmentation_mask)
+
+    # Check if the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 3
+    assert isinstance(ax[0], Axes)
+
+    assert fig._suptitle.get_text() == "Spatial Attributes Visualization Aggregated"
+    assert ax[0].get_title() == "Original image"
+    assert ax[1].get_title() == "Attribution Map"
+    assert ax[2].get_title() == "Mask"
+
+    # Cleanup
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
+
+    # Smaller dimensions
+    new_segmentation_mask = new_segmentation_mask[0]
+    fig, ax = visualize.visualize_spatial_aggregated_attributes(hsi_attributes_spatial, new_segmentation_mask)
+
+    # Check if the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 3
+    assert isinstance(ax[0], Axes)
+
+    assert fig._suptitle.get_text() == "Spatial Attributes Visualization Aggregated"
+    assert ax[0].get_title() == "Original image"
+    assert ax[1].get_title() == "Attribution Map"
+    assert ax[2].get_title() == "Mask"
+
+    # Cleanup
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
+
+
+def test_visualize_spectral_aggregated_attributes():
+    # Create sample spectral attributes
+    image = torch.ones((len(wavelengths_main), 240, 240))
+    band_names = {"R": 0, "G": 1, "B": 2}
+    attribution_map = torch.rand((image.shape))
+    score = 0.5
+    band_names = {"R": 0, "G": 1, "B": 2}
+    band_mask = torch.zeros_like(image)
+    band_mask[0] = 1
+    band_mask[1] = 2
+
+    spectral_attributes = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
+        attributes=attribution_map,
+        score=score,
+        band_names=band_names,
+        mask=band_mask,
+    )
+    new_band_mask = torch.zeros_like(image)
+    new_band_mask[1] = 1
+    new_band_mask[0] = 2
+
+    # Call the function
+    fig, ax = visualize.visualize_spectral_aggregated_attributes(
+        spectral_attributes, band_names, new_band_mask, use_pyplot=False
+    )
+
+    # Assert that the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
+
+    # Assert that the title is set correctly
+    assert fig._suptitle.get_text() == "Spectral Attributes Visualization"
+
+    # Assert that the first subplot shows the visualization by waveband
+    assert ax[0].get_title() == "Attributions by Waveband"
+    assert ax[0].get_xlabel() == "Wavelength (nm)"
+    assert ax[0].get_ylabel() == "Correlation with Output"
+
+    # Assert that the second subplot shows the visualization by magnitude
+    assert ax[1].get_title() == "Attributions by Magnitude"
+    assert ax[1].get_xlabel() == "Group"
+    assert ax[1].get_ylabel() == "Average Attribution Magnitude"
+
+    # Cleanup
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
+
+    # Numpy array
+    new_band_mask = new_band_mask.numpy()
+    fig, ax = visualize.visualize_spectral_aggregated_attributes(
+        spectral_attributes, band_names, new_band_mask, use_pyplot=False
+    )
+
+    # Assert that the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
+
+    # Assert that the title is set correctly
+    assert fig._suptitle.get_text() == "Spectral Attributes Visualization"
+
+    # Assert that the first subplot shows the visualization by waveband
+    assert ax[0].get_title() == "Attributions by Waveband"
+    assert ax[0].get_xlabel() == "Wavelength (nm)"
+    assert ax[0].get_ylabel() == "Correlation with Output"
+
+    # Assert that the second subplot shows the visualization by magnitude
+    assert ax[1].get_title() == "Attributions by Magnitude"
+    assert ax[1].get_xlabel() == "Group"
+    assert ax[1].get_ylabel() == "Average Attribution Magnitude"
+
+    # Cleanup
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
+
+    # Smaller dimensions
+    new_band_mask = new_band_mask[:, 0, 0]
+    fig, ax = visualize.visualize_spectral_aggregated_attributes(
+        spectral_attributes, band_names, new_band_mask, use_pyplot=False
+    )
+
+    # Assert that the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
+
+    # Assert that the title is set correctly
+    assert fig._suptitle.get_text() == "Spectral Attributes Visualization"
+
+    # Assert that the first subplot shows the visualization by waveband
+    assert ax[0].get_title() == "Attributions by Waveband"
+    assert ax[0].get_xlabel() == "Wavelength (nm)"
+    assert ax[0].get_ylabel() == "Correlation with Output"
+
+    # Assert that the second subplot shows the visualization by magnitude
+    assert ax[1].get_title() == "Attributions by Magnitude"
+    assert ax[1].get_xlabel() == "Group"
+    assert ax[1].get_ylabel() == "Average Attribution Magnitude"
+
+    # Cleanup
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
+
+    # Test multiple spectral attributes
+    spectral_attributes_new = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
+        attributes=attribution_map,
+        score=score,
+        band_names=band_names,
+        mask=band_mask,
+    )
+
+    fig, ax = visualize.visualize_spectral_aggregated_attributes(
+        [spectral_attributes, spectral_attributes_new], band_names, new_band_mask, use_pyplot=False
+    )
+
+    # Assert that the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 3
+    assert isinstance(ax[0], Axes)
+
+    # Assert that the title is set correctly
+    assert fig._suptitle.get_text() == "Spectral Attributes Visualization"
+
+    # Assert that the first subplot shows the visualization by waveband
+    assert ax[0].get_title() == "Attributions by Waveband"
+    assert ax[0].get_xlabel() == "Wavelength (nm)"
+    assert ax[0].get_ylabel() == "Correlation with Output"
+
+    # Assert that the second subplot shows the visualization by magnitude
+    assert ax[1].get_title() == "Attributions by Magnitude"
+    assert ax[1].get_xlabel() == "Group"
+    assert ax[1].get_ylabel() == "Average Attribution Magnitude"
+
+    # Assert that the third subplot shows the score distribution
+    assert ax[2].get_title() == "Distribution of Score Values"
+    assert ax[2].get_xlabel() == "Score"
+    assert ax[2].get_ylabel() == "Frequency"
+
+    # Cleanup
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
+
+
+def test_visualize_aggregated_attributes():
+    # Test Spatial Analysis
+    hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+    attributes = torch.ones_like(hsi.image)
+    score = 0.5
+    segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
+    hsi_attributes_spatial = HSIAttributes(hsi=hsi, mask=segmentation_mask, attributes=attributes, score=score)
+    new_segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
+    new_segmentation_mask[0, 0, 0] = 0
+
+    # Call the visualize_spatial_attributes function
+    fig, ax = visualize.visualize_aggregated_attributes(hsi_attributes_spatial, new_segmentation_mask)
+
+    # Check if the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 3
+    assert isinstance(ax[0], Axes)
+
+    assert fig._suptitle.get_text() == "Spatial Attributes Visualization Aggregated"
+    assert ax[0].get_title() == "Original image"
+    assert ax[1].get_title() == "Attribution Map"
+    assert ax[2].get_title() == "Mask"
+
+    # Cleanup
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
+
+    # Test Spectral Analysis
+    image = torch.ones((len(wavelengths_main), 240, 240))
+    band_names = {"R": 0, "G": 1, "B": 2}
+    attribution_map = torch.rand((image.shape))
+    score = 0.5
+    band_names = {"R": 0, "G": 1, "B": 2}
+    band_mask = torch.zeros_like(image)
+    band_mask[0] = 1
+    band_mask[1] = 2
+
+    spectral_attributes = HSIAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
+        attributes=attribution_map,
+        score=score,
+        band_names=band_names,
+        mask=band_mask,
+    )
+    new_band_mask = torch.zeros_like(image)
+    new_band_mask[1] = 1
+    new_band_mask[0] = 2
+
+    # Call the function
+    fig, ax = visualize.visualize_aggregated_attributes(
+        spectral_attributes, new_band_mask, band_names, use_pyplot=False
+    )
+
+    # Assert that the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
+
+    # Assert that the title is set correctly
+    assert fig._suptitle.get_text() == "Spectral Attributes Visualization"
+
+    # Assert that the first subplot shows the visualization by waveband
+    assert ax[0].get_title() == "Attributions by Waveband"
+    assert ax[0].get_xlabel() == "Wavelength (nm)"
+    assert ax[0].get_ylabel() == "Correlation with Output"
+
+    # Assert that the second subplot shows the visualization by magnitude
+    assert ax[1].get_title() == "Attributions by Magnitude"
+    assert ax[1].get_xlabel() == "Group"
+    assert ax[1].get_ylabel() == "Average Attribution Magnitude"
+
+    # Cleanup
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig

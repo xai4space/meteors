@@ -22,7 +22,7 @@ from pydantic.functional_validators import BeforeValidator
 from meteors import HSI
 from meteors.lime_base import Lime as LimeBase
 from meteors.utils.models import ExplainableModel, InterpretableModel, SkLearnLasso
-from meteors.utils.utils import torch_dtype_to_python_dtype, change_dtype_of_list
+from meteors.utils.utils import torch_dtype_to_python_dtype, change_dtype_of_list, expand_spectral_mask
 
 try:
     from fast_slic import Slic as slic
@@ -173,7 +173,7 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
         - All unique values in the mask must be present in the band_names dictionary
           after the alignment process.
     """
-    unique_mask_values = set(band_mask.unique().tolist())
+    unique_mask_values = set(band_mask.unique().int().tolist())
     band_name_values = set(band_names.values())
 
     # Check if 0 is in the mask but not in band_names
@@ -182,6 +182,10 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
             "Band mask contains `0` values which are not covered by the provided band names. "
             "Adding 'not_included' to band names."
         )
+        if "not_included" in band_names:
+            raise ValueError(
+                "Band names should not contain 'not_included' if 0 is present in the mask and not in band names"
+            )
         band_names["not_included"] = 0
         band_name_values.add(0)
 
@@ -743,6 +747,11 @@ class HSISpectralAttributes(HSIAttributes):
         axis.remove(self.hsi.spectral_axis)
         return self.attributes.select(dim=axis[0], index=0).select(dim=axis[1] - 1, index=0)
 
+    def _validate_hsi_attributions_and_mask(self) -> None:
+        super()._validate_hsi_attributions_and_mask()
+        if self.mask is not None:
+            align_band_names_with_mask(self.band_names, self.mask)
+
 
 ###################################################################
 ############################ EXPLAINER ############################
@@ -1096,6 +1105,8 @@ class Lime(Explainer):
                 A tuple containing the dictionary with mapping segment labels into wavelength indices and the mapping
                 from segment labels into segment ids.
         """
+        if isinstance(band_names, str):
+            band_names = [band_names]
         if isinstance(band_names, list):
             logger.debug("band_names is a list of segments, creating a dictionary of segments")
             band_names_hashed = [Lime._make_band_names_indexable(segment) for segment in band_names]
@@ -1366,33 +1377,6 @@ class Lime(Explainer):
         return band_mask_single_dim
 
     @staticmethod
-    def _expand_band_mask(hsi: HSI, band_mask_single_dim: torch.Tensor, repeat_dimensions: bool) -> torch.Tensor:
-        """Expands the band mask to match the dimensions of the input hsi.
-
-        Args:
-            hsi (HSI): The input hsi.
-            band_mask_single_dim (torch.Tensor): The band mask tensor with a single dimension.
-            repeat_dimensions (bool): Whether to repeat the dimensions of the band mask to match the hsi.
-
-        Returns:
-            torch.Tensor: The expanded band mask tensor.
-        """
-        if hsi.spectral_axis == 0:
-            band_mask = band_mask_single_dim.unsqueeze(-1).unsqueeze(-1)
-        elif hsi.spectral_axis == 1:
-            band_mask = band_mask_single_dim.unsqueeze(0).unsqueeze(-1)
-        elif hsi.spectral_axis == 2:
-            band_mask = band_mask_single_dim.unsqueeze(0).unsqueeze(0)
-        if repeat_dimensions:
-            size_image = hsi.image.size()
-            size_mask = band_mask.size()
-
-            repeat_dims = [s2 // s1 for s1, s2 in zip(size_mask, size_image)]
-            band_mask = band_mask.repeat(repeat_dims)
-
-        return band_mask
-
-    @staticmethod
     def _create_tensor_band_mask(
         hsi: HSI,
         dict_labels_to_indices: dict[str | tuple[str, ...], list[int]],
@@ -1440,7 +1424,7 @@ class Lime(Explainer):
         )
 
         # Expand band mask to match image dimensions
-        band_mask = Lime._expand_band_mask(hsi, band_mask_single_dim, repeat_dimensions)
+        band_mask = expand_spectral_mask(hsi, band_mask_single_dim, repeat_dimensions)
 
         if return_dict_labels_to_segment_ids:
             return band_mask, dict_labels_to_segment_ids
@@ -1650,8 +1634,8 @@ class Lime(Explainer):
         if band_mask is None:
             band_mask, band_names = self.get_band_mask(hsi, band_names)
         band_mask = ensure_torch_tensor(band_mask, "Band mask should be None, numpy array, or torch tensor")
-        if band_mask.ndim != hsi.image.ndim:
-            band_mask = Lime._expand_band_mask(hsi, band_mask, repeat_dimensions=False)
+        if band_mask.shape != hsi.image.shape:
+            band_mask = expand_spectral_mask(hsi, band_mask, repeat_dimensions=True)
         band_mask = band_mask.int()
 
         if band_names is None:
@@ -1662,7 +1646,9 @@ class Lime(Explainer):
             # unique_segments = torch.unique(band_mask)
             # if isinstance(band_names, dict):
             #     assert set(unique_segments).issubset(set(band_names.values())), "Incorrect band names"
-            logger.debug("Band names are provided, using them. In future it there should be an option to validate them")
+            logger.debug(
+                "Band names are provided and will be used. In the future, there should be an option to validate them."
+            )
 
         hsi = hsi.to(self.device)
         band_mask = band_mask.to(self.device)
@@ -1734,8 +1720,6 @@ class Lime(Explainer):
         Returns:
             torch.Tensor: An output segmentation mask.
         """
-        logger.warning("Patch segmentation only works for band_index = 0 now")
-
         if patch_size < 1 or not isinstance(patch_size, (int, float)):
             raise ValueError("Invalid patch_size. patch_size must be a positive integer")
 
