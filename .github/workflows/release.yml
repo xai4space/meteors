@@ -59,9 +59,9 @@ jobs:
 
       - name: Upload build 📦
         uses: actions/upload-artifact@v4
-        if: ${{ github.event.inputs.dry-run == 'no' }}
         with:
           name: dist
+          path: dist/
 
       - name: Check Version 🏷️
         id: check-version
@@ -84,7 +84,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master # this scopes to just master branch
+          ref: main # this scopes to just main branch
           fetch-depth: 0 # this fetches entire commit history
 
       - name: Setup Rye 🌾
@@ -156,6 +156,7 @@ jobs:
         #     echo EOF
         #   } >> "$GITHUB_OUTPUT"
       - name: Commit and push updated CHANGELOG.md
+        if: ${{ github.event.inputs.dry-run }} == "no"
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -195,6 +196,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist
+          path: dist/
 
       - name: Publish to TestPyPI 🚀
         run: |
@@ -240,8 +242,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist
+          path: dist/
 
       - name: Publish package 🚀
+        if: ${{ github.event.inputs.dry-run }} == "no"
         run: |
           rye publish --token ${{ secrets.PYPI_TOKEN }} --yes
 
@@ -286,6 +290,7 @@ jobs:
           name: dist
 
       - name: Create Tag 🏷️
+        if : ${{ github.event.inputs.dry-run }} == "no"
         uses: ncipollo/release-action@v1
         with:
           artifacts: "dist/*"
