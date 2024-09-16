@@ -1,0 +1,298 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        type: choice
+        description: "Dry Run"
+        options:
+          - "no"
+          - "yes"
+        default: "no"
+      initial-version:
+        type: choice
+        description: "Initial Version"
+        options:
+          - "no"
+          - "yes"
+        default: "no"
+
+env:
+  PYTHON_VERSION: "3.11"
+  RYE_VERSION: "0.35.0"
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    outputs:
+      pkg-name: ${{ steps.check-version.outputs.pkg-name }}
+      version: ${{ steps.check-version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rye 🌾
+        id: setup-rye
+        uses: eifinger/setup-rye@v3
+        with:
+          version: ${{ env.RYE_VERSION }}
+
+      - name: Pin python-version 📌
+        run: rye pin ${{ env.PYTHON_VERSION }}
+
+      - name: Cache dependencies 📦
+        uses: actions/cache@v4
+        with:
+          path: ./venv
+          key: release
+
+      - name: Install dependencies 🛠️
+        run: |
+          rye sync
+
+      - name: Build package 📦
+        run: |
+          rye build --clean
+          rye build
+
+      - name: Upload build 📦
+        uses: actions/upload-artifact@v4
+        if: ${{ github.event.inputs.dry-run == 'no' }}
+        with:
+          name: dist
+
+      - name: Check Version 🏷️
+        id: check-version
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          echo pkg-name="v$(rye version)" >> $GITHUB_OUTPUT
+          echo version="$(rye version)" >> $GITHUB_OUTPUT
+
+  release-notes:
+    needs:
+      - build
+
+    permissions:
+      # Needed to push the updated CHANGELOG.md
+      contents: write
+
+    runs-on: ubuntu-latest
+    outputs:
+      release-body: ${{ steps.generate-release-body.outputs.release-body }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master # this scopes to just master branch
+          fetch-depth: 0 # this fetches entire commit history
+
+      - name: Setup Rye 🌾
+        id: setup-rye
+        uses: eifinger/setup-rye@v3
+        with:
+          version: ${{ env.RYE_VERSION }}
+
+      - name: Pin python-version 📌
+        run: rye pin ${{ env.PYTHON_VERSION }}
+
+      - name: Cache dependencies 📦
+        uses: actions/cache@v4
+        with:
+          path: ./venv
+          key: release
+
+      - name: Install dependencies 🛠️
+        run: |
+          rye sync
+
+      - name: Check Tags 🏷️
+        id: check-tags
+        shell: bash
+        env:
+          PKG_NAME: ${{ needs.build.outputs.pkg-name }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+          echo $REGEX
+          PREV_TAG=$(git tag --sort=-creatordate | grep -P $REGEX || true | head -1)
+          TAG="${PKG_NAME}==${VERSION}"
+          if [ "$TAG" == "$PREV_TAG" ]; then
+            if [ "${{ github.event.inputs.initial-version }}" == "yes" ]; then
+              echo "Initial version to release"
+              PREV_TAG=""
+            else
+              echo "No new version to release"
+              exit 1
+            fi
+          fi
+          echo tag="$TAG" >> $GITHUB_OUTPUT
+          echo prev-tag="$PREV_TAG" >> $GITHUB_OUTPUT
+
+      - name: Generate release body 📝
+        id: generate-release-body
+        env:
+          PKG_NAME: ${{ needs.build.outputs.pkg-name }}
+          TAG: ${{ steps.check-tags.outputs.tag }}
+          PREV_TAG: ${{ steps.check-tags.outputs.prev-tag }}
+        run: |
+          changelog=$(rye python commit_processor.py . "$TAG" "$PREV_TAG")
+          echo "release-body<<EOF" >> $GITHUB_OUTPUT
+          echo "$changelog" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        # This is the old way of generating the release body
+        # run: |
+        #   PREAMBLE="Changes since $PREV_TAG"
+        #   # if PREV_TAG is empty, then we are releasing the first version
+        #   if [ -z "$PREV_TAG" ]; then
+        #     PREAMBLE="Initial release"
+        #     PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+        #   fi
+        #   {
+        #     echo 'release-body<<EOF'
+        #     echo $PREAMBLE
+        #     echo
+        #     git log --format="%s" "$PREV_TAG"..HEAD
+        #     echo EOF
+        #   } >> "$GITHUB_OUTPUT"
+      - name: Commit and push updated CHANGELOG.md
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG.md for ${{ needs.build.outputs.version }} [skip ci]"
+          git push
+
+  test-pypi-publish:
+    needs:
+      - build
+      - release-notes
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rye 🌾
+        id: setup-rye
+        uses: eifinger/setup-rye@v3
+        with:
+          version: ${{ env.RYE_VERSION }}
+
+      - name: Pin python-version 📌
+        run: rye pin ${{ env.PYTHON_VERSION }}
+
+      - name: Cache dependencies 📦
+        uses: actions/cache@v4
+        with:
+          path: ./venv
+          key: release
+
+      - name: Install dependencies 🛠️
+        run: |
+          rye sync
+
+      - name: Download build 📦
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+
+      - name: Publish to TestPyPI 🚀
+        run: |
+          rye publish --token ${{ secrets.TEST_PYPI_TOKEN }} --yes --repository testpypi --repository-url https://test.pypi.org/legacy/ --skip-existing
+
+      - name: Test install from TestPyPI 🧪
+        run: |
+          pip install \
+          --index-url https://test.pypi.org/simple/ \
+          --extra-index-url https://pypi.org/simple \
+          ${{ needs.build.outputs.pkg-name }}==${{ needs.build.outputs.version }}
+
+  pypi-publish:
+    needs:
+      - build
+      - release-notes
+      - test-pypi-publish
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rye 🌾
+        id: setup-rye
+        uses: eifinger/setup-rye@v3
+        with:
+          version: ${{ env.RYE_VERSION }}
+
+      - name: Pin python-version 📌
+        run: rye pin ${{ env.PYTHON_VERSION }}
+
+      - name: Cache dependencies 📦
+        uses: actions/cache@v4
+        with:
+          path: ./venv
+          key: release
+
+      - name: Install dependencies 🛠️
+        run: |
+          rye sync
+
+      - name: Download build 📦
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+
+      - name: Publish package 🚀
+        run: |
+          rye publish --token ${{ secrets.PYPI_TOKEN }} --yes
+
+  mark-release:
+    needs:
+      - build
+      - release-notes
+      - test-pypi-publish
+      - pypi-publish
+
+    runs-on: ubuntu-latest
+    permissions:
+      # This permission is needed by `ncipollo/release-action` to
+      # create the GitHub release.
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rye 🌾
+        id: setup-rye
+        uses: eifinger/setup-rye@v3
+        with:
+          version: ${{ env.RYE_VERSION }}
+
+      - name: Pin python-version 📌
+        run: rye pin ${{ env.PYTHON_VERSION }}
+
+      - name: Cache dependencies 📦
+        uses: actions/cache@v4
+        with:
+          path: ./venv
+          key: release
+
+      - name: Install dependencies 🛠️
+        run: |
+          rye sync
+
+      - name: Download build 📦
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+
+      - name: Create Tag 🏷️
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "dist/*"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generateReleaseNotes: false
+          tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}
+          body: ${{ needs.release-notes.outputs.release-body }}
+          commit: ${{ github.sha }}
+          makeLatest: true

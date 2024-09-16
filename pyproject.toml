@@ -83,7 +83,6 @@ omit = [
     "src/meteors/lime_base.py",
 ]
 
-
 [tool.pytest.ini_options]
 addopts = "--cov=src/meteors --cov-report=xml"
 
