@@ -65,17 +65,21 @@ def test_generate_changelog_no_previous_tag(mock_repo):
 - Initial documentation
 """
     assert changelog == expected_changelog
-    mock_repo.iter_commits.assert_called_once_with("v1.0.0")
+    mock_repo.iter_commits.assert_called_once_with()
 
 
 @patch("commit_processor.open", new_callable=mock_open, read_data="# Changelog\n\n## Old content\n")
-def test_update_changelog(mock_file, mock_repo):
+@patch("commit_processor.Repo")
+def test_update_changelog(MockRepo, mock_file):
+    mock_repo = MagicMock()
+    MockRepo.return_value = mock_repo
+
     mock_commits = [MagicMock(spec=commit_processor.Commit, message="feat: Add feature X")]
     mock_repo.iter_commits.return_value = mock_commits
 
-    mock_tag = MagicMock()
-    mock_tag.commit.committed_datetime = datetime(2023, 1, 1)
-    mock_repo.tags = {"v1.0.0": mock_tag}
+    mock_head_commit = MagicMock()
+    mock_head_commit.committed_datetime = datetime(2023, 1, 1)
+    mock_repo.head.commit = mock_head_commit
 
     commit_processor.update_changelog("/fake/path", "v1.0.0")
 

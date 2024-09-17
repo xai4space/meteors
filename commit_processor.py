@@ -17,9 +17,9 @@ def generate_changelog(repo_path: str, current_tag: str, previous_tag: str | Non
     repo = Repo(repo_path)
 
     if previous_tag:
-        commits = list(repo.iter_commits(f"{previous_tag}..{current_tag}"))
+        commits = list(repo.iter_commits(f"{previous_tag}..HEAD"))
     else:
-        commits = list(repo.iter_commits(current_tag))
+        commits = list(repo.iter_commits())
 
     grouped_commits = defaultdict(list)
     for commit in commits:
@@ -66,10 +66,9 @@ def generate_changelog(repo_path: str, current_tag: str, previous_tag: str | Non
 def update_changelog(repo_path: str, current_tag: str, previous_tag: str | None = None) -> str:
     changelog = generate_changelog(repo_path, current_tag, previous_tag)
     repo = Repo(repo_path)
-    tag_commit = repo.tags[current_tag].commit
-    date = tag_commit.committed_datetime.date()
+    date = repo.head.commit.committed_datetime.strftime("%Y-%m-%d")
 
-    with open("CHANGELOG.md", "r+") as f:
+    with open("changelog.md", "r+") as f:
         content = f.read()
         content_without_header = re.sub(r"^# Changelog\n\n", "", content)
         f.seek(0, 0)

@@ -10,17 +10,11 @@ on:
           - "no"
           - "yes"
         default: "no"
-      initial-version:
-        type: choice
-        description: "Initial Version"
-        options:
-          - "no"
-          - "yes"
-        default: "no"
 
 env:
   PYTHON_VERSION: "3.11"
   RYE_VERSION: "0.35.0"
+  DRY_RUN: ${{ github.event.inputs.dry-run }}
 
 jobs:
   build:
@@ -55,7 +49,6 @@ jobs:
       - name: Build package 📦
         run: |
           rye build --clean
-          rye build
 
       - name: Upload build 📦
         uses: actions/upload-artifact@v4
@@ -115,16 +108,17 @@ jobs:
         run: |
           REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
           echo $REGEX
-          PREV_TAG=$(git tag --sort=-creatordate | grep -P $REGEX || true | head -1)
-          TAG="${PKG_NAME}==${VERSION}"
+          PREV_TAG=$(git describe --tags --abbrev=0)
+          TAG="${PKG_NAME}"
+          echo "Previous tag: $PREV_TAG"
+          echo "Tag: $TAG"
           if [ "$TAG" == "$PREV_TAG" ]; then
-            if [ "${{ github.event.inputs.initial-version }}" == "yes" ]; then
-              echo "Initial version to release"
-              PREV_TAG=""
-            else
-              echo "No new version to release"
-              exit 1
-            fi
+            echo "No new version to release"
+            exit 1
+          fi
+          if [ -z "$PREV_TAG" ]; then
+            echo "Initial version to release"
+            PREV_TAG=""
           fi
           echo tag="$TAG" >> $GITHUB_OUTPUT
           echo prev-tag="$PREV_TAG" >> $GITHUB_OUTPUT
@@ -136,32 +130,18 @@ jobs:
           TAG: ${{ steps.check-tags.outputs.tag }}
           PREV_TAG: ${{ steps.check-tags.outputs.prev-tag }}
         run: |
-          changelog=$(rye python commit_processor.py . "$TAG" "$PREV_TAG")
+          changelog=$(rye run python commit_processor.py . "$TAG"  "$PREV_TAG")
           echo "release-body<<EOF" >> $GITHUB_OUTPUT
           echo "$changelog" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-        # This is the old way of generating the release body
-        # run: |
-        #   PREAMBLE="Changes since $PREV_TAG"
-        #   # if PREV_TAG is empty, then we are releasing the first version
-        #   if [ -z "$PREV_TAG" ]; then
-        #     PREAMBLE="Initial release"
-        #     PREV_TAG=$(git rev-list --max-parents=0 HEAD)
-        #   fi
-        #   {
-        #     echo 'release-body<<EOF'
-        #     echo $PREAMBLE
-        #     echo
-        #     git log --format="%s" "$PREV_TAG"..HEAD
-        #     echo EOF
-        #   } >> "$GITHUB_OUTPUT"
+          cat changelog.md
       - name: Commit and push updated CHANGELOG.md
-        if: ${{ github.event.inputs.dry-run }} == "no"
+        if: ${{ env.DRY_RUN == 'no' }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit -m "docs: update CHANGELOG.md for ${{ needs.build.outputs.version }} [skip ci]"
+          git add changelog.md
+          git commit -m "docs: update changelog.md for ${{ needs.build.outputs.version }} [skip ci]"
           git push
 
   test-pypi-publish:
@@ -245,7 +225,7 @@ jobs:
           path: dist/
 
       - name: Publish package 🚀
-        if: ${{ github.event.inputs.dry-run }} == "no"
+        if: ${{ env.DRY_RUN == 'no' }}
         run: |
           rye publish --token ${{ secrets.PYPI_TOKEN }} --yes
 
@@ -290,13 +270,13 @@ jobs:
           name: dist
 
       - name: Create Tag 🏷️
-        if : ${{ github.event.inputs.dry-run }} == "no"
+        if: ${{ env.DRY_RUN == 'no' }}
         uses: ncipollo/release-action@v1
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
           generateReleaseNotes: false
-          tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}
+          tag: ${{needs.build.outputs.pkg-name}}
           body: ${{ needs.release-notes.outputs.release-body }}
           commit: ${{ github.sha }}
           makeLatest: true
