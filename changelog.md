@@ -1,8 +1,8 @@
-## HyperXAI 0.0.1
+# Changelog
 
-- Prepared a simple draft of package along with some ideas and sample files for implementation of LIME for hyperspectral images.
-- Segmentation mask for LIME using slic
-- Spatial attributions using LIME
+## HyperXAI -> meteors 0.0.1
+
+- Renamed package to meteors
 
 ## HyperXAI 0.0.2
 
@@ -10,6 +10,8 @@
 - Spectral attributions using LIME
 - CUDA compatibility of LIME
 
-## HyperXAI -> meteors 0.0.1
+## HyperXAI 0.0.1
 
-- Renamed package to meteors
+- Prepared a simple draft of package along with some ideas and sample files for implementation of LIME for hyperspectral images.
+- Segmentation mask for LIME using slic
+- Spatial attributions using LIME

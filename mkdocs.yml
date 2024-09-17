@@ -1,12 +1,14 @@
 site_name: Meteors
 
 nav:
-  - Home 🏠: index.md
-  - Quickstart 🚀: quickstart.md
-  # - Tutorials 📚:
-  - API Reference 📖: reference.md
-  - Changelog 📝: changelog.md
-  - How-To Guides 📚: how-to-guides.md
+  - 🏠 Home: index.md
+  - 🚀 Quickstart: quickstart.md
+  - 📚 Tutorials:
+    - 🎓 Introduction: tutorials/introduction.md
+    - LIME: tutorials/lime.md
+  - 📖 API Reference: reference.md
+  - 📝 Changelog: changelog.md
+  - 🤝 How to Contribute: how-to-guides.md
 
 plugins:
   - search
