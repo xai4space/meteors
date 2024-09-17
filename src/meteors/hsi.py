@@ -228,9 +228,8 @@ def process_and_validate_binary_mask(
 
 
 class HSI(BaseModel):
-    """
-    A dataclass for hyperspectral image data, including the image, wavelengths, and binary mask.
-    
+    """A dataclass for hyperspectral image data, including the image, wavelengths, and binary mask.
+
     Attributes:
         image (torch.Tensor): The hyperspectral image data as a PyTorch tensor.
         wavelengths (torch.Tensor): The wavelengths present in the image.
@@ -238,6 +237,7 @@ class HSI(BaseModel):
         device (torch.device): The device to be used for inference.
         binary_mask (torch.Tensor): A binary mask used to cover unimportant parts of the image.
     """
+
     image: Annotated[  # Should always be a first field
         torch.Tensor,
         PlainValidator(ensure_image_tensor),

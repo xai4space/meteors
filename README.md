@@ -11,7 +11,7 @@
 
 Meteors is an open-source package for creating explanations of hyperspectral and multispectral images. Developed primarily for [Pytorch](https://pytorch.org) models, Meteors was inspired by the [Captum](https://captum.ai/) library. Our goal is to provide not only the ability to create explanations for hyperspectral images but also to visualize them in a user-friendly way.
 
-*Please note that this package is still in the development phase, and we welcome any feedback and suggestions to help improve the library.*
+_Please note that this package is still in the development phase, and we welcome any feedback and suggestions to help improve the library._
 
 Meteors emerged from a research grant project between the Warsaw University of Technology research group [MI2.ai](https://www.mi2.ai/index.html) and [Kp Labs](https://kplabs.space), financially supported by the [European Space Agency (ESA)](https://www.esa.int).
 
@@ -38,7 +38,7 @@ pip install meteors
 ```
 
 With conda:
-*Coming soon*
+_Coming soon_
 
 ## 📚 Documentation
 

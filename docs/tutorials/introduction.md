@@ -23,8 +23,8 @@ Each tutorial is self-contained and focuses on a specific topic or technique. Yo
 - Refer to the [API Reference](../reference.md) for detailed information on the Meteors functions and classes used in the tutorials.
 - If you encounter any issues or have questions, feel free to reach out to the Meteors community or open an issue on the GitHub repository.
 
-## 🎉 Let's Get Started! 
+## 🎉 Let's Get Started!
 
 Ready to dive into the world of hyperspectral image explanation with Meteors? Choose a tutorial from the list above and start your journey!
 
-Happy learning and exploring with Meteors! ☄️🔍✨ 
+Happy learning and exploring with Meteors! ☄️🔍✨
