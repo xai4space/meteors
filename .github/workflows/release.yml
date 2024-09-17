@@ -68,8 +68,9 @@ jobs:
       - build
 
     permissions:
-      # Needed to push the updated CHANGELOG.md
+      # Needed for `peter-evans/create-pull-request` to create a PR
       contents: write
+      pull-requests: write
 
     runs-on: ubuntu-latest
     outputs:
@@ -106,7 +107,7 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+          REGEX="^$PKG_NAME==v\\d+\\.\\d+\\.\\d+\$"
           echo $REGEX
           PREV_TAG=$(git describe --tags --abbrev=0)
           TAG="${PKG_NAME}"
@@ -137,12 +138,13 @@ jobs:
           cat changelog.md
       - name: Commit and push updated CHANGELOG.md
         if: ${{ env.DRY_RUN == 'no' }}
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add changelog.md
-          git commit -m "docs: update changelog.md for ${{ needs.build.outputs.version }} [skip ci]"
-          git push
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update file
+          title: "docs: update changelog.md for ${{ needs.build.outputs.version }} [skip ci]"
+          body: Automated changes to update changelog.md
+          branch: update-changelog-${{ needs.build.outputs.version }}
 
   test-pypi-publish:
     needs:
