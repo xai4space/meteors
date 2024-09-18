@@ -31,10 +31,9 @@ from meteors import HSI
 **Remember**, when providing data to the model, make sure it is in the final format that the model expects, without the batch dimension. The `HSI` object will handle the rest.
 We also recommend providing the image data channel orientation, height, width, and the number of channels in the format `(CHW)`. For example:
 
-- Channel orientation: C
+- Number of channels: C
 - Height: H
 - Width: W
-- Number of channels: C
 
 ## 🔍 Explanation Methods
 
