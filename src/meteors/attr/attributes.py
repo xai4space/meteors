@@ -159,22 +159,20 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
 
 
 def validate_attribution_method(value: str | None) -> str | None:
-    """
-    Validates the attribution method. 
+    """Validates the attribution method.
 
     Args:
         value (str | None): The attribution method to be validated.
 
     Returns:
         str | None: The validated attribution method.
-
     """
     if value is None:
         return value
     value = value.title()
     if value not in AVAILABLE_ATTRIBUTION_METHODS:
         logger.warning(
-           f"Unknown attribution method: {value}. The core implemented methods are {AVAILABLE_ATTRIBUTION_METHODS}"
+            f"Unknown attribution method: {value}. The core implemented methods are {AVAILABLE_ATTRIBUTION_METHODS}"
         )
     return value
 
@@ -261,7 +259,8 @@ class HSIAttributes(BaseModel):
         float | None,
         Field(
             validate_default=True,
-            description="The score provided by the interpretable model. Can be None if method don't provide one."),
+            description="The score provided by the interpretable model. Can be None if method don't provide one.",
+        ),
     ] = None
     mask: Annotated[
         torch.Tensor | None,
@@ -408,6 +407,7 @@ class HSISpatialAttributes(HSIAttributes):
         segmentation_mask (torch.Tensor): Spatial (Segmentation) mask used for the explanation.
         flattened_attributes (torch.Tensor): Spatial 2D attribution map.
     """
+
     @property
     def segmentation_mask(self) -> torch.Tensor:
         """Returns the 2D spatial segmentation mask that has the same size as the hsi image.
@@ -432,7 +432,7 @@ class HSISpatialAttributes(HSIAttributes):
                     [0., 0.]])
         """
         return self.attributes.select(dim=self.hsi.spectral_axis, index=0)
-    
+
     def _validate_hsi_attributions_and_mask(self) -> None:
         """Validates the hsi attributions and performs necessary operations to ensure compatibility with the device.
 
@@ -469,9 +469,9 @@ class HSISpectralAttributes(HSIAttributes):
 
     @property
     def band_mask(self) -> torch.Tensor:
-        """Returns a 1D band mask - a band mask with removed repeated dimensions (num_bands, ), 
+        """Returns a 1D band mask - a band mask with removed repeated dimensions (num_bands, ),
         where num_bands is the number of bands in the hsi image.
-        
+
         The method selects the appropriate dimensions from the `band_mask` tensor
         based on the `axis_to_select` and returns a flattened version of the selected
         tensor.
@@ -488,7 +488,7 @@ class HSISpectralAttributes(HSIAttributes):
         if self.mask is None:
             raise ValueError("Band mask is not provided")
         axis_to_select = [i for i in range(self.hsi.ndim) if i != self.hsi.spectral_axis]
-        return self.band_mask.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1]-1, index=0)
+        return self.band_mask.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1] - 1, index=0)
 
     @property
     def flattened_attributes(self) -> torch.Tensor:
@@ -501,7 +501,7 @@ class HSISpectralAttributes(HSIAttributes):
         """
         axis = [i for i in range(self.attributes.ndim) if i != self.hsi.spectral_axis]
         return self.attributes.select(dim=axis[0], index=0).select(dim=axis[1] - 1, index=0)
-    
+
     def _validate_hsi_attributions_and_mask(self) -> None:
         """Validates the hsi attributions and performs necessary operations to ensure compatibility with the device.
 
@@ -512,5 +512,5 @@ class HSISpectralAttributes(HSIAttributes):
         super()._validate_hsi_attributions_and_mask()
         if self.mask is None:
             raise ValueError("Band mask is not provided")
-        
+
         self.band_names = align_band_names_with_mask(self.band_names, self.mask)

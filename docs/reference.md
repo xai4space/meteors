@@ -1,6 +1,5 @@
 # API Reference
 
-
 - [API Reference](#api-reference)
     - [Meteors](#meteors)
       - [Attribution Methods](#attribution-methods)
@@ -24,7 +23,6 @@ options:
 show_bases: false
 show_root_heading: true
 show_root_full_path: false
-
 
 ## Visualizations
 

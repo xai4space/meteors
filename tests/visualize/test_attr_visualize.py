@@ -104,6 +104,7 @@ def ig_model():
     ig = mt.attr.IntegratedGradients(model)
     return ig
 
+
 def test_visualize_ig_attributes(ig_model):
     tensor_image = torch.rand((len(wavelengths_main), 240, 230))
 
@@ -121,20 +122,20 @@ def test_visualize_ig_attributes(ig_model):
     assert isinstance(ax, np.ndarray)
     assert ax.shape == (2, 3)
     assert all([isinstance(a, Axes) for a in ax.ravel()])
-    assert fig.texts[0].get_text() == f"HSI Attributes of: IntegratedGradients"
-    assert ax[0,0].get_title() == "Attribution Heatmap"
-    assert ax[0,1].get_title() == "Attribution Module Values"
-    assert ax[0,2].get_title() == "Attribution Sign Values"
-    assert ax[1,0].get_title() == "Spectral Attribution"
-    assert ax[1,0].get_xlabel() == "Wavelength"
-    assert ax[1,0].get_ylabel() == "Attribution"
-    assert ax[1,1].get_title() == "Spectral Attribution Absolute Values"
-    assert ax[1,1].get_xlabel() == "Wavelength"
-    assert ax[1,1].get_ylabel() == "Attribution Absolute Value"
-    assert ax[1,2].get_title() == "Spectral Attribution Sign Values"
-    assert ax[1,2].get_xlabel() == "Wavelength"
-    assert ax[1,2].get_ylabel() == "Attribution Sign Proportion"
-    assert ax[1,2].get_yticks().tolist() == [-1, 0, 1]
+    assert fig.texts[0].get_text() == "HSI Attributes of: IntegratedGradients"
+    assert ax[0, 0].get_title() == "Attribution Heatmap"
+    assert ax[0, 1].get_title() == "Attribution Module Values"
+    assert ax[0, 2].get_title() == "Attribution Sign Values"
+    assert ax[1, 0].get_title() == "Spectral Attribution"
+    assert ax[1, 0].get_xlabel() == "Wavelength"
+    assert ax[1, 0].get_ylabel() == "Attribution"
+    assert ax[1, 1].get_title() == "Spectral Attribution Absolute Values"
+    assert ax[1, 1].get_xlabel() == "Wavelength"
+    assert ax[1, 1].get_ylabel() == "Attribution Absolute Value"
+    assert ax[1, 2].get_title() == "Spectral Attribution Sign Values"
+    assert ax[1, 2].get_xlabel() == "Wavelength"
+    assert ax[1, 2].get_ylabel() == "Attribution Sign Proportion"
+    assert ax[1, 2].get_yticks().tolist() == [-1, 0, 1]
 
     # Cleanup
     plt.close(fig)

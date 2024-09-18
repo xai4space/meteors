@@ -57,7 +57,7 @@ def test_validate_and_transform_baseline():
     assert transformed_baseline.shape == hsi.image.shape
     assert torch.all(transformed_baseline == 1)
     assert transformed_baseline.device == hsi.image.device
-    
+
     # Test case 3: Float baseline
     baseline = 0.5
     transformed_baseline = explainer.validate_and_transform_baseline(baseline, hsi)

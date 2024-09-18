@@ -16,8 +16,7 @@ from meteors.attr import HSIAttributes
 
 
 def validate_attribution_method_initialization(attribution_method: Explainer) -> None:
-    """
-    Validates the initialization of an attribution method.
+    """Validates the initialization of an attribution method.
 
     Args:
         attribution_method (Explainer): The attribution method to be validated.
@@ -75,8 +74,8 @@ class Explainer(ABC):
         forward_func (Callable): The forward function of the explainable model.
         chained_explainer (Explainer | None): The chained explainer. Defaults to None.
     """
-    attribute: Callable[[HSI, int | None], HSIAttributes]
 
+    attribute: Callable[[HSI, int | None], HSIAttributes]
 
     def __init__(self, callable: ExplainableModel | Explainer) -> None:
         if not isinstance(callable, ExplainableModel) and not isinstance(callable, Explainer):
@@ -106,8 +105,7 @@ class Explainer(ABC):
         self.forward_func = self.explainable_model.forward_func
 
     def attribute(self, hsi: HSI, target: int | None = None, *args: Any, **kwargs: Any) -> HSIAttributes:
-        """
-        Compute the attribute method of the explainer for the given hyperspectral image.
+        """Compute the attribute method of the explainer for the given hyperspectral image.
 
         Parameters:
         - hsi (HSI): The hyperspectral image to compute attributes for.

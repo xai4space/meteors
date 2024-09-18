@@ -54,7 +54,7 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
     ax[0, 1].set_title("Attribution Module Values")
     ax[0, 1].grid(False)
     ax[0, 1].axis("off")
-    
+
     # Attributions module values
     _ = viz.visualize_image_attr(
         rotated_attributes,
@@ -98,7 +98,7 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
     plt.tight_layout()
 
     if use_pyplot:
-        plt.show() # pragma: no cover
-        return None # pragma: no cover
-    
+        plt.show()  # pragma: no cover
+        return None  # pragma: no cover
+
     return fig, ax

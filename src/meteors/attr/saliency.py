@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from loguru import logger
 from captum.attr import Saliency as CaptumSaliency
 
 from meteors.utils.models import ExplainableModel

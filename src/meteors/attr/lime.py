@@ -346,25 +346,6 @@ class Lime(Explainer):
             similarity_func=similarity_func,
             perturb_func=perturb_func,
         )
-    
-    def attribute(self, hsi: HSI, target: int | None = None, *args: Any, **kwargs: Any) -> HSIAttributes:
-        """
-        Compute the attribute method of the explainer for the given hyperspectral image.
-
-        Parameters:
-        - hsi (HSI): The hyperspectral image to compute attributes for.
-        - target (int | None): The target class index for attribute computation. If None, attributes will be computed for all classes.
-        - *args (Any): Additional positional arguments.
-        - **kwargs (Any): Additional keyword arguments.
-
-        Returns:
-        - HSIAttributes: The computed attributes of the HSI.
-
-        Raises:
-        - NotImplementedError: If the attribute method is not implemented in the explainer base class.
-        """
-        raise NotImplementedError("Lime don't support simple `attribute` method. Use `attribute_spatial` or `attribute_spectral` instead.")
-
 
     @staticmethod
     def get_segmentation_mask(

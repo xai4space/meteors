@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 
-from loguru import logger
 from captum.attr import NoiseTunnel as CaptumNoiseTunnel
 
 from meteors import HSI

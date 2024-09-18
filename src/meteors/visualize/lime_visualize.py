@@ -155,7 +155,7 @@ def visualize_spectral_attributes(
     if use_pyplot:
         plt.show()  # pragma: no cover
         return None  # pragma: no cover
-    
+
     return fig, ax
 
 
@@ -425,7 +425,7 @@ def visualize_spatial_aggregated_attributes(
     if use_pyplot:
         plt.show()  # pragma: no cover
         return None  # pragma: no cover
-    
+
     return fig, ax
 
 
@@ -499,7 +499,7 @@ def visualize_spectral_aggregated_attributes(
     if use_pyplot:
         plt.show()  # pragma: no cover
         return None  # pragma: no cover
-    
+
     return fig, ax
 
 

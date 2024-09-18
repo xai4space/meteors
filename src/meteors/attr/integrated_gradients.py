@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Literal
 
 import torch
-from loguru import logger
 from captum.attr import IntegratedGradients as CaptumIntegratedGradients
 
 from meteors.utils.models import ExplainableModel
