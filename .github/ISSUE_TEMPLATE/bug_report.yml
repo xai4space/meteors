@@ -1,46 +1,56 @@
 name: "🐛 Bug Report"
 description: Create a new ticket for a bug.
-title: "bug: <Please write a comprehensive title after the 'bug: ' prefix>"
+title: "fix: <Please write a comprehensive title after the 'fix: ' prefix>"
 body:
-  - type: textarea
-    id: description
+  - type: markdown
     attributes:
-      label: "Description"
-      description: Please enter an explicit description of your issue
-      placeholder: Short and explicit description of your incident...
-    validations:
-      required: true
+      value: >
+        Thank you for taking the time to report an issue. Please fill the form below.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      description: Please confirm and check all the following options.
+      options:
+        - label: I added a very descriptive title to this issue.
+          required: true
+        - label: I used the GitHub search to find a similar question and didn't find it.
+          required: true
+        - label: I am sure that this is a bug in Meteors rather than my code.
+          required: true
+        - label: The bug is not resolved by updating to the latest stable version of Meteors.
+          required: true
+        - label: I included a link to the documentation page I am referring to (if applicable).
+          required: true
   - type: textarea
-    id: reprod
+    id: reproduction_steps
     attributes:
       label: "Reproduction steps"
       description: Please enter an explicit description of your issue
-      value: |
-        1. Go to '...'
-        2. Click on '....'
-        3. Scroll down to '....'
-        4. See error
-      render: bash
+      placeholder: |
+        The following code:
+
+        ```python
+        from meteors.foo import foo
+
+        def bad_code(inputs) -> int:
+          raise NotImplementedError('For demo purpose')
+
+          chain = foo(bad_code)
+          chain.invoke('Hello!')
+        ```
     validations:
       required: true
   - type: textarea
-    id: screenshot
-    attributes:
-      label: "Screenshots"
-      description: If applicable, add screenshots to help explain your problem.
-      value: |
-        ![DESCRIPTION](LINK.png)
-      render: bash
+    id: error
     validations:
       required: false
-  - type: textarea
-    id: logs
     attributes:
-      label: "Logs"
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      render: bash
-    validations:
-      required: false
+      label: Error Message and Stack Trace (if applicable)
+      description: |
+        If you are reporting an error, please include the full error message and stack trace.
+      placeholder: |
+        Exception + full stack trace
   - type: dropdown
     id: os
     attributes:
