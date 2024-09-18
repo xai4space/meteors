@@ -1,5 +1,4 @@
 # Contributing
 
-## Request for changes/ Pull Requests
-
-You first need to create a fork of the [meteors](https://github.com/xai4space/meteors) repository to commit your changes to it. When you have made your changes, you can open a pull request on the [meteors repository](https://github.com/xai4space/meteors/pulls).
+Hi My friend! Thank you for considering contributing to Meteors!
+Please follow the guidelines in [contribution guide here](https://xai4space.github.io/meteors/latest/how-to-guides/) to ensure a smooth and efficient contribution process.
