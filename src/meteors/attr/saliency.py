@@ -33,8 +33,6 @@ class Saliency(Explainer):
         if self._attribution_method is None:
             raise ValueError("Saliency explainer is not initialized")
 
-        logger.debug("Applying Saliency on the image")
-
         saliency_attributions = self._attribution_method.attribute(
             hsi.get_image().unsqueeze(0), target=target, abs=abs, additional_forward_args=additional_forward_args
         )

@@ -18,7 +18,7 @@ from meteors.utils.utils import expand_spectral_mask, aggregate_by_mask
 from meteors.attr.attributes import align_band_names_with_mask
 
 
-def visualize_spatial_attributes(  # noqa: C901
+def visualize_spatial_attributes(
     spatial_attributes: HSISpatialAttributes, use_pyplot: bool = False
 ) -> tuple[Figure, Axes] | None:
     """Visualizes the spatial attributes of an hsi using Lime attribution.
@@ -155,8 +155,8 @@ def visualize_spectral_attributes(
     if use_pyplot:
         plt.show()  # pragma: no cover
         return None  # pragma: no cover
-    else:
-        return fig, ax
+    
+    return fig, ax
 
 
 def validate_consistent_band_and_wavelengths(
@@ -425,8 +425,8 @@ def visualize_spatial_aggregated_attributes(
     if use_pyplot:
         plt.show()  # pragma: no cover
         return None  # pragma: no cover
-    else:
-        return fig, ax
+    
+    return fig, ax
 
 
 def visualize_spectral_aggregated_attributes(
@@ -499,8 +499,8 @@ def visualize_spectral_aggregated_attributes(
     if use_pyplot:
         plt.show()  # pragma: no cover
         return None  # pragma: no cover
-    else:
-        return fig, ax
+    
+    return fig, ax
 
 
 def visualize_aggregated_attributes(

@@ -34,8 +34,6 @@ class NoiseTunnel(Explainer):
                 f"The attribution method {self.chained_explainer.__class__.__name__} is not properly initialized"
             )
 
-        logger.debug("Applying Noise Tunnel on the image")
-
         noise_tunnel_attributes = self._attribution_method.attribute(
             hsi.get_image().unsqueeze(0),
             target=target,

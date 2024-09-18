@@ -19,9 +19,9 @@ class ToyModel(nn.Module):
         return torch.sum(F.relu(input)).unsqueeze(0)
 
 
-class ExplainableToyModel(ExplainableModel):
-    def __init__(self):
-        super().__init__(problem_type="regression", forward_func=ToyModel())
+@pytest.fixture
+def model():
+    return ExplainableModel(problem_type="regression", forward_func=ToyModel())
 
 
 def test_torch_random_choice():
@@ -84,9 +84,7 @@ def test_perturb_input():
         BaseHyperNoiseTunnel.perturb_input(input, torch.ones((5, 5)), n_samples=5)
 
 
-def test_attribute():
-    model = ExplainableToyModel()
-
+def test_attribute(model):
     ig = IntegratedGradients(model)
     hyper_noise_tunnel = HyperNoiseTunnel(ig)
 
@@ -136,11 +134,11 @@ def test_attribute():
     assert attributes.attributes.shape == (5, 5, 5)
 
 
-def test_base_hyper_noise_tunnel_class():
+def test_base_hyper_noise_tunnel_class(model):
     tensor_image = torch.rand((5, 5, 5))
     baselines = torch.zeros((1, 5, 5, 5))
 
-    ig = IntegratedGradients(ExplainableToyModel())
+    ig = IntegratedGradients(model)
     base_hyper_noise_tunnel = BaseHyperNoiseTunnel(ig._attribution_method)
 
     tensor_attributes = base_hyper_noise_tunnel.attribute(tensor_image, baselines=baselines, n_samples=1)

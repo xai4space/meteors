@@ -16,13 +16,12 @@ class ToyModel(nn.Module):
         return torch.sum(F.relu(input)).unsqueeze(0)
 
 
-class ExplainableToyModel(ExplainableModel):
-    def __init__(self):
-        super().__init__(problem_type="regression", forward_func=ToyModel())
+@pytest.fixture
+def toy_model():
+    return ExplainableModel(problem_type="regression", forward_func=ToyModel())
 
 
-def test_integrated_gradients():
-    toy_model = ExplainableToyModel()
+def test_integrated_gradients(explainable_toy_model):
     ig = IntegratedGradients(toy_model)
 
     assert ig is not None
@@ -38,8 +37,7 @@ def test_integrated_gradients():
     assert attributions.approximation_error is not None
 
 
-def test_saliency():
-    toy_model = ExplainableToyModel()
+def test_saliency(explainable_toy_model):
     saliency = Saliency(toy_model)
 
     assert saliency is not None
@@ -52,8 +50,7 @@ def test_saliency():
     assert not saliency.multiplies_by_inputs
 
 
-def test_input_x_gradient():
-    toy_model = ExplainableToyModel()
+def test_input_x_gradient(explainable_toy_model):
     input_x_gradient = InputXGradient(toy_model)
 
     assert input_x_gradient is not None
@@ -65,8 +62,7 @@ def test_input_x_gradient():
     assert not input_x_gradient.has_convergence_delta()
 
 
-def test_noise_tunnel():
-    toy_model = ExplainableToyModel()
+def test_noise_tunnel(explainable_toy_model):
     input_x_gradient = InputXGradient(toy_model)
     noise_tunnel = NoiseTunnel(input_x_gradient)
 
@@ -87,8 +83,7 @@ def test_noise_tunnel():
         NoiseTunnel(noise_tunnel)
 
 
-def test_occlusion():
-    toy_model = ExplainableToyModel()
+def test_occlusion(explainable_toy_model):
     occlusion = Occlusion(toy_model)
     assert occlusion is not None
 

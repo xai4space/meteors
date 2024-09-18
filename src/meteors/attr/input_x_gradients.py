@@ -24,8 +24,6 @@ class InputXGradient(Explainer):
         if self._attribution_method is None:
             raise ValueError("InputXGradient explainer is not initialized")
 
-        logger.debug("Applying InputXGradient on the image")
-
         gradient_attribution = self._attribution_method.attribute(
             hsi.get_image().unsqueeze(0), target=target, additional_forward_args=additional_forward_args
         )

@@ -1,5 +1,6 @@
 import torch
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 
 from meteors import HSI
 from meteors.attr import HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
@@ -93,7 +94,7 @@ def test_visualize_hsi_with_hsi_object():
     ax = visualize.visualize_hsi(hsi, None)
 
     # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
 
 def test_visualize_hsi_with_hsi_attributes_object():
@@ -106,7 +107,7 @@ def test_visualize_hsi_with_hsi_attributes_object():
     ax = visualize.visualize_hsi(hsi_attributes, None)
 
     # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
     # Create an HSISpatialAttributes object
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
@@ -117,7 +118,7 @@ def test_visualize_hsi_with_hsi_attributes_object():
     ax = visualize.visualize_hsi(hsi_attributes_spatial, None)
 
     # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
     # Create an HSISpectralAttributes object
     band_names = {"R": 0, "G": 1, "B": 2}
@@ -132,7 +133,7 @@ def test_visualize_hsi_with_hsi_attributes_object():
     ax = visualize.visualize_hsi(hsi_attributes_spectral, None)
 
     # Check if the axes object is returned
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
 
 def test_visualize_hsi_with_hsi_object_and_ax():
@@ -186,6 +187,3 @@ def test_visualize_hsi_with_hsi_attributes_object_and_ax():
 
     # Check if the same axes object is returned
     assert returned_ax is ax
-
-
-test_visualize_hsi_with_hsi_attributes_object_and_ax()

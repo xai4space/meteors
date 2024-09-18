@@ -501,13 +501,13 @@ def test_visualize_spectral_attributes_by_magnitude():
     ax = visualize.visualize_spectral_attributes_by_magnitude(spectral_attributes, ax, color_palette=custom_palette)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
     # Test annotate_bars False
     ax = visualize.visualize_spectral_attributes_by_magnitude(spectral_attributes, ax, annotate_bars=False)
 
     # Assert the output
-    assert isinstance(ax, plt.Axes)
+    assert isinstance(ax, Axes)
 
     # Test show_not_included True
     with_not_included_band_names = {"not_included": 0, "R": 1, "G": 2, "B": 3}

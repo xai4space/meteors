@@ -390,6 +390,8 @@ def test_lime_explainer():
     assert lime.explainable_model == explainable_model
     assert lime.interpretable_model == interpretable_model
     assert lime._attribution_method is not None
+    with pytest.raises(NotImplementedError):
+        lime.attribute(image=HSI(image=torch.randn(3, 240, 240), wavelengths=wavelengths), target=0)
 
     # Test case 1: Valid input
     def dumb_model(image: torch.Tensor) -> torch.Tensor:

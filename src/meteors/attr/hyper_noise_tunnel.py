@@ -1,22 +1,18 @@
 from __future__ import annotations
+from typing import Any, Union, Literal
 
 from functools import partial
 import inspect
 
-from typing import Any, Union, Literal
+from loguru import logger
+import torch
+from torch import Tensor
+from captum.attr._utils.attribution import GradientAttribution
+from captum.attr import Attribution
 
 from meteors.attr import Explainer, HSIAttributes
 from meteors.attr.explainer import validate_and_transform_baseline
 from meteors import HSI
-
-import torch
-from torch import Tensor
-
-from captum.attr._utils.attribution import GradientAttribution
-from captum.attr import Attribution
-
-
-from loguru import logger
 
 
 def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | str | None = None) -> torch.Tensor:
@@ -67,9 +63,6 @@ class BaseHyperNoiseTunnel(Attribution):
         Returns:
             torch.Tensor: A perturbed tensor, which contains `n_samples` perturbed inputs.
         """
-        if input.dim() != 3 and input.dim() != 4:
-            raise ValueError("Input must be in the format (C, H, W) or (N, C, H, W)")
-
         # validate the baseline against the input
         if baseline.shape != input.shape:
             raise ValueError(f"Baseline shape {baseline.shape} does not match input shape {input.shape}")

@@ -1,11 +1,14 @@
 import pytest
+
 import torch
+import numpy as np
+import torch.nn as nn
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 
 import meteors as mt
 from meteors.utils.models import ExplainableModel
-import torch.nn as nn
-import numpy as np
+
 
 # Temporary solution for wavelengths
 wavelengths_main = [
@@ -95,42 +98,65 @@ class ToyModel(nn.Module):
         return torch.mean(input - 0.9).unsqueeze(0)
 
 
-class ExplainableToyModel(ExplainableModel):
-    def __init__(self):
-        super().__init__(problem_type="regression", forward_func=ToyModel())
+@pytest.fixture
+def ig_model():
+    model = ExplainableModel(forward_func=ToyModel(), problem_type="regression")
+    ig = mt.attr.IntegratedGradients(model)
+    return ig
 
-
-def test_visualize_ig_attributes():
+def test_visualize_ig_attributes(ig_model):
     tensor_image = torch.rand((len(wavelengths_main), 240, 230))
-    tensor_image
+
     tensor_image[20:30, 20:30, 20:30] = 1000
-
     tensor_image[0:10, 0:10, 0:10] = -500
-
     tensor_image[50, 50:100, 40:60] = 500
 
     image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main)
 
-    toy_model = ExplainableToyModel()
-    ig = mt.attr.IntegratedGradients(toy_model)
-    image_attributes = ig.attribute(image)
+    image_attributes = ig_model.attribute(image)
 
     fig, ax = mt.visualize.visualize_attributes(image_attributes)
 
     assert isinstance(fig, plt.Figure)
     assert isinstance(ax, np.ndarray)
     assert ax.shape == (2, 3)
+    assert all([isinstance(a, Axes) for a in ax.ravel()])
+    assert fig.texts[0].get_text() == f"HSI Attributes of: IntegratedGradients"
+    assert ax[0,0].get_title() == "Attribution Heatmap"
+    assert ax[0,1].get_title() == "Attribution Module Values"
+    assert ax[0,2].get_title() == "Attribution Sign Values"
+    assert ax[1,0].get_title() == "Spectral Attribution"
+    assert ax[1,0].get_xlabel() == "Wavelength"
+    assert ax[1,0].get_ylabel() == "Attribution"
+    assert ax[1,1].get_title() == "Spectral Attribution Absolute Values"
+    assert ax[1,1].get_xlabel() == "Wavelength"
+    assert ax[1,1].get_ylabel() == "Attribution Absolute Value"
+    assert ax[1,2].get_title() == "Spectral Attribution Sign Values"
+    assert ax[1,2].get_xlabel() == "Wavelength"
+    assert ax[1,2].get_ylabel() == "Attribution Sign Proportion"
+    assert ax[1,2].get_yticks().tolist() == [-1, 0, 1]
 
     # Cleanup
     plt.close(fig)
 
 
-def test_validaton_checks():
+def test_validation_checks(ig_model):
     tensor_image = torch.rand((5, 5, len(wavelengths_main)))
     image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main, orientation=("H", "W", "C"))
-    toy_model = ExplainableToyModel()
-    ig = mt.attr.IntegratedGradients(toy_model)
-    image_attributes = ig.attribute(image)
+    image_attributes = ig_model.attribute(image)
 
     with pytest.raises(ValueError):
-        fig, ax = mt.visualize.visualize_attributes(image_attributes)
+        mt.visualize.visualize_attributes(image_attributes)
+
+
+def test_empty_attributions(ig_model):
+    tensor_image = torch.rand((len(wavelengths_main), 240, 240))
+    image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main)
+
+    image_attributes = ig_model.attribute(image)
+
+    image_attributes.attributes = torch.zeros_like(image_attributes.attributes)
+
+    response = mt.visualize.visualize_attributes(image_attributes)
+
+    assert response is None

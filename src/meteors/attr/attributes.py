@@ -4,18 +4,14 @@ from typing_extensions import Annotated, Self
 import warnings
 from loguru import logger
 
-
 import torch
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field, model_validator, ValidationInfo
-from pydantic.functional_validators import BeforeValidator
-
+from pydantic import BaseModel, ConfigDict, Field, model_validator, ValidationInfo, AfterValidator, BeforeValidator
 
 from meteors import HSI
 
 
 # Constants
-HSI_AXIS_ORDER = [2, 1, 0]  # (bands, rows, columns)
 AVAILABLE_ATTRIBUTION_METHODS = [
     "Lime",
     "Integrated Gradients",
@@ -122,19 +118,17 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
 
     Returns:
         dict[str, int]: The updated band_names dictionary, potentially including a
-                        'not_included' category if 0 is present in the mask but not in
+                        'not_included' category if some id is present in the mask but not in
                         the original band_names.
 
     Raises:
-        ValueError: If the set of values in band_names doesn't match the unique values
-                    in the band_mask after accounting for the 'not_included' category.
+        ValueError: If the band_names dictionary contains a 'not_included' category and some
+                    unique values in the mask are not present in the band_names.
 
     Warns:
         UserWarning: If a 'not_included' category (0) is added to the band_names.
 
     Notes:
-        - The function assumes that 0 in the mask represents 'not_included' areas if
-          not explicitly defined in the input band_names.
         - All unique values in the mask must be present in the band_names dictionary
           after the alignment process.
     """
@@ -142,32 +136,45 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
     band_name_values = set(band_names.values())
 
     # Check if 0 is in the mask but not in band_names
-    if 0 in unique_mask_values and 0 not in band_name_values:
-        warnings.warn(
-            "Band mask contains `0` values which are not covered by the provided band names. "
-            "Adding 'not_included' to band names."
-        )
-        if "not_included" in band_names:
-            raise ValueError(
-                "Band names should not contain 'not_included' if 0 is present in the mask and not in band names"
-            )
-        band_names["not_included"] = 0
-        band_name_values.add(0)
+    for value in unique_mask_values:
+        if value not in band_name_values:
+            if "not_included" in band_names:
+                raise ValueError(
+                    "Band names should not contain 'not_included' if some unique ids are present in the mask and not in band names"
+                )
+            else:
+                warnings.warn(
+                    f"Adding 'not_included' to band names because {value} ids is present in the mask and not in band names"
+                )
+                band_names["not_included"] = value
 
     # Validate that all mask values are in band_names
-    if unique_mask_values != band_name_values:
-        raise ValueError("Band names should have all unique values in mask")
-
+    new_band_names_values = set(band_names.values())
+    if unique_mask_values != new_band_names_values:
+        for value in new_band_names_values:
+            if value not in unique_mask_values:
+                warnings.warn(f"Band name {value} is not present in the mask, it will be removed")
+                band_names = {k: v for k, v in band_names.items() if v != value}
     return band_names
 
 
 def validate_attribution_method(value: str | None) -> str | None:
+    """
+    Validates the attribution method. 
+
+    Args:
+        value (str | None): The attribution method to be validated.
+
+    Returns:
+        str | None: The validated attribution method.
+
+    """
     if value is None:
         return value
     value = value.title()
     if value not in AVAILABLE_ATTRIBUTION_METHODS:
         logger.warning(
-            "Unknown attribution method: {value}. The core implemented methods are {AVAILABLE_ATTRIBUTION_METHODS}"
+           f"Unknown attribution method: {value}. The core implemented methods are {AVAILABLE_ATTRIBUTION_METHODS}"
         )
     return value
 
@@ -224,11 +231,9 @@ class HSIAttributes(BaseModel):
     Attributes:
         hsi (HSI): Hyperspectral image object for which the explanations were created.
         attributes (torch.Tensor): Attributions (explanations) for the hsi.
-        score (float): R^2 score of interpretable model used for the explanation. Used only for LIME attributes
-        approximation_error (float): Approximation error of the explanation. Used only for IG attributes
+        score (float): The score provided by the interpretable model. Can be None if method don't provide one.
         device (torch.device): Device to be used for inference. If None, the device of the input hsi will be used.
             Defaults to None.
-        model_config (ConfigDict): Configuration dictionary for the model.
         attribution_method (str | None): The method used to generate the explanation. Defaults to None.
     """
 
@@ -247,7 +252,7 @@ class HSIAttributes(BaseModel):
     ]
     attribution_method: Annotated[
         str | None,
-        BeforeValidator(validate_attribution_method),
+        AfterValidator(validate_attribution_method),
         Field(
             description="The method used to generate the explanation.",
         ),
@@ -256,16 +261,7 @@ class HSIAttributes(BaseModel):
         float | None,
         Field(
             validate_default=True,
-            le=1.0,
-            ge=-1.0,
-            description="R^2 score of interpretable model used for the explanation. Used only for LIME attributes",
-        ),
-    ] = None
-    approximation_error: Annotated[
-        float | None,
-        Field(
-            description="Approximation error of the explanation. Also known as convergence delta. Used only for IG attributes",
-        ),
+            description="The score provided by the interpretable model. Can be None if method don't provide one."),
     ] = None
     mask: Annotated[
         torch.Tensor | None,
@@ -337,25 +333,6 @@ class HSIAttributes(BaseModel):
         self._validate_hsi_attributions_and_mask()
         return self
 
-    @model_validator(mode="after")
-    def validate_score_and_error(self) -> Self:
-        """Validates the score and error attributes.
-
-        This method validates the score and error attributes based on the attribution method.
-
-        Returns:
-            Self: The current instance of the class.
-        """
-        if (self.attribution_method is None or self.attribution_method.title() != "Lime") and self.score is not None:
-            logger.warning("Score should not be provided for non-LIME attributes")
-        if self.attribution_method is not None and self.attribution_method.title() == "Lime" and self.score is None:
-            raise ValueError("Score must be provided for LIME attributes")
-        if (
-            self.attribution_method is None or self.attribution_method.title() != "Integrated Gradients"
-        ) and self.approximation_error is not None:
-            logger.warning("Approximation error should not be provided for non-IG attributes")
-        return self
-
     def to(self, device: str | torch.device) -> Self:
         """Move the hsi and attributes tensors to the specified device.
 
@@ -424,45 +401,21 @@ class HSISpatialAttributes(HSIAttributes):
     Attributes:
         hsi (HSI): Hyperspectral image object for which the explanations were created.
         attributes (torch.Tensor): Attributions (explanations) for the hsi.
-        score (float): R^2 score of interpretable model used for the explanation.
+        score (float): The score provided by the interpretable model. Can be None if method don't provide one.
         device (torch.device): Device to be used for inference. If None, the device of the input hsi will be used.
             Defaults to None.
-        model_config (ConfigDict): Configuration dictionary for the model.
-        segmentation_mask (torch.Tensor): Spatial (Segmentation) mask used for the explanation.
         attribution_method (str | None): The method used to generate the explanation. Defaults to None.
+        segmentation_mask (torch.Tensor): Spatial (Segmentation) mask used for the explanation.
+        flattened_attributes (torch.Tensor): Spatial 2D attribution map.
     """
-
     @property
     def segmentation_mask(self) -> torch.Tensor:
-        """Returns the 3D spatial segmentation mask that has the same size as the hsi image.
+        """Returns the 2D spatial segmentation mask that has the same size as the hsi image.
 
         Returns:
             torch.Tensor: The segmentation mask tensor.
-        Raises:
-            ValueError: If the segmentation mask is not provided in the attributes.
         """
-        if self.mask is None:
-            raise ValueError("Segmentation mask is not provided")
-        return self.mask
-
-    @property
-    def flattened_segmentation_mask(self) -> torch.Tensor:
-        """Returns the flattened segmentation mask as a flattened 2D tensor, with removed repeated dimensions.
-
-        This method selects the segmentation mask along the specified dimension (spectral axis)
-        and returns the first index.
-
-        Returns:
-            torch.Tensor: The spatial segmentation mask.
-
-        Examples:
-            >>> segmentation_mask = torch.zeros((3, 2, 2))
-            >>> attrs = HSISpatialAttributes(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
-            >>> attrs.segmentation_mask
-            tensor([[0., 0.],
-                    [0., 0.]])
-        """
-        return self.segmentation_mask.select(dim=self.hsi.spectral_axis, index=0)
+        return self.mask.select(dim=self.hsi.spectral_axis, index=0)
 
     @property
     def flattened_attributes(self) -> torch.Tensor:
@@ -479,6 +432,17 @@ class HSISpatialAttributes(HSIAttributes):
                     [0., 0.]])
         """
         return self.attributes.select(dim=self.hsi.spectral_axis, index=0)
+    
+    def _validate_hsi_attributions_and_mask(self) -> None:
+        """Validates the hsi attributions and performs necessary operations to ensure compatibility with the device.
+
+        Raises:
+            ValueError: If the shapes of the attributes and hsi tensors do not match.
+            ValueError: If the segmentation mask is not provided.
+        """
+        super()._validate_hsi_attributions_and_mask()
+        if self.mask is None:
+            raise ValueError("Segmentation mask is not provided")
 
 
 class HSISpectralAttributes(HSIAttributes):
@@ -490,10 +454,10 @@ class HSISpectralAttributes(HSIAttributes):
         score (float): R^2 score of interpretable model used for the explanation.
         device (torch.device): Device to be used for inference. If None, the device of the input hsi will be used.
             Defaults to None.
-        model_config (ConfigDict): Configuration dictionary for the model.
+        attribution_method (str | None): The method used to generate the explanation. Defaults to None.
         band_mask (torch.Tensor): Band mask used for the explanation.
         band_names (dict[str, int]): Dictionary that translates the band names into the band segment ids.
-        attribution_method (str | None): The method used to generate the explanation. Defaults to None.
+        flattened_attributes (torch.Tensor): Spectral 1D attribution map.
     """
 
     band_names: Annotated[
@@ -504,10 +468,10 @@ class HSISpectralAttributes(HSIAttributes):
     ]
 
     @property
-    def flattened_band_mask(self) -> torch.Tensor:
-        """Returns a flattened band mask - a band mask with removed repeated dimensions
-        The flattened_band_mask is a 1D tensor of shape (num_bands, ), where num_bands is the number of bands in the hsi image.
-
+    def band_mask(self) -> torch.Tensor:
+        """Returns a 1D band mask - a band mask with removed repeated dimensions (num_bands, ), 
+        where num_bands is the number of bands in the hsi image.
+        
         The method selects the appropriate dimensions from the `band_mask` tensor
         based on the `axis_to_select` and returns a flattened version of the selected
         tensor.
@@ -521,23 +485,10 @@ class HSISpectralAttributes(HSIAttributes):
             >>> attrs.flattened_band_mask
             torch.tensor([0, 1, 2])
         """
-        axis_to_select = HSI_AXIS_ORDER.copy()
-        axis_to_select.remove(self.hsi.spectral_axis)
-        return self.band_mask.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1], index=0)
-
-    @property
-    def band_mask(self) -> torch.Tensor:
-        """Returns a band mask that has the full size - the same size as the hsi image.
-
-        Returns:
-            torch.Tensor: The band mask tensor.
-        Raises:
-            ValueError: If the band mask is not provided in the attributes.
-
-        """
         if self.mask is None:
             raise ValueError("Band mask is not provided")
-        return self.mask
+        axis_to_select = [i for i in range(self.hsi.ndim) if i != self.hsi.spectral_axis]
+        return self.band_mask.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1]-1, index=0)
 
     @property
     def flattened_attributes(self) -> torch.Tensor:
@@ -548,6 +499,18 @@ class HSISpectralAttributes(HSIAttributes):
         Returns:
             torch.Tensor: A flattened tensor of attributes.
         """
-        axis = list(range(self.attributes.ndim))
-        axis.remove(self.hsi.spectral_axis)
+        axis = [i for i in range(self.attributes.ndim) if i != self.hsi.spectral_axis]
         return self.attributes.select(dim=axis[0], index=0).select(dim=axis[1] - 1, index=0)
+    
+    def _validate_hsi_attributions_and_mask(self) -> None:
+        """Validates the hsi attributions and performs necessary operations to ensure compatibility with the device.
+
+        Raises:
+            ValueError: If the shapes of the attributes and hsi tensors do not match.
+            ValueError: If the band mask is not provided.
+        """
+        super()._validate_hsi_attributions_and_mask()
+        if self.mask is None:
+            raise ValueError("Band mask is not provided")
+        
+        self.band_names = align_band_names_with_mask(self.band_names, self.mask)

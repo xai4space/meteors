@@ -35,8 +35,6 @@ class IntegratedGradients(Explainer):
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
-        logger.debug("Applying IntegratedGradients on the image")
-
         ig_attributions = self._attribution_method.attribute(
             hsi.get_image().unsqueeze(0),
             baselines=baseline.unsqueeze(0),
@@ -58,7 +56,7 @@ class IntegratedGradients(Explainer):
         attributes = HSIAttributes(
             hsi=hsi,
             attributes=attributions.squeeze(0),
-            approximation_error=approximation_error,
+            score=approximation_error,
             attribution_method=self.get_name(),
         )
 

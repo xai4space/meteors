@@ -15,7 +15,7 @@
       - [HyperSpectral Image](#hyperspectral-image)
 
 The architecture of the package can be seen on the UML diagram:
-![UML diagram of package structure](./img/UML-attribution-methods.png)
+![UML diagram of package structure](../assets/UML-attribution-methods.png)
 
 ### Attribution Methods
 

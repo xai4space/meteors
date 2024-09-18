@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -21,19 +22,23 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
     Returns:
         matplotlib.figure.Figure | None:
             If use_pyplot is False, returns the figure and axes objects.
-            If use_pyplot is True, returns None.
+            If use_pyplot is True, returns None .
+            If all the attributions are zero, returns None.
     """
 
     if image_attributes.hsi.orientation != ("C", "H", "W"):
         raise ValueError(f"HSI orientation {image_attributes.hsi.orientation} is not supported yet")
 
-    # naive rotation of image_attributes to satisfy the viz module from captum
-
-    rotated_attributes = image_attributes.attributes.detach().cpu().permute(1, 2, 0).numpy()
+    rotated_attributes = image_attributes.change_orientation("HWC", inplace=False)
+    rotated_attributes = rotated_attributes.attributes.detach().cpu().numpy()
+    if np.all(rotated_attributes == 0):
+        warnings.warn("All the attributions are zero. There is nothing to visualize.")
+        return None
 
     fig, ax = plt.subplots(2, 3, figsize=(15, 5))
     ax[0, 0].set_title("Attribution Heatmap")
     ax[0, 0].grid(False)
+    ax[0, 0].axis("off")
 
     fig.suptitle(f"HSI Attributes of: {image_attributes.attribution_method}")
 
@@ -48,6 +53,8 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
 
     ax[0, 1].set_title("Attribution Module Values")
     ax[0, 1].grid(False)
+    ax[0, 1].axis("off")
+    
     # Attributions module values
     _ = viz.visualize_image_attr(
         rotated_attributes,
@@ -91,6 +98,7 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
     plt.tight_layout()
 
     if use_pyplot:
-        plt.show()
-        return None
+        plt.show() # pragma: no cover
+        return None # pragma: no cover
+    
     return fig, ax

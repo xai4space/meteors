@@ -5,8 +5,7 @@ import warnings
 import torch
 import numpy as np
 from loguru import logger
-from pydantic import BaseModel, ConfigDict, ValidationInfo, Field, model_validator
-from pydantic.functional_validators import PlainValidator
+from pydantic import BaseModel, ConfigDict, ValidationInfo, Field, model_validator, PlainValidator
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=FutureWarning)

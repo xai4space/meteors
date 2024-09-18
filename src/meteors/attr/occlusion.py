@@ -32,8 +32,6 @@ class Occlusion(Explainer):
         if self._attribution_method is None:
             raise ValueError("Occlusion explainer is not initialized")
 
-        logger.debug("Applying Occlusion on the image")
-
         baseline = validate_and_transform_baseline(baseline, hsi)
 
         occlusion_attributions = self._attribution_method.attribute(

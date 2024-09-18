@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-
-from typing_extensions import Self, Callable, Type
+from typing_extensions import Self, Callable, Type, Any
 from abc import ABC
 from loguru import logger
 from functools import cached_property
@@ -13,9 +12,20 @@ import torch
 
 from meteors.utils.models import ExplainableModel
 from meteors import HSI
+from meteors.attr import HSIAttributes
 
 
-def validate_attribution_method_initialization(attribution_method: Explainer):
+def validate_attribution_method_initialization(attribution_method: Explainer) -> None:
+    """
+    Validates the initialization of an attribution method.
+
+    Args:
+        attribution_method (Explainer): The attribution method to be validated.
+
+    Raises:
+        ValueError: If the attribution method is not initialized.
+        AttributeError: If the attribution method is not initialized properly.
+    """
     if attribution_method is None:
         raise ValueError("Attribution method is not initialized")
     if not isinstance(attribution_method.explainable_model, ExplainableModel):
@@ -26,7 +36,6 @@ def validate_attribution_method_initialization(attribution_method: Explainer):
         raise ValueError(f"The attribution method {attribution_method.__class__.__name__} is not properly initialized")
 
 
-# @lru_cache(maxsize=32)
 def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None, hsi: HSI) -> torch.Tensor:
     """Function validates the baseline and transforms it to the same device as the hsi tensor.
 
@@ -61,11 +70,15 @@ def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None,
 class Explainer(ABC):
     """Explainer class for explaining models.
 
-    Args:
-        callable (ExplainableModel | Explainer): The explainable model to be explained, or another explainer - used for chaining explainers such as NoiseTunnel.
+    Attributes:
+        explainable_model (ExplainableModel | Explainer): The explainable model to be explained.
+        forward_func (Callable): The forward function of the explainable model.
+        chained_explainer (Explainer | None): The chained explainer. Defaults to None.
     """
+    attribute: Callable[[HSI, int | None], HSIAttributes]
 
-    def __init__(self, callable: ExplainableModel | Explainer):
+
+    def __init__(self, callable: ExplainableModel | Explainer) -> None:
         if not isinstance(callable, ExplainableModel) and not isinstance(callable, Explainer):
             raise TypeError(f"Expected ExplainableModel or Explainer as callable, but got {type(callable)}")
         self.chained_explainer = None
@@ -83,27 +96,32 @@ class Explainer(ABC):
                 raise ValueError("Cannot chain Explainer with another Explainer. The maximum depth of chaining is 1")
             self.chained_explainer = callable
             self.explainable_model: ExplainableModel = callable.explainable_model
-            logger.debug(
+            logger.info(
                 f"Initializing {self.__class__.__name__} explainer on model {callable.explainable_model} chained with {callable.__class__.__name__}"
             )
         else:
             self.explainable_model = callable
-            logger.debug(f"Initializing {self.__class__.__name__} explainer on model {callable}")
+            logger.info(f"Initializing {self.__class__.__name__} explainer on model {callable}")
 
         self.forward_func = self.explainable_model.forward_func
 
-    attribute: Callable
-    """Default method to attribute the input to the model.
+    def attribute(self, hsi: HSI, target: int | None = None, *args: Any, **kwargs: Any) -> HSIAttributes:
+        """
+        Compute the attribute method of the explainer for the given hyperspectral image.
 
-    Args:
-        hsi (HSI): The input hsi to be explained.
-        target (int | None, optional): The target class index to be explained. Defaults to None.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+        Parameters:
+        - hsi (HSI): The hyperspectral image to compute attributes for.
+        - target (int | None): The target class index for attribute computation. If None, attributes will be computed for all classes.
+        - *args (Any): Additional positional arguments.
+        - **kwargs (Any): Additional keyword arguments.
 
-    Returns:
-        HSIAttributes: The hsi attributes.
-    """
+        Returns:
+        - HSIAttributes: The computed attributes of the HSI.
+
+        Raises:
+        - NotImplementedError: If the attribute method is not implemented in the explainer base class.
+        """
+        raise NotImplementedError("Attribute method not implemented in the explainer base class")
 
     def has_convergence_delta(self) -> bool:
         """Check if the explainer has a convergence delta.
