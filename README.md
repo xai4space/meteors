@@ -63,6 +63,8 @@ rye test
 rye run pre-commit run --all-files
 ```
 
+For more information on how to contribute, please refer to our [Contributing Guide](https://xai4space.github.io/meteors/latest/how-to-guides/).
+
 Thank you for considering contributing to Meteors!
 
 ## 💫 Contributors
