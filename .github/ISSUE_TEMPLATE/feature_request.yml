@@ -1,60 +1,33 @@
 name: "💡 Feature Request"
-description: Create a new ticket for a new feature request
-title: "feat: <Please write a comprehensive title after the 'feature: ' prefix>"
+description: Create a new ticket for a feature request
+title: "feat: <Please provide a clear and concise title>"
 body:
-  - type: input
-    id: start_date
-    attributes:
-      label: "Start Date"
-      description: Start of development
-      placeholder: "month/day/year"
-    validations:
-      required: false
   - type: textarea
-    id: implementation_pr
+    id: description
     attributes:
-      label: "Implementation PR"
-      description: Pull request used
-      placeholder: "#Pull Request ID"
+      label: "Feature Description"
+      description: Provide a clear and concise description of the feature you're requesting.
     validations:
-      required: false
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: "Use Case"
+      description: Describe the use case or problem this feature would solve.
+    validations:
+      required: true
   - type: textarea
     id: reference_issues
     attributes:
       label: "Reference Issues"
-      description: Common issues
+      description: If there are any related issues, reference them here (e.g., "Closes #123", "Relates to #456").
       placeholder: "#Issues IDs"
     validations:
       required: false
   - type: textarea
-    id: summary
+    id: additional_context
     attributes:
-      label: "Summary"
-      description: Provide a brief explanation of the feature
-      placeholder: Describe in a few lines your feature request
-    validations:
-      required: true
-  - type: textarea
-    id: basic_example
-    attributes:
-      label: "Basic Example"
-      description: Indicate here some basic examples of your feature.
-      placeholder: A few specific words about your feature request.
-    validations:
-      required: true
-  - type: textarea
-    id: drawbacks
-    attributes:
-      label: "Drawbacks"
-      description: What are the drawbacks/impacts of your feature request ?
-      placeholder: Identify the drawbacks and impacts while being neutral on your feature request
-    validations:
-      required: false
-  - type: textarea
-    id: unresolved_question
-    attributes:
-      label: "Unresolved questions"
-      description: What questions still remain unresolved ?
-      placeholder: Identify any unresolved issues.
+      label: "Additional Context"
+      description: Add any other context, examples, or references that would help clarify the feature request.
     validations:
       required: false

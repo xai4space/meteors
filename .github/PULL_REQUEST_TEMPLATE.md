@@ -1,14 +1,14 @@
 # Contributing to Meteors
 
-Thank you for contributing to meteors! Please follow the guidelines below to ensure a smooth and efficient contribution process.
+Thank you for contributing to Meteors! Please follow the guidelines below to ensure a smooth and efficient contribution process.
 
 ## PR Checklist
 
 - [ ] **PR Title**: `"semantic tag: description"`
 
   - **Package**: Use the appropriate semantic tag for your PR:
-    - `feat`: A new feature.
     - `fix`: A bug fix.
+    - `feat`: A new feature.
     - `docs`: Documentation only changes.
     - `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc).
     - `refactor`: A code change that neither fixes a bug nor adds a feature.
@@ -18,24 +18,19 @@ Thank you for contributing to meteors! Please follow the guidelines below to ens
     - `build`: Changes that affect the build system or external dependencies.
   - **Example**: `"fix: typo in README.md"`
 
-- [ ] **Related Issue(s)**: If your PR fixes an issue, please link it in the PR description.
-
 - [ ] **PR Message**: **_Delete this entire checklist_** and replace it with:
 
   - **Description**: A detailed description of the change.
   - **Dependencies**: Any dependencies required for this change.
 
-- [ ] **Add Tests and Docs**: If adding a new features, please include:
+- [ ] **Add tests and docs**: If you're adding a new integration, please include
 
-  1. A test for the feature, preferably unit tests that do not rely on network access.
-  2. An example notebook showing its use, located in the `examples` directory.
+  1. a test for the integration, preferably unit tests that do not rely on network access,
+  2. an example notebook showing its use, located in the `examples` directory.
 
-- [ ] **Lint**: Ensure your code passes linting and all tests:
+- [ ] **Lint and test**: Run `rye run pre-commit run --all-files` and `rye test` to ensure your changes pass all checks. See [contribution guidelines](https://xai4space.github.io/meteors/latest/how-to-guides/) for more.
 
-  - Code is formatted with `pre-commit` hooks. Run `pre-commit install` and `pre-commit run --all-files` to format your code.
-
-- [ ] **Tests**: Ensure all tests pass:
-  - Run `pytest` in the root directory to run all tests.
+- [ ] **Related Issue(s)**: If your PR fixes an issue, please link it in the PR description.
 
 ## Additional Guidelines
 
