@@ -1,3 +1,5 @@
+# Changelog
+
 ## HyperXAI 0.0.1
 
 - Prepared a simple draft of package along with some ideas and sample files for implementation of LIME for hyperspectral images.
