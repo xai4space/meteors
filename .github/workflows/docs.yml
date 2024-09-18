@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: Checkout code 📂
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Setup Rye 🌾
         id: setup-rye
@@ -45,22 +43,27 @@ jobs:
       - name: Get Version from VERSION file 🏷️
         id: get_version
         run: |
-          VERSION=$(grep -m 1 'version = ' pyproject.toml | sed -E 's/.*version = "(.*)"/\1/')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo VERSION="$(rye version)" >> $GITHUB_OUTPUT
 
       - name: Convert Jupyter examples to Markdown 📓➡️📄
         run: |
-          mkdir -p docs/tutorials
+          output_dir="docs/tutorials/"
           if [ -d "examples" ]; then
-            if ls examples/*.ipynb 1> /dev/null 2>&1; then
-              for notebook in examples/*.ipynb; do
-                rye run jupyter nbconvert --to markdown "$notebook" --output-dir docs/tutorials
-              done
-            else
-              echo "No notebooks to convert."
-            fi
+            for dir in examples/*/; do
+              if [ -d "$dir" ]; then
+                dir_name=$(basename "$dir")
+                if ls "$dir"/*.ipynb 1> /dev/null 2>&1; then
+                  for notebook in "$dir"/*.ipynb; do
+                    rye run jupyter nbconvert --to markdown "$notebook" --output-dir "$output_dir" --output "$dir_name"
+                  done
+                else
+                  echo "No notebooks found in directory '$dir_name'."
+                fi
+              fi
+            done
           else
             echo "Directory 'examples' does not exist."
+            exit 1
           fi
 
       - name: Move Assets to Docs ➡️
