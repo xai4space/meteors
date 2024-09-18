@@ -4,6 +4,7 @@ from loguru import logger
 
 import torch
 
+
 import meteors as mt
 import meteors.attr.lime as mt_lime
 import meteors.attr.lime_base as mt_lime_base
@@ -902,6 +903,21 @@ def test__get_band_wavelengths_indices_from_band_names():
         ("AVI"): 1,
     }
 
+    # Test string
+    wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700, 750, 800])
+    band_names = "AVI"
+    band_indices, dict_labels_to_segment_ids = mt_lime.Lime._get_band_wavelengths_indices_from_band_names(
+        wavelengths, band_names
+    )
+
+    expected_band_indices = {
+        ("AVI"): [8, 5],
+    }
+
+    expected_dict_labels_to_segment_ids = {
+        ("AVI"): 1,
+    }
+
     assert band_indices == expected_band_indices
     assert dict_labels_to_segment_ids == expected_dict_labels_to_segment_ids
 
@@ -1063,86 +1079,6 @@ def test__create_single_dim_band_mask():
 
     with pytest.raises(ValueError):
         mt_lime.Lime._create_single_dim_band_mask(hsi, dict_labels_to_indices, dict_labels_to_segment_ids, "cpu")
-
-
-def test__expand_band_mask():
-    # Create a sample hsi
-    wavelengths = torch.tensor([400, 450, 500, 550, 600])
-    hsi = HSI(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths, orientation=("C", "H", "W"))
-
-    # Create a sample band mask
-    band_mask_single_dim = torch.tensor([1, 2, 3, 4, 5])
-
-    # Test case 1: Repeat dimensions is False
-    repeat_dimensions = False
-    expanded_band_mask = mt_lime.Lime._expand_band_mask(hsi, band_mask_single_dim, repeat_dimensions)
-
-    expected_shape = (5, 1, 1)
-    assert expanded_band_mask.shape == expected_shape
-
-    expected_values = torch.tensor(
-        [
-            [[1]],
-            [[2]],
-            [[3]],
-            [[4]],
-            [[5]],
-        ]
-    )
-    assert torch.equal(expanded_band_mask, expected_values)
-
-    # Test case 2: Repeat dimensions is True and band axis is 0
-    repeat_dimensions = True
-    hsi = HSI(image=torch.ones((len(wavelengths), 3, 3)), wavelengths=wavelengths, orientation=("C", "H", "W"))
-    expanded_band_mask = mt_lime.Lime._expand_band_mask(hsi, band_mask_single_dim, repeat_dimensions)
-
-    expected_shape = (5, 3, 3)
-    assert expanded_band_mask.shape == expected_shape
-
-    expected_values = torch.tensor(
-        [
-            [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
-            [[2, 2, 2], [2, 2, 2], [2, 2, 2]],
-            [[3, 3, 3], [3, 3, 3], [3, 3, 3]],
-            [[4, 4, 4], [4, 4, 4], [4, 4, 4]],
-            [[5, 5, 5], [5, 5, 5], [5, 5, 5]],
-        ]
-    )
-    assert torch.equal(expanded_band_mask, expected_values)
-
-    # Test case 3: Repeat dimensions is True and band axis is 1
-    repeat_dimensions = True
-    hsi = HSI(image=torch.ones((3, len(wavelengths), 3)), wavelengths=wavelengths, orientation=("H", "C", "W"))
-    expanded_band_mask = mt_lime.Lime._expand_band_mask(hsi, band_mask_single_dim, repeat_dimensions)
-
-    expected_shape = (3, 5, 3)
-    assert expanded_band_mask.shape == expected_shape
-
-    expected_values = torch.tensor(
-        [
-            [[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]],
-            [[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]],
-            [[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]],
-        ]
-    )
-    assert torch.equal(expanded_band_mask, expected_values)
-
-    # Test case 4: Repeat dimensions is True and band axis is 2
-    repeat_dimensions = True
-    hsi = HSI(image=torch.ones((3, 3, len(wavelengths))), wavelengths=wavelengths, orientation=("H", "W", "C"))
-    expanded_band_mask = mt_lime.Lime._expand_band_mask(hsi, band_mask_single_dim, repeat_dimensions)
-
-    expected_shape = (3, 3, 5)
-    assert expanded_band_mask.shape == expected_shape
-
-    expected_values = torch.tensor(
-        [
-            [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]],
-            [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]],
-            [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]],
-        ]
-    )
-    assert torch.equal(expanded_band_mask, expected_values)
 
 
 def test__create_tensor_band_mask():

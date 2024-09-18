@@ -8,6 +8,11 @@ from .lime_visualize import (
 from .hsi_visualize import visualize_hsi
 
 from .attr_visualize import visualize_attributes
+from .lime_visualize import (
+    visualize_spatial_aggregated_attributes,
+    visualize_spectral_aggregated_attributes,
+    visualize_aggregated_attributes,
+)
 
 
 __all__ = [
@@ -17,4 +22,7 @@ __all__ = [
     "visualize_spatial_attributes",
     "visualize_hsi",
     "visualize_attributes",
+    "visualize_spatial_aggregated_attributes",
+    "visualize_spectral_aggregated_attributes",
+    "visualize_aggregated_attributes",
 ]
