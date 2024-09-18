@@ -1058,7 +1058,7 @@ class Lime(Explainer):
                     f"Invalid band name {band_name}, band name must be either in `spyndex.indices` or `spyndex.bands`"
                 )
 
-        return tuple(set(band_names_segment)) if len(band_names_segment) > 1 else band_names_segment[0]
+        return tuple(set(band_names_segment))  # if len(band_names_segment) > 1 else band_names_segment[0]
 
     @staticmethod
     def _get_indices_from_wavelength_indices_range(
@@ -1123,9 +1123,25 @@ class Lime(Explainer):
             try:
                 segment_indices_ranges: list[tuple[int, int]] = []
                 for band_name in segment:
-                    segment_indices_ranges += Lime._convert_wavelengths_to_indices(
-                        wavelengths, (spyndex.bands[band_name].min_wavelength, spyndex.bands[band_name].max_wavelength)
-                    )
+                    if band_name not in spyndex.bands:
+                        raise ValueError(
+                            f"Band name {band_name} is not present in spyndex.bands. Check the appropriate band names with the spyndex library or in Awesome Spectral Indices list."
+                        )
+
+                    min_wavelength = spyndex.bands[band_name].min_wavelength
+                    max_wavelength = spyndex.bands[band_name].max_wavelength
+
+                    if min_wavelength > wavelengths.max() or max_wavelength < wavelengths.min():
+                        logger.warning(
+                            f"Band {band_name} is not present in the given wavelengths. "
+                            f"Band ranges from {min_wavelength} nm to {max_wavelength} nm and the HSI wavelengths "
+                            f"range from {wavelengths.min():.2f} nm to {wavelengths.max():.2f} nm. The given band will be skipped"
+                        )
+                    else:
+                        segment_indices_ranges += Lime._convert_wavelengths_to_indices(
+                            wavelengths,
+                            (spyndex.bands[band_name].min_wavelength, spyndex.bands[band_name].max_wavelength),
+                        )
 
                 segment_list = Lime._get_indices_from_wavelength_indices_range(wavelengths, segment_indices_ranges)
                 band_indices[original_segment] = segment_list

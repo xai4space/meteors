@@ -1753,6 +1753,20 @@ def test_get_band_mask():
     assert band_mask.shape == (len(wavelengths), 1, 1)
     assert dict_labels_to_segment_ids == {"R": 1, "G": 2}
 
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_names = ["S2", "G"]
+    band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
+    assert isinstance(band_mask, torch.Tensor)
+    assert band_mask.shape == (len(wavelengths), 1, 1)
+    assert dict_labels_to_segment_ids == {"S2": 1, "G": 2}
+
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_names = ["BI", "G"]
+    band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
+    assert isinstance(band_mask, torch.Tensor)
+    assert band_mask.shape == (len(wavelengths), 1, 1)
+    assert dict_labels_to_segment_ids == {"BI": 1, "G": 2}
+
     # Test case 2: Valid input with band indices
     hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_indices = {"RGB": 0}
