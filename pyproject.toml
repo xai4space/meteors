@@ -64,7 +64,7 @@ plugins = [
 [tool.codespell]
 skip = [
     "examples/*",
-    "code_of_conduct.md",
+    ".github/CODE_OF_CONDUCT.md",
 ]
 ignore-words-list = "hsi,HSI"
 
