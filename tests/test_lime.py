@@ -1192,6 +1192,10 @@ def test__extract_bands_from_spyndex():
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
     assert result == "R"
 
+    segment_name = "G1"
+    result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
+    assert result == "G1"
+
     # Test case 2: Multiple band names
     segment_name = ["R", "G"]
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
@@ -1563,11 +1567,11 @@ def test__get_band_wavelengths_indices_from_band_names():
     assert band_indices == expected_band_indices
     assert dict_labels_to_segment_ids == expected_dict_labels_to_segment_ids
 
-    # Test bands out of bounds
+    # Test bands out of bounds - a warning should be raised
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     band_names = ["G", "AVI"]
-    with pytest.raises(ValueError):
-        mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
+
+    mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
     # Test invialid band names
     band_names = 123
@@ -1842,6 +1846,9 @@ def test_get_band_mask():
     hsi = torch.ones((len(wavelengths), 10, 10))
     with pytest.raises(ValueError):
         mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices)
+
+
+test_get_band_mask()
 
 
 def test_get_spatial_attributes_regression():

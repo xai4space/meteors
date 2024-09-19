@@ -190,8 +190,11 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
         band_name_values.add(0)
 
     # Validate that all mask values are in band_names
-    if unique_mask_values != band_name_values:
+
+    if not set(unique_mask_values).issubset(set(band_name_values)):
         raise ValueError("Band names should have all unique values in mask")
+    if len(unique_mask_values) != len(band_name_values):
+        logger.warning("There exists bands defined in the band_names field that are not present in the mask.")
 
     return band_names
 
@@ -1058,7 +1061,7 @@ class Lime(Explainer):
                     f"Invalid band name {band_name}, band name must be either in `spyndex.indices` or `spyndex.bands`"
                 )
 
-        return tuple(set(band_names_segment))  # if len(band_names_segment) > 1 else band_names_segment[0]
+        return tuple(set(band_names_segment)) if len(band_names_segment) > 1 else band_names_segment[0]
 
     @staticmethod
     def _get_indices_from_wavelength_indices_range(
@@ -1122,6 +1125,8 @@ class Lime(Explainer):
         for original_segment, segment in zip(segments_list, segments_list_after_mapping):
             try:
                 segment_indices_ranges: list[tuple[int, int]] = []
+                if isinstance(segment, str):
+                    segment = (segment,)
                 for band_name in segment:
                     if band_name not in spyndex.bands:
                         raise ValueError(
