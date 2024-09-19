@@ -138,7 +138,7 @@ def validate_shapes(attributes: torch.Tensor, hsi: HSI) -> None:
     Raises:
         ValueError: If the shape of the attributes tensor does not match the shape of the hsi.
     """
-    if attributes.shape != hsi.image.shape:
+    if list(attributes.shape) != list(hsi.image.shape):
         raise ValueError("Attributes must have the same shape as the hsi")
 
 
