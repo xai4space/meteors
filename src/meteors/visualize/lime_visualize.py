@@ -22,6 +22,31 @@ from meteors.lime import align_band_names_with_mask
 from meteors.utils.utils import aggregate_by_mask, expand_spectral_mask
 
 
+def _merge_band_names_segments(band_names: dict[str | tuple[str, ...], int]) -> dict[str, int]:
+    """Merges the band names with multiple segments into a single band name.
+
+    Args:
+        band_names (dict[str | tuple[str, ...], int]): A dictionary mapping band names to segment IDs.
+
+    Returns:
+        dict[str, int]: A dictionary mapping band names to segment IDs.
+    """
+
+    # simplify bands with multiple segments
+    segments_to_be_updated = []
+
+    for label in band_names.keys():
+        if isinstance(label, tuple) or isinstance(label, list):
+            new_key = ", ".join(label)
+            segments_to_be_updated.append((label, new_key))
+
+    # update the dict
+    for old_key, new_key in segments_to_be_updated:
+        band_names[new_key] = band_names.pop(old_key)
+
+    return band_names  # type: ignore
+
+
 def visualize_hsi(hsi: HSI | HSIAttributes, ax: Axes | None, use_mask: bool = True) -> Axes:
     """Visualizes an LIME hsi object on the given axes.
 
@@ -274,11 +299,7 @@ def visualize_spectral_attributes_by_waveband(
     if not show_not_included and band_names.get("not_included") is not None:
         band_names.pop("not_included")
 
-    # simplify bands with multiple segments
-    for idx, label in enumerate(band_names.keys()):
-        if isinstance(label, tuple) or isinstance(label, list):
-            new_key = "+".join(label)
-            band_names[new_key] = band_names.pop(label)
+    band_names = _merge_band_names_segments(band_names)  # type: ignore
 
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
@@ -380,21 +401,18 @@ def visualize_spectral_attributes_by_magnitude(
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
     band_names = dict(spectral_attributes[0].band_names)
-    labels = list(band_names.keys())
     wavelengths = spectral_attributes[0].hsi.wavelengths
     validate_consistent_band_and_wavelengths(band_names, wavelengths, spectral_attributes)
 
     ax = setup_visualization(ax, "Attributions by Magnitude", "Group", "Average Attribution Magnitude")
     ax.tick_params(axis="x", rotation=45)
 
+    band_names = _merge_band_names_segments(band_names)  # type: ignore
+    labels = list(band_names.keys())
+
     if not show_not_included and band_names.get("not_included") is not None:
         band_names.pop("not_included")
         labels = list(band_names.keys())
-
-    # simplify bands with multiple segments
-    for idx, label in enumerate(labels):
-        if isinstance(label, tuple) or isinstance(label, list):
-            labels[idx] = "+".join(label)
 
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
