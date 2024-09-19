@@ -190,12 +190,14 @@ def visualize_spectral_attributes(
 
 
 def validate_consistent_band_and_wavelengths(
-    band_names: dict[str, int], wavelengths: torch.Tensor, spectral_attributes: list[HSISpectralAttributes]
+    band_names: dict[str | tuple[str, ...], int],
+    wavelengths: torch.Tensor,
+    spectral_attributes: list[HSISpectralAttributes],
 ) -> None:
     """Validates that all spectral attributes have consistent band names and wavelengths.
 
     Args:
-        band_names (dict[str, int]): A dictionary mapping band names to their indices.
+        band_names (dict[str | tuple[str, ...], int]): A dictionary mapping band names to their indices.
         wavelengths (torch.Tensor): A tensor containing the wavelengths of the hsi.
         spectral_attributes (list[HSISpectralAttributes]): A list of spectral attributes.
 
@@ -272,6 +274,12 @@ def visualize_spectral_attributes_by_waveband(
     if not show_not_included and band_names.get("not_included") is not None:
         band_names.pop("not_included")
 
+    # simplify bands with multiple segments
+    for idx, label in enumerate(band_names.keys()):
+        if isinstance(label, tuple) or isinstance(label, list):
+            new_key = "+".join(label)
+            band_names[new_key] = band_names.pop(label)
+
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
@@ -312,12 +320,12 @@ def visualize_spectral_attributes_by_waveband(
 
 
 def calculate_average_magnitudes(
-    band_names: dict[str, int], band_mask: torch.Tensor, attribution_map: torch.Tensor
+    band_names: dict[str | tuple[str, ...], int], band_mask: torch.Tensor, attribution_map: torch.Tensor
 ) -> torch.Tensor:
     """Calculates the average magnitudes for each segment ID in the attribution map.
 
     Args:
-        band_names (dict[str, int]): A dictionary mapping band names to segment IDs.
+        band_names (dict[str | tuple[str, ...], int]): A dictionary mapping band names to segment IDs.
         band_mask (torch.Tensor): A tensor representing the spectral band mask.
         attribution_map (torch.Tensor): A tensor representing the attribution map.
 
@@ -382,6 +390,11 @@ def visualize_spectral_attributes_by_magnitude(
     if not show_not_included and band_names.get("not_included") is not None:
         band_names.pop("not_included")
         labels = list(band_names.keys())
+
+    # simplify bands with multiple segments
+    for idx, label in enumerate(labels):
+        if isinstance(label, tuple) or isinstance(label, list):
+            labels[idx] = "+".join(label)
 
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
@@ -461,7 +474,7 @@ def visualize_spatial_aggregated_attributes(
 
 def visualize_spectral_aggregated_attributes(
     attributes: HSIAttributes | list[HSIAttributes],
-    band_names: dict[str, int],
+    band_names: dict[str | tuple[str, ...], int],
     band_mask: torch.Tensor | np.ndarray,
     use_pyplot: bool = False,
     color_palette: list[str] | None = None,
@@ -472,7 +485,7 @@ def visualize_spectral_aggregated_attributes(
 
     Args:
         attributes (HSIAttributes | list[HSIAttributes]): The spectral attributes of the hsi object to visualize.
-        band_names (dict[str, int]): A dictionary mapping band names to their indices.
+        band_names (dict[str | tuple[str, ...], int]): A dictionary mapping band names to their indices.
         band_mask (torch.Tensor | np.ndarray): The mask used to aggregate the spectral attributes.
         use_pyplot (bool, optional): If True, displays the visualization using pyplot.
             If False, returns the figure and axes objects. Defaults to False.
@@ -536,7 +549,7 @@ def visualize_spectral_aggregated_attributes(
 def visualize_aggregated_attributes(
     attributes: HSIAttributes | list[HSIAttributes],
     mask: torch.Tensor | np.ndarray,
-    band_names: dict[str, int] | None = None,
+    band_names: dict[str | tuple[str, ...], int] | None = None,
     use_pyplot: bool = False,
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
@@ -547,7 +560,7 @@ def visualize_aggregated_attributes(
     Args:
         attributes (HSIAttributes | list[HSIAttributes]): The attributes of the hsi object to visualize.
         mask (torch.Tensor | np.ndarray): The mask used to aggregate the attributes.
-        band_names (dict[str, int] | None, optional): A dictionary mapping band names to their indices.
+        band_names (dict[str | tuple[str, ...], int] | None, optional): A dictionary mapping band names to their indices.
             If None, the visualization will be spatially aggregated. Defaults to None.
         use_pyplot (bool, optional): If True, displays the visualization using pyplot.
             If False, returns the figure and axes objects. Defaults to False.

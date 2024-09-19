@@ -142,7 +142,9 @@ def validate_shapes(attributes: torch.Tensor, hsi: HSI) -> None:
         raise ValueError("Attributes must have the same shape as the hsi")
 
 
-def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tensor) -> dict[str, int]:
+def align_band_names_with_mask(
+    band_names: dict[str | tuple[str, ...], int], band_mask: torch.Tensor
+) -> dict[str | tuple[str, ...], int]:
     """Aligns the band names dictionary with the unique values in the band mask.
 
     This function ensures that the band_names dictionary correctly represents all unique
@@ -150,13 +152,13 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
     that all mask values are accounted for in the band names.
 
     Args:
-        band_names (dict[str, int]): A dictionary mapping band names to their corresponding
+        band_names (dict[str | tuple[str, ...], int]): A dictionary mapping band names to their corresponding
                                      integer values in the mask.
         band_mask (torch.Tensor): A tensor representing the band mask, where each unique
                                   integer corresponds to a different band or category.
 
     Returns:
-        dict[str, int]: The updated band_names dictionary, potentially including a
+        dict[str | tuple[str, ...], int]: The updated band_names dictionary, potentially including a
                         'not_included' category if 0 is present in the mask but not in
                         the original band_names.
 
@@ -701,11 +703,11 @@ class HSISpectralAttributes(HSIAttributes):
         device (torch.device): Device to be used for inference. If None, the device of the input hsi will be used.
             Defaults to None.
         model_config (ConfigDict): Configuration dictionary for the model.
-        band_names (dict[str, int]): Dictionary that translates the band names into the band segment ids.
+        band_names (dict[str | tuple[str, ...], int]): Dictionary that translates the band names into the band segment ids.
     """
 
     band_names: Annotated[
-        dict[str, int],
+        dict[str | tuple[str, ...], int],
         Field(
             description="Dictionary that translates the band names into the band segment ids.",
         ),
