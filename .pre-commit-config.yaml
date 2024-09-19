@@ -9,7 +9,7 @@ repos:
         exclude: |
           (?x)^(
             # examples with outsourced code
-            examples/clip/.*
+            examples/lime/clip_model.py
           )$
       - id: ruff-format
         name: ☕️ Format using ruff
@@ -17,7 +17,7 @@ repos:
         exclude: |
           (?x)^(
             # examples with outsourced code
-            examples/clip/.*
+            examples/lime/clip_model.py
           )$
   - repo: https://github.com/PyCQA/docformatter
     rev: v1.7.5
@@ -73,5 +73,5 @@ repos:
         exclude: |
           (?x)^(
             # examples with outsourced code
-            examples/clip/.*
+            examples/lime/clip_model.py
           )$
