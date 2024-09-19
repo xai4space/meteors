@@ -226,6 +226,11 @@ def test_align_band_names_with_mask():
     with pytest.raises(ValueError):
         mt_lime.align_band_names_with_mask(band_names, invalid_band_mask)
 
+    # Test case 4: Band names that are not in the mask
+    band_names = {"R": 1, "G": 2, "B": 3}
+    band_mask = torch.tensor([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+    mt_lime.align_band_names_with_mask(band_names, band_mask)
+
 
 def test_validate_band_names():
     # Test case 1: Valid band names (list of strings)
@@ -1578,6 +1583,10 @@ def test__get_band_wavelengths_indices_from_band_names():
     with pytest.raises(ValueError):
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
+    band_names = "invalid band"
+    with pytest.raises(ValueError):
+        mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
+
 
 def test__check_overlapping_segments(caplog):
     # Create a sample hsi
@@ -1846,6 +1855,16 @@ def test_get_band_mask():
     hsi = torch.ones((len(wavelengths), 10, 10))
     with pytest.raises(ValueError):
         mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices)
+
+    # Test case 13: Band mask with multiple inputs
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_wavelengths = {"RGB": [500.43, 554.78]}
+    band_names = ["BI", "G"]
+    band_indices = {"RGB": [0, 1, 2]}
+
+    mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices, band_names=band_names)
+
+    mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices, band_wavelengths=band_wavelengths)
 
 
 test_get_band_mask()
