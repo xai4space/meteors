@@ -222,7 +222,7 @@ def test_align_band_names_with_mask():
 
     # Test case 3: Invalid band names
     band_names = {"R": 1, "G": 2, "B": 3}
-    invalid_band_mask = torch.tensor([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+    invalid_band_mask = torch.tensor([[5, 0, 0], [0, 0, 0], [0, 0, 0]])
     with pytest.raises(ValueError):
         mt_lime.align_band_names_with_mask(band_names, invalid_band_mask)
 
