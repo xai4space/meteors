@@ -182,7 +182,7 @@ jobs:
 
       - name: Publish to TestPyPI 🚀
         run: |
-          rye publish --token ${{ secrets.TEST_PYPI_TOKEN }}  --yes --repository testpypi --repository-url https://test.pypi.org/legacy/ --skip-existing </dev/null
+          rye publish --yes --token ${{ secrets.TEST_PYPI_TOKEN }} --repository testpypi --repository-url https://test.pypi.org/legacy/ --skip-existing
 
       - name: Test install from TestPyPI 🧪
         run: |
@@ -229,7 +229,7 @@ jobs:
       - name: Publish package 🚀
         if: ${{ env.DRY_RUN == 'no' }}
         run: |
-          rye publish --token ${{ secrets.PYPI_TOKEN }} --yes
+          rye publish --yes --token ${{ secrets.PYPI_TOKEN }}
 
   mark-release:
     needs:
