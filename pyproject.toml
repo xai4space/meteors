@@ -7,6 +7,7 @@ authors = [
 description = "Explanations of models for Hyperspectral data"
 readme = "README.md"
 requires-python = ">=3.9"
+license = "BSD-3-Clause"
 
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
