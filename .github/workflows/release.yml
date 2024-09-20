@@ -189,7 +189,7 @@ jobs:
           pip install \
           --index-url https://test.pypi.org/simple/ \
           --extra-index-url https://pypi.org/simple \
-          ${{ needs.build.outputs.pkg-name }}==${{ needs.build.outputs.version }}
+          meteors==${{ needs.build.outputs.version }}
 
   pypi-publish:
     needs:
