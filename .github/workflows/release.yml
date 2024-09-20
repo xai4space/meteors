@@ -182,7 +182,7 @@ jobs:
 
       - name: Publish to TestPyPI 🚀
         run: |
-          rye publish --token ${{ secrets.TEST_PYPI_TOKEN }} --yes --repository testpypi --repository-url https://test.pypi.org/legacy/ --skip-existing
+          rye publish --token ${{ secrets.TEST_PYPI_TOKEN }}  --yes --repository testpypi --repository-url https://test.pypi.org/legacy/ --skip-existing </dev/null
 
       - name: Test install from TestPyPI 🧪
         run: |
