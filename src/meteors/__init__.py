@@ -5,6 +5,12 @@ from .lime import Lime, HSIAttributes, HSISpatialAttributes, HSISpectralAttribut
 from . import utils
 from . import visualize
 
+from loguru import logger
+import sys
+
+logger.remove()
+logger.add(sys.stdout, level="WARNING")
+
 __all__ = [
     "HSI",
     "Lime",
