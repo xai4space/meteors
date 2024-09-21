@@ -6,6 +6,9 @@ show_bases: false
 show_root_heading: true
 show_root_full_path: false
 
+The architecture of the package can be seen on the UML diagram:
+![UML diagram of package structure](../assets/UML_diagram.png)
+
 ## Visualizations
 
 ::: src.meteors.visualize.lime_visualize
