@@ -138,11 +138,13 @@ def validate_shapes(attributes: torch.Tensor, hsi: HSI) -> None:
     Raises:
         ValueError: If the shape of the attributes tensor does not match the shape of the hsi.
     """
-    if attributes.shape != hsi.image.shape:
+    if list(attributes.shape) != list(hsi.image.shape):
         raise ValueError("Attributes must have the same shape as the hsi")
 
 
-def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tensor) -> dict[str, int]:
+def align_band_names_with_mask(
+    band_names: dict[str | tuple[str, ...], int], band_mask: torch.Tensor
+) -> dict[str | tuple[str, ...], int]:
     """Aligns the band names dictionary with the unique values in the band mask.
 
     This function ensures that the band_names dictionary correctly represents all unique
@@ -150,13 +152,13 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
     that all mask values are accounted for in the band names.
 
     Args:
-        band_names (dict[str, int]): A dictionary mapping band names to their corresponding
+        band_names (dict[str | tuple[str, ...], int]): A dictionary mapping band names to their corresponding
                                      integer values in the mask.
         band_mask (torch.Tensor): A tensor representing the band mask, where each unique
                                   integer corresponds to a different band or category.
 
     Returns:
-        dict[str, int]: The updated band_names dictionary, potentially including a
+        dict[str | tuple[str, ...], int]: The updated band_names dictionary, potentially including a
                         'not_included' category if 0 is present in the mask but not in
                         the original band_names.
 
@@ -190,8 +192,11 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
         band_name_values.add(0)
 
     # Validate that all mask values are in band_names
-    if unique_mask_values != band_name_values:
+
+    if not set(unique_mask_values).issubset(set(band_name_values)):
         raise ValueError("Band names should have all unique values in mask")
+    if len(unique_mask_values) != len(band_name_values):
+        logger.warning("There exists bands defined in the band_names field that are not present in the mask.")
 
     return band_names
 
@@ -698,11 +703,11 @@ class HSISpectralAttributes(HSIAttributes):
         device (torch.device): Device to be used for inference. If None, the device of the input hsi will be used.
             Defaults to None.
         model_config (ConfigDict): Configuration dictionary for the model.
-        band_names (dict[str, int]): Dictionary that translates the band names into the band segment ids.
+        band_names (dict[str | tuple[str, ...], int]): Dictionary that translates the band names into the band segment ids.
     """
 
     band_names: Annotated[
-        dict[str, int],
+        dict[str | tuple[str, ...], int],
         Field(
             description="Dictionary that translates the band names into the band segment ids.",
         ),
@@ -1120,17 +1125,27 @@ class Lime(Explainer):
         segments_list_after_mapping = [Lime._extract_bands_from_spyndex(segment) for segment in segments_list]
         band_indices: dict[tuple[str, ...] | str, list[int]] = {}
         for original_segment, segment in zip(segments_list, segments_list_after_mapping):
-            try:
-                segment_indices_ranges: list[tuple[int, int]] = []
-                for band_name in segment:
+            segment_indices_ranges: list[tuple[int, int]] = []
+            if isinstance(segment, str):
+                segment = (segment,)
+            for band_name in segment:
+                min_wavelength = spyndex.bands[band_name].min_wavelength
+                max_wavelength = spyndex.bands[band_name].max_wavelength
+
+                if min_wavelength > wavelengths.max() or max_wavelength < wavelengths.min():
+                    logger.warning(
+                        f"Band {band_name} is not present in the given wavelengths. "
+                        f"Band ranges from {min_wavelength} nm to {max_wavelength} nm and the HSI wavelengths "
+                        f"range from {wavelengths.min():.2f} nm to {wavelengths.max():.2f} nm. The given band will be skipped"
+                    )
+                else:
                     segment_indices_ranges += Lime._convert_wavelengths_to_indices(
-                        wavelengths, (spyndex.bands[band_name].min_wavelength, spyndex.bands[band_name].max_wavelength)
+                        wavelengths,
+                        (spyndex.bands[band_name].min_wavelength, spyndex.bands[band_name].max_wavelength),
                     )
 
-                segment_list = Lime._get_indices_from_wavelength_indices_range(wavelengths, segment_indices_ranges)
-                band_indices[original_segment] = segment_list
-            except Exception as e:
-                raise ValueError(f"Problem with segment {original_segment} and bands {segment}") from e
+            segment_list = Lime._get_indices_from_wavelength_indices_range(wavelengths, segment_indices_ranges)
+            band_indices[original_segment] = segment_list
         return band_indices, dict_labels_to_segment_ids
 
     @staticmethod

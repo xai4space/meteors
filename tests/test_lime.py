@@ -222,9 +222,14 @@ def test_align_band_names_with_mask():
 
     # Test case 3: Invalid band names
     band_names = {"R": 1, "G": 2, "B": 3}
-    invalid_band_mask = torch.tensor([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+    invalid_band_mask = torch.tensor([[5, 0, 0], [0, 0, 0], [0, 0, 0]])
     with pytest.raises(ValueError):
         mt_lime.align_band_names_with_mask(band_names, invalid_band_mask)
+
+    # Test case 4: Band names that are not in the mask
+    band_names = {"R": 1, "G": 2, "B": 3}
+    band_mask = torch.tensor([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+    mt_lime.align_band_names_with_mask(band_names, band_mask)
 
 
 def test_validate_band_names():
@@ -1192,6 +1197,10 @@ def test__extract_bands_from_spyndex():
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
     assert result == "R"
 
+    segment_name = "G1"
+    result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
+    assert result == "G1"
+
     # Test case 2: Multiple band names
     segment_name = ["R", "G"]
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
@@ -1563,14 +1572,18 @@ def test__get_band_wavelengths_indices_from_band_names():
     assert band_indices == expected_band_indices
     assert dict_labels_to_segment_ids == expected_dict_labels_to_segment_ids
 
-    # Test bands out of bounds
+    # Test bands out of bounds - a warning should be raised
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     band_names = ["G", "AVI"]
-    with pytest.raises(ValueError):
-        mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
+
+    mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
     # Test invialid band names
     band_names = 123
+    with pytest.raises(ValueError):
+        mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
+
+    band_names = "invalid band"
     with pytest.raises(ValueError):
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
@@ -1753,6 +1766,20 @@ def test_get_band_mask():
     assert band_mask.shape == (len(wavelengths), 1, 1)
     assert dict_labels_to_segment_ids == {"R": 1, "G": 2}
 
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_names = ["S2", "G"]
+    band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
+    assert isinstance(band_mask, torch.Tensor)
+    assert band_mask.shape == (len(wavelengths), 1, 1)
+    assert dict_labels_to_segment_ids == {"S2": 1, "G": 2}
+
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_names = ["BI", "G"]
+    band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
+    assert isinstance(band_mask, torch.Tensor)
+    assert band_mask.shape == (len(wavelengths), 1, 1)
+    assert dict_labels_to_segment_ids == {"BI": 1, "G": 2}
+
     # Test case 2: Valid input with band indices
     hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_indices = {"RGB": 0}
@@ -1828,6 +1855,19 @@ def test_get_band_mask():
     hsi = torch.ones((len(wavelengths), 10, 10))
     with pytest.raises(ValueError):
         mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices)
+
+    # Test case 13: Band mask with multiple inputs
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_wavelengths = {"RGB": [500.43, 554.78]}
+    band_names = ["BI", "G"]
+    band_indices = {"RGB": [0, 1, 2]}
+
+    mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices, band_names=band_names)
+
+    mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices, band_wavelengths=band_wavelengths)
+
+
+test_get_band_mask()
 
 
 def test_get_spatial_attributes_regression():
