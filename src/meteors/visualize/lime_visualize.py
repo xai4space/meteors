@@ -37,7 +37,7 @@ def _merge_band_names_segments(band_names: dict[str | tuple[str, ...], int]) -> 
 
     for label in band_names.keys():
         if isinstance(label, tuple) or isinstance(label, list):
-            new_key = ", ".join(label)
+            new_key = ",".join(label)
             segments_to_be_updated.append((label, new_key))
 
     # update the dict

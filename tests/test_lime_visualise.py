@@ -94,6 +94,28 @@ wavelengths_main = [
 ]
 
 
+def test__merge_band_names_segments():
+    band_names = {
+        "band1": 0,
+        "band2": 1,
+        ("band3", "segment1"): 2,
+        ("band4", "segment2"): 3,
+        ("band5", "segment2"): 4,
+    }
+
+    merged_band_names = visualize._merge_band_names_segments(band_names)
+
+    expected_merged_band_names = {
+        "band1": 0,
+        "band2": 1,
+        "band3,segment1": 2,
+        "band4,segment2": 3,
+        "band5,segment2": 4,
+    }
+    print(merged_band_names, expected_merged_band_names)
+    assert merged_band_names == expected_merged_band_names
+
+
 def test_visualize_hsi_with_hsi_object():
     # Create an hsi object
     hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
