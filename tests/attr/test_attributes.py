@@ -350,11 +350,11 @@ def test_validate_attribution_method():
 def test_attributes():
     # Create a sample HSIAttributes object
     image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
-    attributes = torch.ones((3, 4, 4))
+    torch_attributes = torch.ones((3, 4, 4))
     device = torch.device("cpu")
     mask = torch.randint(0, 2, (3, 4, 4))
     attributes = HSIAttributes(
-        hsi=image, attributes=attributes, score=0.8, mask=mask, attribution_method="Lime", device=device
+        hsi=image, attributes=torch_attributes, score=0.8, mask=mask, attribution_method="Lime", device=device
     )
 
     assert attributes.hsi == image
@@ -365,7 +365,6 @@ def test_attributes():
     assert attributes.mask.device == device
     assert attributes.score == 0.8
     assert attributes.attribution_method == "Lime"
-    assert attributes.model_config == {}
     assert attributes.device == device
 
     with pytest.raises(NotImplementedError):
@@ -395,7 +394,7 @@ def test_attributes():
 
     # No mask passed
     no_mask_attributes = HSIAttributes(
-        hsi=image, attributes=attributes, score=0.8, attribution_method="Lime", device=device
+        hsi=image, attributes=torch_attributes, score=0.8, attribution_method="Lime", device=device
     )
     assert no_mask_attributes.mask is None
 
@@ -409,6 +408,9 @@ def test_attributes():
         assert attributes.hsi.device == device
         assert attributes.attributes.device == device
         assert attributes.mask.device == device
+
+
+test_attributes()
 
 
 def test_validate_scorer():
@@ -435,14 +437,14 @@ def test_validate_scorer():
 
 
 def test_change_orientation_attributes():
-    image = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600], orientation=("C", "H", "W"))
-    attributes = torch.ones((3, 4, 4))
+    image = HSI(image=torch.ones((3, 4, 5)), wavelengths=[400, 500, 600], orientation=("C", "H", "W"))
+    attributes = torch.ones((3, 4, 5))
     device = torch.device("cpu")
     attrs = HSIAttributes(
         hsi=image,
         attributes=attributes,
         score=0.8,
-        mask=torch.randint(0, 2, (3, 4, 4)),
+        mask=torch.randint(0, 2, (3, 4, 5)),
         attribution_method="Lime",
         device=device,
     )
@@ -481,6 +483,9 @@ def test_change_orientation_attributes():
     new_orientation = ("H", "C", "A")
     with pytest.raises(ValueError):
         attrs.change_orientation(new_orientation, True)
+
+
+test_change_orientation_attributes()
 
 
 def test_spatial_attributes():
@@ -579,7 +584,7 @@ def test_spectral_attributes():
 
     assert spectral_attributes.hsi == image
     assert torch.equal(spectral_attributes.attributes, attributes)
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names == band_names
 
     # Assert that the attributes tensor has been moved to the specified device
@@ -624,7 +629,7 @@ def test_spectral_attributes():
             hsi=image,
             attributes=attributes,
             band_names=band_names,
-            mask=torch.randint(0, 2, (3, 4, 4)),
+            mask=torch.randint(0, 2, (3, 4, 5)),
             device=device,
         )
 

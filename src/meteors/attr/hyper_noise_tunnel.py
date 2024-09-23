@@ -46,7 +46,7 @@ class BaseHyperNoiseTunnel(Attribution):
     @staticmethod
     def perturb_input(
         input, baseline, n_samples: int = 1, perturbation_prob: float = 0.5, num_perturbed_bands: int | None = None
-    ):
+    ) -> torch.Tensor:
         """The perturbation function used in the hyper noise tunnel. It randomly selects a subset of the input bands
         that will be masked out and replaced with the baseline. The parameters `num_perturbed_bands` and
         `perturbation_prob` control the number of bands that will be perturbed (masked). If `num_perturbed_bands` is

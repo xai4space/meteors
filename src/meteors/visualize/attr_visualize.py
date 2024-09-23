@@ -29,8 +29,8 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
     if image_attributes.hsi.orientation != ("C", "H", "W"):
         raise ValueError(f"HSI orientation {image_attributes.hsi.orientation} is not supported yet")
 
-    rotated_attributes = image_attributes.change_orientation("HWC", inplace=False)
-    rotated_attributes = rotated_attributes.attributes.detach().cpu().numpy()
+    rotated_attributes_dataclass = image_attributes.change_orientation("HWC", inplace=False)
+    rotated_attributes = rotated_attributes_dataclass.attributes.detach().cpu().numpy()
     if np.all(rotated_attributes == 0):
         warnings.warn("All the attributions are zero. There is nothing to visualize.")
         return None

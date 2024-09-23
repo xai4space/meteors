@@ -390,8 +390,8 @@ def test_lime_explainer():
     assert lime.explainable_model == explainable_model
     assert lime.interpretable_model == interpretable_model
     assert lime._attribution_method is not None
-    with pytest.raises(NotImplementedError):
-        lime.attribute(image=HSI(image=torch.randn(3, 240, 240), wavelengths=wavelengths), target=0)
+    with pytest.raises(ValueError):
+        lime.attribute(hsi=HSI(image=torch.randn(3, 240, 240), wavelengths=[100, 200, 300]), target=0)
 
     # Test case 1: Valid input
     def dumb_model(image: torch.Tensor) -> torch.Tensor:
@@ -571,6 +571,10 @@ def test__extract_bands_from_spyndex():
     segment_name = "R"
     result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
     assert result == "R"
+
+    segment_name = "G1"
+    result = mt_lime.Lime._extract_bands_from_spyndex(segment_name)
+    assert result == "G1"
 
     # Test case 2: Multiple band names
     segment_name = ["R", "G"]
@@ -943,14 +947,18 @@ def test__get_band_wavelengths_indices_from_band_names():
     assert band_indices == expected_band_indices
     assert dict_labels_to_segment_ids == expected_dict_labels_to_segment_ids
 
-    # Test bands out of bounds
+    # Test bands out of bounds - a warning should be raised
     wavelengths = torch.tensor([400, 450, 500, 550, 600, 650, 700])
     band_names = ["G", "AVI"]
-    with pytest.raises(ValueError):
-        mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
+
+    mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
     # Test invialid band names
     band_names = 123
+    with pytest.raises(ValueError):
+        mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
+
+    band_names = "invalid band"
     with pytest.raises(ValueError):
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
@@ -1133,6 +1141,34 @@ def test_get_band_mask():
     assert band_mask.shape == (len(wavelengths), 1, 1)
     assert dict_labels_to_segment_ids == {"R": 1, "G": 2}
 
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_names = ["S2", "G"]
+    band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
+    assert isinstance(band_mask, torch.Tensor)
+    assert band_mask.shape == (len(wavelengths), 1, 1)
+    assert dict_labels_to_segment_ids == {"S2": 1, "G": 2}
+
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_names = ["BI", "G"]
+    band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
+    assert isinstance(band_mask, torch.Tensor)
+    assert band_mask.shape == (len(wavelengths), 1, 1)
+    assert dict_labels_to_segment_ids == {"BI": 1, "G": 2}
+
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_names = ["S2", "G"]
+    band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
+    assert isinstance(band_mask, torch.Tensor)
+    assert band_mask.shape == (len(wavelengths), 1, 1)
+    assert dict_labels_to_segment_ids == {"S2": 1, "G": 2}
+
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_names = ["BI", "G"]
+    band_mask, dict_labels_to_segment_ids = mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
+    assert isinstance(band_mask, torch.Tensor)
+    assert band_mask.shape == (len(wavelengths), 1, 1)
+    assert dict_labels_to_segment_ids == {"BI": 1, "G": 2}
+
     # Test case 2: Valid input with band indices
     hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_indices = {"RGB": 0}
@@ -1213,6 +1249,19 @@ def test_get_band_mask():
     with pytest.raises(ValueError):
         mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices)
 
+    # Test case 13: Band mask with multiple inputs
+    hsi = mt.HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
+    band_wavelengths = {"RGB": [500.43, 554.78]}
+    band_names = ["BI", "G"]
+    band_indices = {"RGB": [0, 1, 2]}
+
+    mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices, band_names=band_names)
+
+    mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices, band_wavelengths=band_wavelengths)
+
+
+test_get_band_mask()
+
 
 def test_get_spatial_attributes_regression():
     # Dumb model
@@ -1241,7 +1290,7 @@ def test_get_spatial_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1249,14 +1298,14 @@ def test_get_spatial_attributes_regression():
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_mask_smaller, target=0)
     assert isinstance(spatial_attributes, HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
     # Test case 1: Different target
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_mask, target=1)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1295,7 +1344,7 @@ def test_get_spatial_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1308,7 +1357,7 @@ def test_get_spatial_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1338,14 +1387,14 @@ def test_get_spatial_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
     # Test case 1: Different target
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_mask, target=1)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1384,7 +1433,7 @@ def test_get_spatial_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1397,7 +1446,7 @@ def test_get_spatial_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1440,7 +1489,7 @@ def test_get_spatial_attributes_segmentation():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1452,7 +1501,7 @@ def test_get_spatial_attributes_segmentation():
         postprocessing_segmentation_output=postprocessing,
     )
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1507,7 +1556,7 @@ def test_get_spatial_attributes_segmentation():
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask.expand_as(hsi.image))
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1551,7 +1600,7 @@ def test_get_spectral_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names == band_names
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1561,7 +1610,7 @@ def test_get_spectral_attributes_regression():
     spectral_attributes = lime.get_spectral_attributes(hsi, band_mask_smaller, band_names=band_names, target=0)
     assert isinstance(spectral_attributes, HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names == band_names
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1573,7 +1622,7 @@ def test_get_spectral_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names == band_names
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1597,7 +1646,7 @@ def test_get_spectral_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names is not None
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1618,7 +1667,7 @@ def test_get_spectral_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names is not None
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1633,14 +1682,11 @@ def test_get_spectral_attributes_regression():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names is not None
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == hsi.image.shape
-
-
-test_get_spectral_attributes_regression()
 
 
 def test_get_spectral_attributes_classification():
@@ -1673,7 +1719,7 @@ def test_get_spectral_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names == band_names
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1685,7 +1731,7 @@ def test_get_spectral_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names == band_names
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1709,7 +1755,7 @@ def test_get_spectral_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names is not None
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1730,7 +1776,7 @@ def test_get_spectral_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names is not None
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1745,7 +1791,7 @@ def test_get_spectral_attributes_classification():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names is not None
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1796,7 +1842,7 @@ def test_get_spectral_attributes_segmentation():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names == band_names
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1814,7 +1860,7 @@ def test_get_spectral_attributes_segmentation():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names == band_names
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1845,7 +1891,7 @@ def test_get_spectral_attributes_segmentation():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names is not None
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1868,7 +1914,7 @@ def test_get_spectral_attributes_segmentation():
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names is not None
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
@@ -1910,12 +1956,14 @@ def test_attribute_wrapper():
     )
 
     # Call the get_spectral_attributes method
-    spectral_attributes = lime.attribute("spectral", hsi, band_mask=band_mask, band_names=band_names, target=0)
+    spectral_attributes = lime.attribute(
+        attribution_type="spectral", hsi=hsi, band_mask=band_mask, band_names=band_names, target=0
+    )
 
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
     assert spectral_attributes.hsi == hsi
-    assert torch.equal(spectral_attributes.band_mask, band_mask)
+    assert torch.equal(spectral_attributes.band_mask, band_mask[:, 0, 0])
     assert spectral_attributes.band_names == band_names
     assert spectral_attributes.score <= 1.0 and spectral_attributes.score >= 0.0
     assert isinstance(spectral_attributes.score, float)
@@ -1941,12 +1989,14 @@ def test_attribute_wrapper():
     # Create a sample segmentation mask
     segmentation_mask = torch.randint(1, 4, (1, 10, 10)).expand_as(hsi.image)
 
-    spatial_attributes = lime.attribute("spatial", hsi, segmentation_mask=segmentation_mask, target=0)
+    spatial_attributes = lime.attribute(
+        attribution_type="spatial", hsi=hsi, segmentation_mask=segmentation_mask, target=0
+    )
 
     # Assert the output type and properties
     assert isinstance(spatial_attributes, mt.attr.HSISpatialAttributes)
     assert spatial_attributes.hsi == hsi
-    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask)
+    assert torch.equal(spatial_attributes.segmentation_mask, segmentation_mask[0, :, :])
     assert spatial_attributes.score <= 1.0 and spatial_attributes.score >= 0.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
@@ -1957,4 +2007,4 @@ def test_attribute_wrapper():
 
     # Test case 3: Invalid attribute type
     with pytest.raises(ValueError):
-        lime.attribute("invalid", hsi, band_mask=band_mask, band_names=band_names, target=0)
+        lime.attribute(attribution_type="invalid", hsi=hsi, band_mask=band_mask, band_names=band_names, target=0)

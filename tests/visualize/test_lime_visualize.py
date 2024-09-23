@@ -90,6 +90,28 @@ wavelengths_main = [
 ]
 
 
+def test__merge_band_names_segments():
+    band_names = {
+        "band1": 0,
+        "band2": 1,
+        ("band3", "segment1"): 2,
+        ("band4", "segment2"): 3,
+        ("band5", "segment2"): 4,
+    }
+
+    merged_band_names = visualize._merge_band_names_segments(band_names)
+
+    expected_merged_band_names = {
+        "band1": 0,
+        "band2": 1,
+        "band3,segment1": 2,
+        "band4,segment2": 3,
+        "band5,segment2": 4,
+    }
+    print(merged_band_names, expected_merged_band_names)
+    assert merged_band_names == expected_merged_band_names
+
+
 def test_visualize_spatial_attributes():
     # Create an HSISpatialAttributes object
     hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
@@ -135,9 +157,6 @@ def test_visualize_empty_spatial_attributes():
 
     # Cleanup
     plt.close(fig)
-
-
-test_visualize_empty_spatial_attributes()
 
 
 def test_validate_consistent_band_and_wavelengths():
@@ -340,6 +359,9 @@ def test_visualize_spectral_attributes_by_waveband():
     fig.clear()
     plt.close("all")
     del ax, fig
+
+
+test_visualize_spectral_attributes_by_waveband()
 
 
 def test_calculate_average_magnitudes():
@@ -588,6 +610,35 @@ def test_visualize_spectral_attributes():
     assert ax[1].get_xlabel() == "Group"
     assert ax[1].get_ylabel() == "Average Attribution Magnitude"
 
+    # test visualization with segment list as a band names
+
+    band_names = {("R", "T"): 0, "G": 1, "B": 2}
+
+    spectral_attributes = HSISpectralAttributes(
+        hsi=HSI(image=image, wavelengths=wavelengths_main),
+        attributes=attribution_map,
+        score=0.2,
+        band_names=band_names,
+        mask=band_mask,
+    )
+
+    # Call the function
+    fig, ax = visualize.visualize_spectral_attributes(spectral_attributes, use_pyplot=False)
+
+    # Assert that the figure and axes objects are returned
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
+
+    # Assert that the title is set correctly
+    assert fig._suptitle.get_text() == "Spectral Attributes Visualization"
+
+    # check if the labels are set correctly
+    fig.gca().get_xticklabels()[2].get_text() == "R, T"
+
+    # Cleanup
+    plt.close(fig)
+
 
 def test_visualize_spectral_attributes_global():
     # Create sample spectral attributes
@@ -641,6 +692,9 @@ def test_visualize_spectral_attributes_global():
     assert ax[2].get_title() == "Distribution of Score Values"
     assert ax[2].get_xlabel() == "Score"
     assert ax[2].get_ylabel() == "Frequency"
+
+    # Cleanup
+    plt.close(fig)
 
 
 def test_visualize_spectral_empty_attributes():

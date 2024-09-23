@@ -180,7 +180,7 @@ def test_visualize_hsi_with_hsi_attributes_object_and_ax():
     band_mask[0] = 1
     band_mask[1] = 2
     hsi_attributes_spectral = HSISpectralAttributes(
-        hsi=hsi, attributes=attributes, band_names=band_names, band_mask=band_mask
+        hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask
     )
     # Call the visualize_hsi function
     returned_ax = visualize.visualize_hsi(hsi_attributes_spectral, ax)

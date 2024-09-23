@@ -122,7 +122,7 @@ def test_visualize_ig_attributes(ig_model):
     assert isinstance(ax, np.ndarray)
     assert ax.shape == (2, 3)
     assert all([isinstance(a, Axes) for a in ax.ravel()])
-    assert fig.texts[0].get_text() == "HSI Attributes of: IntegratedGradients"
+    assert fig.texts[0].get_text() == "HSI Attributes of: Integrated Gradients"
     assert ax[0, 0].get_title() == "Attribution Heatmap"
     assert ax[0, 1].get_title() == "Attribution Module Values"
     assert ax[0, 2].get_title() == "Attribution Sign Values"
@@ -139,6 +139,11 @@ def test_visualize_ig_attributes(ig_model):
 
     # Cleanup
     plt.close(fig)
+
+
+model = ExplainableModel(forward_func=ToyModel(), problem_type="regression")
+ig = mt.attr.IntegratedGradients(model)
+test_visualize_ig_attributes(ig)
 
 
 def test_validation_checks(ig_model):

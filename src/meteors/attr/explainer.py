@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing_extensions import Self, Callable, Type, Any
+from typing_extensions import Self, Type, Callable
 from abc import ABC
 from loguru import logger
 from functools import cached_property
@@ -31,7 +31,7 @@ def validate_attribution_method_initialization(attribution_method: Explainer) ->
         raise AttributeError(
             f"The attribution method {attribution_method.__class__.__name__} is not initialized properly"
         )
-    if attribution_method.explainable_model is None:
+    if attribution_method.explainable_model is None or attribution_method.explainable_model.forward_func is None:
         raise ValueError(f"The attribution method {attribution_method.__class__.__name__} is not properly initialized")
 
 
@@ -104,22 +104,22 @@ class Explainer(ABC):
 
         self.forward_func = self.explainable_model.forward_func
 
-    def attribute(self, hsi: HSI, target: int | None = None, *args: Any, **kwargs: Any) -> HSIAttributes:
-        """Compute the attribute method of the explainer for the given hyperspectral image.
+    # def attribute(self, hsi: HSI, target: int | None = None, *args: Any, **kwargs: Any) -> HSIAttributes:
+    #     """Compute the attribute method of the explainer for the given hyperspectral image.
 
-        Parameters:
-        - hsi (HSI): The hyperspectral image to compute attributes for.
-        - target (int | None): The target class index for attribute computation. If None, attributes will be computed for all classes.
-        - *args (Any): Additional positional arguments.
-        - **kwargs (Any): Additional keyword arguments.
+    #     Parameters:
+    #     - hsi (HSI): The hyperspectral image to compute attributes for.
+    #     - target (int | None): The target class index for attribute computation. If None, attributes will be computed for all classes.
+    #     - *args (Any): Additional positional arguments.
+    #     - **kwargs (Any): Additional keyword arguments.
 
-        Returns:
-        - HSIAttributes: The computed attributes of the HSI.
+    #     Returns:
+    #     - HSIAttributes: The computed attributes of the HSI.
 
-        Raises:
-        - NotImplementedError: If the attribute method is not implemented in the explainer base class.
-        """
-        raise NotImplementedError("Attribute method not implemented in the explainer base class")
+    #     Raises:
+    #     - NotImplementedError: If the attribute method is not implemented in the explainer base class.
+    #     """
+    #     raise NotImplementedError("Attribute method not implemented in the explainer base class")
 
     def has_convergence_delta(self) -> bool:
         """Check if the explainer has a convergence delta.

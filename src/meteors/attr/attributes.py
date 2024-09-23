@@ -99,11 +99,13 @@ def validate_shapes(attributes: torch.Tensor, hsi: HSI) -> None:
     Raises:
         ValueError: If the shape of the attributes tensor does not match the shape of the hsi.
     """
-    if attributes.shape != hsi.image.shape:
+    if list(attributes.shape) != list(hsi.image.shape):
         raise ValueError("Attributes must have the same shape as the hsi")
 
 
-def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tensor) -> dict[str, int]:
+def align_band_names_with_mask(
+    band_names: dict[str | tuple[str, ...], int], band_mask: torch.Tensor
+) -> dict[str | tuple[str, ...], int]:
     """Aligns the band names dictionary with the unique values in the band mask.
 
     This function ensures that the band_names dictionary correctly represents all unique
@@ -111,14 +113,14 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
     that all mask values are accounted for in the band names.
 
     Args:
-        band_names (dict[str, int]): A dictionary mapping band names to their corresponding
+        band_names (dict[str | tuple[str, ...], int]): A dictionary mapping band names to their corresponding
                                      integer values in the mask.
         band_mask (torch.Tensor): A tensor representing the band mask, where each unique
                                   integer corresponds to a different band or category.
 
     Returns:
-        dict[str, int]: The updated band_names dictionary, potentially including a
-                        'not_included' category if some id is present in the mask but not in
+        dict[str | tuple[str, ...], int]: The updated band_names dictionary, potentially including a
+                        'not_included' category if 0 is present in the mask but not in
                         the original band_names.
 
     Raises:
@@ -147,14 +149,18 @@ def align_band_names_with_mask(band_names: dict[str, int], band_mask: torch.Tens
                     f"Adding 'not_included' to band names because {value} ids is present in the mask and not in band names"
                 )
                 band_names["not_included"] = value
+                band_name_values.add(value)
 
     # Validate that all mask values are in band_names
-    new_band_names_values = set(band_names.values())
-    if unique_mask_values != new_band_names_values:
-        for value in new_band_names_values:
-            if value not in unique_mask_values:
-                warnings.warn(f"Band name {value} is not present in the mask, it will be removed")
-                band_names = {k: v for k, v in band_names.items() if v != value}
+    if not set(unique_mask_values).issubset(set(band_name_values)):
+        raise ValueError("Band names should have all unique values in mask")
+    if len(unique_mask_values) != len(band_name_values):
+        logger.warning(
+            "There exists bands defined in the band_names field that are not present in the mask. Removing them."
+        )
+
+        band_names = {k: v for k, v in band_names.items() if v in unique_mask_values}
+
     return band_names
 
 
@@ -415,6 +421,8 @@ class HSISpatialAttributes(HSIAttributes):
         Returns:
             torch.Tensor: The segmentation mask tensor.
         """
+        if self.mask is None:
+            raise ValueError("Segmentation mask is not provided")
         return self.mask.select(dim=self.hsi.spectral_axis, index=0)
 
     @property
@@ -456,12 +464,12 @@ class HSISpectralAttributes(HSIAttributes):
             Defaults to None.
         attribution_method (str | None): The method used to generate the explanation. Defaults to None.
         band_mask (torch.Tensor): Band mask used for the explanation.
-        band_names (dict[str, int]): Dictionary that translates the band names into the band segment ids.
+        band_names (dict[str | tuple[str, ...], int]): Dictionary that translates the band names into the band segment ids.
         flattened_attributes (torch.Tensor): Spectral 1D attribution map.
     """
 
     band_names: Annotated[
-        dict[str, int],
+        dict[str | tuple[str, ...], int],
         Field(
             description="Dictionary that translates the band names into the band segment ids.",
         ),
@@ -481,14 +489,14 @@ class HSISpectralAttributes(HSIAttributes):
 
         Examples:
             >>> band_names = {"R": 0, "G": 1, "B": 2}
-            >>> attrs = HSISpectralAttributes(hsi, attributes, score=0.5, band_mask=band_mask)
+            >>> attrs = HSISpectralAttributes(hsi, attributes, score=0.5, mask=band_mask)
             >>> attrs.flattened_band_mask
             torch.tensor([0, 1, 2])
         """
         if self.mask is None:
             raise ValueError("Band mask is not provided")
-        axis_to_select = [i for i in range(self.hsi.ndim) if i != self.hsi.spectral_axis]
-        return self.band_mask.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1] - 1, index=0)
+        axis_to_select = [i for i in range(self.hsi.image.ndim) if i != self.hsi.spectral_axis]
+        return self.mask.select(dim=axis_to_select[0], index=0).select(dim=axis_to_select[1] - 1, index=0)
 
     @property
     def flattened_attributes(self) -> torch.Tensor:

@@ -623,17 +623,27 @@ class Lime(Explainer):
         segments_list_after_mapping = [Lime._extract_bands_from_spyndex(segment) for segment in segments_list]
         band_indices: dict[tuple[str, ...] | str, list[int]] = {}
         for original_segment, segment in zip(segments_list, segments_list_after_mapping):
-            try:
-                segment_indices_ranges: list[tuple[int, int]] = []
-                for band_name in segment:
+            segment_indices_ranges: list[tuple[int, int]] = []
+            if isinstance(segment, str):
+                segment = (segment,)
+            for band_name in segment:
+                min_wavelength = spyndex.bands[band_name].min_wavelength
+                max_wavelength = spyndex.bands[band_name].max_wavelength
+
+                if min_wavelength > wavelengths.max() or max_wavelength < wavelengths.min():
+                    logger.warning(
+                        f"Band {band_name} is not present in the given wavelengths. "
+                        f"Band ranges from {min_wavelength} nm to {max_wavelength} nm and the HSI wavelengths "
+                        f"range from {wavelengths.min():.2f} nm to {wavelengths.max():.2f} nm. The given band will be skipped"
+                    )
+                else:
                     segment_indices_ranges += Lime._convert_wavelengths_to_indices(
-                        wavelengths, (spyndex.bands[band_name].min_wavelength, spyndex.bands[band_name].max_wavelength)
+                        wavelengths,
+                        (spyndex.bands[band_name].min_wavelength, spyndex.bands[band_name].max_wavelength),
                     )
 
-                segment_list = Lime._get_indices_from_wavelength_indices_range(wavelengths, segment_indices_ranges)
-                band_indices[original_segment] = segment_list
-            except Exception as e:
-                raise ValueError(f"Problem with segment {original_segment} and bands {segment}") from e
+            segment_list = Lime._get_indices_from_wavelength_indices_range(wavelengths, segment_indices_ranges)
+            band_indices[original_segment] = segment_list
         return band_indices, dict_labels_to_segment_ids
 
     @staticmethod
@@ -934,7 +944,11 @@ class Lime(Explainer):
         return band_mask
 
     def attribute(
-        self, attribution_type: Literal["spatial", "spectral"], image: HSI, target: int | None = None, **kwargs
+        self,
+        hsi: HSI,
+        target: int | None = None,
+        attribution_type: Literal["spatial", "spectral"] | None = None,
+        **kwargs,
     ) -> HSISpectralAttributes | HSISpatialAttributes:
         """A wrapper function to attribute the image using the LIME method. It executes either the
         `get_spatial_attributes` or `get_spectral_attributes` method based on the provided `attribution_type`. For more
@@ -943,17 +957,17 @@ class Lime(Explainer):
         Additional, nondefault parameters, should be passed as keyword arguments to avoid misalignment of the arguments.
 
         Args:
-            attribution_type (Literal["spatial", "spectral"]): An attribution type to be executed.
-            image (HSI): an image on which the explanation is performed.
+            attribution_type (Literal["spatial", "spectral"] | None): An attribution type to be executed. By default None.
+            hsi (HSI): an image on which the explanation is performed.
             target (int | None, optional): Target output index for the explanation. Defaults to None.
 
         Returns:
             HSISpectralAttributes | HSISpatialAttributes: An object containing the image, the attributions and additional information. In case the `attribution_type` is `spatial`, the object is of type `HSISpatialAttributes`, otherwise it is of type `HSISpectralAttributes`.
         """
         if attribution_type == "spatial":
-            return self.get_spatial_attributes(image, target=target, **kwargs)
+            return self.get_spatial_attributes(hsi, target=target, **kwargs)
         elif attribution_type == "spectral":
-            return self.get_spectral_attributes(image, target=target, **kwargs)
+            return self.get_spectral_attributes(hsi, target=target, **kwargs)
         raise ValueError(f"Unsupported attribution type: {attribution_type}. Use 'spatial' or 'spectral'")
 
     def get_spatial_attributes(

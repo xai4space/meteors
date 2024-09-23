@@ -17,12 +17,12 @@ class ToyModel(nn.Module):
 
 
 @pytest.fixture
-def toy_model():
+def explainable_toy_model():
     return ExplainableModel(problem_type="regression", forward_func=ToyModel())
 
 
 def test_integrated_gradients(explainable_toy_model):
-    ig = IntegratedGradients(toy_model)
+    ig = IntegratedGradients(explainable_toy_model)
 
     assert ig is not None
     assert ig._attribution_method is not None
@@ -34,11 +34,11 @@ def test_integrated_gradients(explainable_toy_model):
     assert ig.has_convergence_delta()
 
     attributions = ig.attribute(image, return_convergence_delta=True)
-    assert attributions.approximation_error is not None
+    assert attributions.score is not None
 
 
 def test_saliency(explainable_toy_model):
-    saliency = Saliency(toy_model)
+    saliency = Saliency(explainable_toy_model)
 
     assert saliency is not None
 
@@ -51,7 +51,7 @@ def test_saliency(explainable_toy_model):
 
 
 def test_input_x_gradient(explainable_toy_model):
-    input_x_gradient = InputXGradient(toy_model)
+    input_x_gradient = InputXGradient(explainable_toy_model)
 
     assert input_x_gradient is not None
 
@@ -63,7 +63,7 @@ def test_input_x_gradient(explainable_toy_model):
 
 
 def test_noise_tunnel(explainable_toy_model):
-    input_x_gradient = InputXGradient(toy_model)
+    input_x_gradient = InputXGradient(explainable_toy_model)
     noise_tunnel = NoiseTunnel(input_x_gradient)
 
     assert noise_tunnel is not None
@@ -74,7 +74,7 @@ def test_noise_tunnel(explainable_toy_model):
 
     # incorrect explainer class
     with pytest.raises(TypeError):
-        NoiseTunnel(toy_model)
+        NoiseTunnel(explainable_toy_model)
 
     with pytest.raises(TypeError):
         NoiseTunnel(InputXGradient)
@@ -84,7 +84,7 @@ def test_noise_tunnel(explainable_toy_model):
 
 
 def test_occlusion(explainable_toy_model):
-    occlusion = Occlusion(toy_model)
+    occlusion = Occlusion(explainable_toy_model)
     assert occlusion is not None
 
     image = HSI(image=torch.rand(3, 10, 10), wavelengths=[0, 100, 200])

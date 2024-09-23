@@ -13,7 +13,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
-  RYE_VERSION: "0.35.0"
+  RYE_VERSION: "0.39.0"
   DRY_RUN: ${{ github.event.inputs.dry-run }}
 
 jobs:
@@ -182,14 +182,14 @@ jobs:
 
       - name: Publish to TestPyPI 🚀
         run: |
-          rye publish --token ${{ secrets.TEST_PYPI_TOKEN }} --yes --repository testpypi --repository-url https://test.pypi.org/legacy/ --skip-existing
+          rye publish --yes --token ${{ secrets.TEST_PYPI_TOKEN }} --repository testpypi --repository-url https://test.pypi.org/legacy/ --skip-existing
 
       - name: Test install from TestPyPI 🧪
         run: |
           pip install \
           --index-url https://test.pypi.org/simple/ \
           --extra-index-url https://pypi.org/simple \
-          ${{ needs.build.outputs.pkg-name }}==${{ needs.build.outputs.version }}
+          meteors==${{ needs.build.outputs.version }}
 
   pypi-publish:
     needs:
@@ -229,7 +229,7 @@ jobs:
       - name: Publish package 🚀
         if: ${{ env.DRY_RUN == 'no' }}
         run: |
-          rye publish --token ${{ secrets.PYPI_TOKEN }} --yes
+          rye publish --yes --token ${{ secrets.PYPI_TOKEN }}
 
   mark-release:
     needs:
