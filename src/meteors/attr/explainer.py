@@ -27,6 +27,8 @@ def validate_attribution_method_initialization(attribution_method: Explainer) ->
     """
     if attribution_method is None:
         raise ValueError("Attribution method is not initialized")
+    if not isinstance(attribution_method, Explainer):
+        raise TypeError(f"Expected an instance of Explainer, but got {type(attribution_method)}")
     if not isinstance(attribution_method.explainable_model, ExplainableModel):
         raise AttributeError(
             f"The attribution method {attribution_method.__class__.__name__} is not initialized properly"
@@ -103,23 +105,6 @@ class Explainer(ABC):
             logger.info(f"Initializing {self.__class__.__name__} explainer on model {callable}")
 
         self.forward_func = self.explainable_model.forward_func
-
-    # def attribute(self, hsi: HSI, target: int | None = None, *args: Any, **kwargs: Any) -> HSIAttributes:
-    #     """Compute the attribute method of the explainer for the given hyperspectral image.
-
-    #     Parameters:
-    #     - hsi (HSI): The hyperspectral image to compute attributes for.
-    #     - target (int | None): The target class index for attribute computation. If None, attributes will be computed for all classes.
-    #     - *args (Any): Additional positional arguments.
-    #     - **kwargs (Any): Additional keyword arguments.
-
-    #     Returns:
-    #     - HSIAttributes: The computed attributes of the HSI.
-
-    #     Raises:
-    #     - NotImplementedError: If the attribute method is not implemented in the explainer base class.
-    #     """
-    #     raise NotImplementedError("Attribute method not implemented in the explainer base class")
 
     def has_convergence_delta(self) -> bool:
         """Check if the explainer has a convergence delta.

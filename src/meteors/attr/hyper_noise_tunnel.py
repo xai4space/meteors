@@ -11,7 +11,7 @@ from captum.attr._utils.attribution import GradientAttribution
 from captum.attr import Attribution
 
 from meteors.attr import Explainer, HSIAttributes
-from meteors.attr.explainer import validate_and_transform_baseline
+from meteors.attr.explainer import validate_and_transform_baseline, validate_attribution_method_initialization
 from meteors import HSI
 
 
@@ -171,8 +171,7 @@ class BaseHyperNoiseTunnel(Attribution):
 class HyperNoiseTunnel(Explainer):
     def __init__(self, attribution_method):
         super().__init__(attribution_method)
-        if not isinstance(attribution_method, Explainer):
-            raise TypeError(f"Expected Explainer as attribution_method, but got {type(attribution_method)}")
+        validate_attribution_method_initialization(attribution_method)
         if not attribution_method._attribution_method:
             raise ValueError("Attribution method is not initialized")
         self._attribution_method: Attribution = BaseHyperNoiseTunnel(attribution_method._attribution_method)

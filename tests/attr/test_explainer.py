@@ -33,13 +33,15 @@ def test_validate_attribution_method_initialization(explainable_toy_model):
 
     # Test case 3: Invalid attribution method
     attribution_method = "invalid"
-    with pytest.raises(AttributeError):
+    with pytest.raises(TypeError):
         explainer_module.validate_attribution_method_initialization(attribution_method)
 
     # Test case 4: None forward function in ExplainableModel
     not_working_model = explainer_module.Explainer(ExplainableModel(problem_type="regression", forward_func=None))
     with pytest.raises(ValueError):
         explainer_module.validate_attribution_method_initialization(not_working_model)
+
+    # test case 5: None explainable_model in Explainer
 
 
 def test_validate_and_transform_baseline():

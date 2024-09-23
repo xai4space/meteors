@@ -6,12 +6,13 @@ from captum.attr import NoiseTunnel as CaptumNoiseTunnel
 from meteors import HSI
 from meteors.attr import HSIAttributes, Explainer
 
+from meteors.attr.explainer import validate_attribution_method_initialization
+
 
 class NoiseTunnel(Explainer):
     def __init__(self, attribution_method: Explainer):
         super().__init__(attribution_method)
-        if not isinstance(attribution_method, Explainer):
-            raise TypeError(f"Expected Explainer as attribution_method, but got {type(attribution_method)}")
+        validate_attribution_method_initialization(attribution_method)
         if not attribution_method._attribution_method:
             raise ValueError("Attribution method is not initialized")
         self._attribution_method = CaptumNoiseTunnel(attribution_method._attribution_method)

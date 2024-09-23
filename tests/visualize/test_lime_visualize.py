@@ -133,7 +133,10 @@ def test_visualize_spatial_attributes():
     assert ax[2].get_title() == "Mask"
 
     # Cleanup
-    plt.close(fig)
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
 
 
 def test_visualize_empty_spatial_attributes():
@@ -156,7 +159,10 @@ def test_visualize_empty_spatial_attributes():
     assert ax[2].get_title() == "Mask"
 
     # Cleanup
-    plt.close(fig)
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
 
 
 def test_validate_consistent_band_and_wavelengths():
@@ -234,7 +240,9 @@ def test_setup_visualization():
     assert result_ax.get_ylabel() == "X Label"
 
     # Cleanup
-    plt.close(fig)
+    result_ax.clear()
+    plt.close("all")
+    del ax, fig
 
 
 def test_visualize_spectral_attributes_by_waveband():
@@ -359,9 +367,6 @@ def test_visualize_spectral_attributes_by_waveband():
     fig.clear()
     plt.close("all")
     del ax, fig
-
-
-test_visualize_spectral_attributes_by_waveband()
 
 
 def test_calculate_average_magnitudes():
@@ -637,7 +642,10 @@ def test_visualize_spectral_attributes():
     fig.gca().get_xticklabels()[2].get_text() == "R, T"
 
     # Cleanup
-    plt.close(fig)
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
 
 
 def test_visualize_spectral_attributes_global():
@@ -694,7 +702,10 @@ def test_visualize_spectral_attributes_global():
     assert ax[2].get_ylabel() == "Frequency"
 
     # Cleanup
-    plt.close(fig)
+    for a in ax:
+        a.clear()
+    plt.close("all")
+    del ax, fig
 
 
 def test_visualize_spectral_empty_attributes():
@@ -736,7 +747,8 @@ def test_visualize_spectral_empty_attributes():
     assert ax[1].get_ylabel() == "Average Attribution Magnitude"
 
     # Cleanup
-    plt.close(fig)
+    plt.close("all")
+    del ax, fig
 
 
 def test_visualize_spatial_aggregated_attributes():
