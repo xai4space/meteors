@@ -13,7 +13,7 @@ from meteors.attr.explainer import validate_and_transform_baseline
 
 
 class Occlusion(Explainer):
-    def __init__(self, explainable_model: ExplainableModel, multiply_by_inputs: bool = True):
+    def __init__(self, explainable_model: ExplainableModel):
         super().__init__(explainable_model)
         self._attribution_method = CaptumOcclusion(explainable_model.forward_func)
 
