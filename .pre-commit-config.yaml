@@ -10,6 +10,8 @@ repos:
           (?x)^(
             # examples with outsourced code
             examples/lime/clip_model.py
+            # jupyter notebooks
+            examples/lime/lime.ipynb
           )$
       - id: ruff-format
         name: ☕️ Format using ruff
@@ -18,6 +20,8 @@ repos:
           (?x)^(
             # examples with outsourced code
             examples/lime/clip_model.py
+            # jupyter notebooks
+            examples/lime/lime.ipynb
           )$
   - repo: https://github.com/PyCQA/docformatter
     rev: v1.7.5
