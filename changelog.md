@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.0.3 (2024-09-24)
+
+### 🩺 Bug Fixes
+- github action release workflow to pypi (#83)
+
 ## v0.0.3 (2024-09-23)
 
 ### 🩺 Bug Fixes
