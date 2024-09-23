@@ -7,6 +7,7 @@ authors = [
 description = "Explanations of models for Hyperspectral data"
 readme = "README.md"
 requires-python = ">=3.9"
+license = { text = "BSD-3-Clause" }
 
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
@@ -32,6 +33,9 @@ dependencies = [
     "importlib-resources; python_version < '3.10'",
     "setuptools>=60.0.0",
 ]
+
+[metadata]
+license = "BDS-3-Clause"
 
 [build-system]
 requires = ["hatchling"]
