@@ -439,7 +439,7 @@ class HSISpatialAttributes(HSIAttributes):
             >>> attrs.flattened_attributes
                 tensor([[0., 0.],
                         [0., 0.]])
-        
+
         Returns:
             torch.Tensor: A flattened tensor of attributes.
         """

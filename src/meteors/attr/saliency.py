@@ -23,6 +23,7 @@ class Saliency(Explainer):
     Attributes:
         _attribution_method (CaptumSaliency): The Saliency method from the `captum` library.
     """
+
     def __init__(
         self,
         explainable_model: ExplainableModel,

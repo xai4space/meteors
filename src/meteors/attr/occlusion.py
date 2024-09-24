@@ -14,16 +14,17 @@ from meteors.attr.explainer import validate_and_transform_baseline
 
 class Occlusion(Explainer):
     """
-    Occlusion explainer class for generating attributions using the Occlusion method. 
-    This attribution method perturbs the input by replacing the contiguous rectangular region 
-    with a given baseline and computing the difference in output. 
+    Occlusion explainer class for generating attributions using the Occlusion method.
+    This attribution method perturbs the input by replacing the contiguous rectangular region
+    with a given baseline and computing the difference in output.
     In our case, features are located in multiple regions, and attribution from different hyper-rectangles is averaged.
     The implementation of this method is also based on the [`captum` repository](https://captum.ai/api/occlusion.html).
     More details about this approach can be found in the [original paper](https://arxiv.org/abs/1311.2901)
-    
+
     Attributes:
         _attribution_method (CaptumOcclusion): The Occlusion method from the `captum` library.
     """
+
     def __init__(self, explainable_model: ExplainableModel):
         super().__init__(explainable_model)
         self._attribution_method = CaptumOcclusion(explainable_model.forward_func)

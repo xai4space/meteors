@@ -17,7 +17,7 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
     Parameters:
         image_attributes (HSIAttributes): The image attributes to be visualized.
         use_pyplot (bool): If True, uses pyplot to display the image. If False, returns the figure and axes objects.
-        
+
     Returns:
         matplotlib.figure.Figure | None:
             If use_pyplot is False, returns the figure and axes objects.

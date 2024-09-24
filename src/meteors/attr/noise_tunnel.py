@@ -19,6 +19,7 @@ class NoiseTunnel(Explainer):
     Attributes:
         _attribution_method (CaptumNoiseTunnel): The Noise Tunnel method from the `captum` library.
     """
+
     def __init__(self, attribution_method: Explainer):
         super().__init__(attribution_method)
         validate_attribution_method_initialization(attribution_method)
