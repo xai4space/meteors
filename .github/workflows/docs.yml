@@ -68,7 +68,10 @@ jobs:
 
       - name: Move Assets to Docs ➡️
         run: |
-          mv -rf assets docs/
+          if [ -d "docs/assets" ]; then
+            rm -rf docs/assets
+          fi
+          mv assets docs/
 
       - name: Build Docs Website 🌐
         run: |
