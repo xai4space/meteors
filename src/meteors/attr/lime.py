@@ -1181,7 +1181,6 @@ class Lime(Explainer):
         band_mask = ensure_torch_tensor(band_mask, "Band mask should be None, numpy array, or torch tensor")
         if band_mask.shape != hsi.image.shape:
             band_mask = expand_spectral_mask(hsi, band_mask, repeat_dimensions=True)
-        band_mask = band_mask.int()
 
         if band_names is None:
             unique_segments = torch.unique(band_mask)
