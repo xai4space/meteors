@@ -2,7 +2,7 @@ name: Docs
 
 on:
   release:
-    types: [published]
+    types: [released]
   workflow_dispatch:
 
 jobs:
@@ -68,7 +68,7 @@ jobs:
 
       - name: Move Assets to Docs ➡️
         run: |
-          mv assets docs/
+          mv -rf assets docs/
 
       - name: Build Docs Website 🌐
         run: |
