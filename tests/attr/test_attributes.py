@@ -563,12 +563,21 @@ def test_spatial_attributes():
         assert spatial_attributes.segmentation_mask.device == device
 
     with pytest.raises(ValueError):
-        attributes_with_no_mask = HSISpatialAttributes(
+        HSISpatialAttributes(
             hsi=image,
             attributes=attributes,
             mask=None,
             device=device,
         )
+
+    with pytest.raises(ValueError):
+        attributes_with_no_mask = HSISpatialAttributes(
+            hsi=image,
+            attributes=attributes,
+            mask=segmentation_mask,
+            device=device,
+        )
+        attributes_with_no_mask.mask = None
         attributes_with_no_mask.segmentation_mask
 
 
@@ -663,11 +672,21 @@ def test_spectral_attributes():
         assert spectral_attributes.band_mask.device == device
 
     with pytest.raises(ValueError):
-        attributes_with_no_mask = HSISpectralAttributes(
+        HSISpectralAttributes(
             hsi=image,
             attributes=attributes,
             band_names=band_names,
             mask=None,
             device=device,
         )
+
+    with pytest.raises(ValueError):
+        attributes_with_no_mask = HSISpectralAttributes(
+            hsi=image,
+            attributes=attributes,
+            band_names=band_names,
+            mask=band_mask,
+            device=device,
+        )
+        attributes_with_no_mask.mask = None
         attributes_with_no_mask.band_mask

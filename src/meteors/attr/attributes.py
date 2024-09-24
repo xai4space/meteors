@@ -150,6 +150,8 @@ def align_band_names_with_mask(
                 )
                 band_names["not_included"] = value
                 band_name_values.add(value)
+                # exit the loop as we have already added the 'not_included' category
+                break
 
     # Validate that all mask values are in band_names
     if not set(unique_mask_values).issubset(set(band_name_values)):
