@@ -5,6 +5,7 @@ import numpy as np
 from pydantic import ValidationError
 
 import meteors.hsi as mt_image
+from meteors import HSI
 
 
 # Temporary solution for wavelengths
@@ -176,24 +177,24 @@ def test_ensure_image_tensor():
         mt_image.ensure_image_tensor(image)
 
 
-def test_resolve_inference_device():
+def test_resolve_inference_device_hsi():
     # Test device as string
     device = "cpu"
     info = ValidationInfoMock(data={"image": torch.randn(5, 5)})
-    result = mt_image.resolve_inference_device(device, info)
+    result = mt_image.resolve_inference_device_hsi(device, info)
     assert isinstance(result, torch.device)
     assert str(result) == device
 
     # Test device as torch.device
     device = torch.device("cpu")
-    result = mt_image.resolve_inference_device(device, info)
+    result = mt_image.resolve_inference_device_hsi(device, info)
     assert isinstance(result, torch.device)
     assert result == device
 
     # Test device as None
     device = None
     info = ValidationInfoMock(data={"image": torch.randn(5, 5)})
-    result = mt_image.resolve_inference_device(device, info)
+    result = mt_image.resolve_inference_device_hsi(device, info)
     assert isinstance(result, torch.device)
     assert result == info.data["image"].device
 
@@ -201,19 +202,19 @@ def test_resolve_inference_device():
     device = 123
     info = ValidationInfoMock(data={"image": torch.randn(5, 5)})
     with pytest.raises(ValueError):
-        mt_image.resolve_inference_device("device", info)
+        mt_image.resolve_inference_device_hsi("device", info)
 
     # Test no image in the info
     device = None
     info = ValidationInfoMock(data={})
     with pytest.raises(ValueError):
-        mt_image.resolve_inference_device(device, info)
+        mt_image.resolve_inference_device_hsi(device, info)
 
     # Test wrong type device
     device = 0
     info = ValidationInfoMock(data={"image": torch.randn(5, 5)})
     with pytest.raises(TypeError):
-        mt_image.resolve_inference_device(device, info)
+        mt_image.resolve_inference_device_hsi(device, info)
 
 
 def test_ensure_wavelengths_tensor():
@@ -352,7 +353,7 @@ def test_image():
     # Test valid image with default parameters
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
-    valid_image = mt_image.HSI(image=sample, wavelengths=wavelengths)
+    valid_image = HSI(image=sample, wavelengths=wavelengths)
     assert valid_image.image == sample
     assert valid_image.wavelengths == torch.tensor(wavelengths)
     assert valid_image.orientation == ("C", "H", "W")
@@ -369,7 +370,7 @@ def test_image():
     orientation = ("C", "H", "W")
     binary_mask = "artificial"
     device = torch.device("cpu")
-    valid_image = mt_image.HSI(
+    valid_image = HSI(
         image=sample, wavelengths=wavelengths, orientation=orientation, binary_mask=binary_mask, device=device
     )
     assert valid_image.image == sample
@@ -384,41 +385,41 @@ def test_image():
     sample = "invalid"
     wavelengths = [0]
     with pytest.raises(TypeError):
-        mt_image.HSI(image=sample, wavelengths=wavelengths)
+        HSI(image=sample, wavelengths=wavelengths)
 
     # Test invalid wavelengths type
     sample = torch.tensor([[[0]]])
     wavelengths = "invalid"
     with pytest.raises(TypeError):
-        mt_image.HSI(image=sample, wavelengths=wavelengths)
+        HSI(image=sample, wavelengths=wavelengths)
 
     # Test invalid orientation type
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     orientation = "invalid"
     with pytest.raises(ValueError):
-        mt_image.HSI(image=sample, wavelengths=wavelengths, orientation=orientation)
+        HSI(image=sample, wavelengths=wavelengths, orientation=orientation)
 
     # Test invalid binary mask type
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     binary_mask = 123
     with pytest.raises(ValueError):
-        mt_image.HSI(image=sample, wavelengths=wavelengths, binary_mask=binary_mask)
+        HSI(image=sample, wavelengths=wavelengths, binary_mask=binary_mask)
 
     # Test invalid device type
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     device = "invalid"
     with pytest.raises(ValueError):
-        mt_image.HSI(image=sample, wavelengths=wavelengths, device=device)
+        HSI(image=sample, wavelengths=wavelengths, device=device)
 
 
 def test_spectral_axis():
     # Test case with orientation ("C", "H", "W")
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
-    valid_image = mt_image.HSI(image=sample, wavelengths=wavelengths)
+    valid_image = HSI(image=sample, wavelengths=wavelengths)
 
     expected_result = 0
     result = valid_image.spectral_axis
@@ -426,7 +427,7 @@ def test_spectral_axis():
     assert result == expected_result
 
     orientation = ("C", "H", "W")
-    valid_image = mt_image.HSI(image=sample, wavelengths=wavelengths, orientation=orientation)
+    valid_image = HSI(image=sample, wavelengths=wavelengths, orientation=orientation)
 
     expected_result = 0
     result = valid_image.spectral_axis
@@ -435,7 +436,7 @@ def test_spectral_axis():
 
     # Test case with orientation ("H", "C", "W")
     orientation = ("H", "C", "W")
-    valid_image = mt_image.HSI(image=sample, wavelengths=wavelengths, orientation=orientation)
+    valid_image = HSI(image=sample, wavelengths=wavelengths, orientation=orientation)
     expected_result = 1
 
     result = valid_image.spectral_axis
@@ -444,7 +445,7 @@ def test_spectral_axis():
 
     # Test case with orientation ("W", "H", "C")
     orientation = ("W", "H", "C")
-    valid_image = mt_image.HSI(image=sample, wavelengths=wavelengths, orientation=orientation)
+    valid_image = HSI(image=sample, wavelengths=wavelengths, orientation=orientation)
     expected_result = 2
 
     result = valid_image.spectral_axis
@@ -452,30 +453,30 @@ def test_spectral_axis():
     assert result == expected_result
 
 
-def test_spatial_mask():
+def test_spatial_binary_mask():
     # Test with binary mask as None
     image = torch.randn(3, 5, 5)
     wavelengths = torch.tensor([400, 500, 600])
     binary_mask = None
-    result = mt_image.HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_mask
+    result = HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_binary_mask
     expected_result = torch.ones(5, 5, dtype=torch.bool)
     assert torch.all(torch.eq(result, expected_result))
 
     # Test with binary mask as numpy array
     binary_mask = np.random.randint(0, 2, size=(3, 5, 5))
-    result = mt_image.HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_mask
+    result = HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_binary_mask
     expected_result = torch.as_tensor(binary_mask[0, :, :], dtype=torch.bool)
     assert torch.all(torch.eq(result, expected_result))
 
     # Test with binary mask as torch tensor
     binary_mask = torch.randint(0, 2, size=(3, 5, 5))
-    result = mt_image.HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_mask
+    result = HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_binary_mask
     expected_result = torch.as_tensor(binary_mask[0, :, :], dtype=torch.bool)
     assert torch.all(torch.eq(result, expected_result))
 
     # Test with binary mask as string 'artificial'
     binary_mask = "artificial"
-    result = mt_image.HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_mask
+    result = HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask).spatial_binary_mask
     expected_result = torch.ones(5, 5, dtype=torch.bool)
     assert torch.all(torch.eq(result, expected_result))
 
@@ -487,7 +488,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
-    mt_image.HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
+    HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid image data with mismatched wavelengths and image shape
     image = torch.randn(3, 5, 5)
@@ -496,9 +497,7 @@ def test_validate_image_data():
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
     with pytest.raises(ValidationError):
-        mt_image.HSI(
-            image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask
-        )
+        HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid image data with mismatched band axis
     image = torch.randn(3, 5, 5)
@@ -507,9 +506,7 @@ def test_validate_image_data():
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
     with pytest.raises(ValidationError):
-        mt_image.HSI(
-            image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask
-        )
+        HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid mask shape
     image = torch.randn(3, 5, 5)
@@ -518,9 +515,7 @@ def test_validate_image_data():
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 10)
     with pytest.raises(ValidationError):
-        mt_image.HSI(
-            image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask
-        )
+        HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid binary mask shape
     image = torch.randn(3, 5, 5)
@@ -529,9 +524,7 @@ def test_validate_image_data():
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 6, 5)
     with pytest.raises(ValidationError):
-        mt_image.HSI(
-            image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask
-        )
+        HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
 
 def test_image_to():
@@ -539,7 +532,7 @@ def test_image_to():
     image = torch.randn(1, 5, 5)
     wavelengths = [0]
     device = torch.device("cpu")
-    valid_image = mt_image.HSI(image=image, wavelengths=wavelengths)
+    valid_image = HSI(image=image, wavelengths=wavelengths)
     result = valid_image.to(device)
     assert result.image.device == device
     assert result.binary_mask.device == device
@@ -548,7 +541,7 @@ def test_image_to():
     # Test moving image and binary mask to CUDA device
     if torch.cuda.is_available():
         device = torch.device("cuda")
-        valid_image = mt_image.HSI(image=image, wavelengths=wavelengths)
+        valid_image = HSI(image=image, wavelengths=wavelengths)
         result = valid_image.to(device)
         assert result.image.device == device
         assert result.binary_mask.device == device
@@ -556,7 +549,7 @@ def test_image_to():
 
     # Test moving image and binary mask to a string device
     device = "cpu"
-    valid_image = mt_image.HSI(image=image, wavelengths=wavelengths)
+    valid_image = HSI(image=image, wavelengths=wavelengths)
     result = valid_image.to(device)
     assert result.image.device == torch.device(device)
     assert result.binary_mask.device == torch.device(device)
@@ -567,7 +560,7 @@ def test_get_image():
     # Test with apply_mask=True and binary_mask is not None
     image = torch.randn((3, 5, 5))
     binary_mask = torch.ones((3, 5, 5), dtype=torch.bool)
-    hsi_image = mt_image.HSI(image=image, wavelengths=[0, 1, 2], binary_mask=binary_mask)
+    hsi_image = HSI(image=image, wavelengths=[0, 1, 2], binary_mask=binary_mask)
     result = hsi_image.get_image(apply_mask=True)
     assert torch.all(torch.eq(result, image))
 
@@ -576,7 +569,7 @@ def test_get_image():
     assert torch.all(torch.eq(result, image))
 
     # Test with apply_mask=True and binary_mask is None
-    hsi_image = mt_image.HSI(image=image, wavelengths=[0, 1, 2])
+    hsi_image = HSI(image=image, wavelengths=[0, 1, 2])
     result = hsi_image.get_image(apply_mask=True)
     assert torch.all(torch.eq(result, image))
 
@@ -586,7 +579,7 @@ def test_get_image():
 
     # Test with binary mask different:
     binary_mask[0, 0, 0] = False
-    hsi_image = mt_image.HSI(image=image, wavelengths=[0, 1, 2], binary_mask=binary_mask)
+    hsi_image = HSI(image=image, wavelengths=[0, 1, 2], binary_mask=binary_mask)
     result = hsi_image.get_image(apply_mask=True)
     assert not torch.all(torch.eq(result, image))
     assert torch.all(torch.eq(result[0, 0, 0], torch.tensor(0.0)))
@@ -594,12 +587,12 @@ def test_get_image():
 
 
 def test__extract_central_slice_from_band():
-    # Create a sample Image object
+    # Create a sample HSI object
 
     image = torch.randn(10, 5, 5)
     wavelengths = torch.arange(10)
     binary_mask = torch.ones(10, 5, 5, dtype=torch.bool)
-    image_obj = mt_image.HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask)
+    image_obj = HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask)
 
     # Test selecting central band with mask and normalization
     selected_wavelengths = torch.tensor([3, 4, 5])
@@ -643,7 +636,7 @@ def test_extract_band_by_name():
     cutoff_min = False
     normalize = True
 
-    hsi_image = mt_image.HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask)
+    hsi_image = HSI(image=image, wavelengths=wavelengths, binary_mask=binary_mask)
     result = hsi_image.extract_band_by_name(
         band_name=band_name, selection_method=method, apply_mask=mask, apply_min_cutoff=cutoff_min, normalize=normalize
     )
@@ -682,7 +675,7 @@ def test_get_rgb_image():
     orientation = ("C", "H", "W")
     binary_mask = torch.ones(len(wavelengths_main), 10, 10, dtype=torch.bool)
     device = torch.device("cpu")
-    test_image = mt_image.HSI(
+    test_image = HSI(
         image=image, wavelengths=wavelengths, orientation=orientation, binary_mask=binary_mask, device=device
     )
 
@@ -703,7 +696,7 @@ def test_get_rgb_image():
 
 def test_orientation_change():
     tensor_image = torch.rand((4, 3, 2))
-    image = mt_image.HSI(image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"))
+    image = HSI(image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"))
 
     assert image.orientation == ("C", "H", "W")
 
@@ -732,9 +725,7 @@ def test_orientation_change():
     # test case with binary mask
     tensor_image = torch.rand((4, 3, 2))
     binary_mask = torch.ones((4, 3, 2), dtype=torch.bool)
-    image = mt_image.HSI(
-        image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"), binary_mask=binary_mask
-    )
+    image = HSI(image=tensor_image, wavelengths=[0, 1, 2, 3], orientation=("C", "H", "W"), binary_mask=binary_mask)
 
     assert image.orientation == ("C", "H", "W")
 

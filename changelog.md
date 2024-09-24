@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.4 (2024-09-24)
+
+- feat: HyperNoiseTunnel and captum attribution methods (#51)
+
 ## v0.0.3 (2024-09-23)
 
 ### 🩺 Bug Fixes

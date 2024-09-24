@@ -12,14 +12,10 @@ from matplotlib.figure import Figure
 from captum.attr import visualization as viz
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from meteors import (
-    HSI,
-    HSIAttributes,
-    HSISpectralAttributes,
-    HSISpatialAttributes,
-)
-from meteors.lime import align_band_names_with_mask
-from meteors.utils.utils import aggregate_by_mask, expand_spectral_mask
+from meteors.attr import HSISpatialAttributes, HSISpectralAttributes, HSIAttributes
+from meteors.utils.utils import expand_spectral_mask, aggregate_by_mask
+
+from meteors.attr.attributes import align_band_names_with_mask
 
 
 def _merge_band_names_segments(band_names: dict[str | tuple[str, ...], int]) -> dict[str, int]:
@@ -47,40 +43,14 @@ def _merge_band_names_segments(band_names: dict[str | tuple[str, ...], int]) -> 
     return band_names  # type: ignore
 
 
-def visualize_hsi(hsi: HSI | HSIAttributes, ax: Axes | None, use_mask: bool = True) -> Axes:
-    """Visualizes an LIME hsi object on the given axes.
-
-    Parameters:
-        hsi (HSI | HSIAttributes): The HSI object to visualize.
-        ax (matplotlib.axes.Axes | None): The axes on which the image will be plotted.
-            If None, the current axes will be used.
-        use_mask (bool): Whether to use the image mask if provided for the visualization.
-
-    Returns:
-        matplotlib.figure.Figure | None:
-            If use_pyplot is False, returns the figure and axes objects.
-            If use_pyplot is True, returns None.
-    """
-    if isinstance(hsi, HSIAttributes):
-        hsi = hsi.hsi
-
-    hsi = hsi.change_orientation("HWC", inplace=False)
-
-    rgb = hsi.get_rgb_image(output_channel_axis=2, apply_mask=use_mask).cpu().numpy()
-    ax = ax or plt.gca()
-    ax.imshow(rgb)
-
-    return ax
-
-
-def visualize_spatial_attributes(  # noqa: C901
+def visualize_spatial_attributes(
     spatial_attributes: HSISpatialAttributes, use_pyplot: bool = False
 ) -> tuple[Figure, Axes] | None:
     """Visualizes the spatial attributes of an hsi using Lime attribution.
 
     Args:
         spatial_attributes (HSISpatialAttributes):
-            The spatial attributes of the hsi object to visualize.
+            The spatial attributes of the image object to visualize.
         use_pyplot (bool, optional):
             Whether to use pyplot for visualization. Defaults to False.
 
@@ -156,7 +126,7 @@ def visualize_spectral_attributes(
 
     Args:
         spectral_attributes (HSISpectralAttributes | list[HSISpectralAttributes]):
-            The spectral attributes of the imhsiage object to visualize.
+            The spectral attributes of the image object to visualize.
         use_pyplot (bool, optional):
             If True, displays the visualization using pyplot.
             If False, returns the figure and axes objects. Defaults to False.
@@ -199,7 +169,7 @@ def visualize_spectral_attributes(
 
     if agg:
         scores = [attr.score for attr in spectral_attributes]  # type: ignore
-        mean_score = sum(scores) / len(scores)
+        mean_score = sum(scores) / len(scores)  # type: ignore
         ax[2].hist(scores, bins=50, color="steelblue", alpha=0.7)
         ax[2].axvline(mean_score, color="darkred", linestyle="dashed")
 
@@ -210,8 +180,8 @@ def visualize_spectral_attributes(
     if use_pyplot:
         plt.show()  # pragma: no cover
         return None  # pragma: no cover
-    else:
-        return fig, ax
+
+    return fig, ax
 
 
 def validate_consistent_band_and_wavelengths(
@@ -317,7 +287,7 @@ def visualize_spectral_attributes_by_waveband(
             uplims = current_attribution_map.numpy().max(axis=0)
 
             ax.errorbar(
-                current_wavelengths,
+                current_wavelengths.numpy(),
                 current_mean,
                 yerr=[current_mean - lolims, uplims - current_mean],
                 label=band_name,
@@ -328,7 +298,7 @@ def visualize_spectral_attributes_by_waveband(
             )
         else:
             ax.scatter(
-                current_wavelengths,
+                current_wavelengths.numpy(),
                 current_mean,
                 label=band_name,
                 color=color_palette[idx],
@@ -486,8 +456,8 @@ def visualize_spatial_aggregated_attributes(
     if use_pyplot:
         plt.show()  # pragma: no cover
         return None  # pragma: no cover
-    else:
-        return fig, ax
+
+    return fig, ax
 
 
 def visualize_spectral_aggregated_attributes(
@@ -560,8 +530,8 @@ def visualize_spectral_aggregated_attributes(
     if use_pyplot:
         plt.show()  # pragma: no cover
         return None  # pragma: no cover
-    else:
-        return fig, ax
+
+    return fig, ax
 
 
 def visualize_aggregated_attributes(

@@ -5,8 +5,7 @@ import warnings
 import torch
 import numpy as np
 from loguru import logger
-from pydantic import BaseModel, ConfigDict, ValidationInfo, Field, model_validator
-from pydantic.functional_validators import PlainValidator
+from pydantic import BaseModel, ConfigDict, ValidationInfo, Field, model_validator, PlainValidator
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=FutureWarning)
@@ -73,32 +72,32 @@ def ensure_image_tensor(image: np.ndarray | torch.Tensor) -> torch.Tensor:
     return image
 
 
-def resolve_inference_device(device: str | torch.device | None, info: ValidationInfo) -> torch.device:
+def resolve_inference_device_hsi(device: str | torch.device | None, info: ValidationInfo) -> torch.device:
     """Resolves and returns the device to be used for inference.
 
     This function determines the appropriate PyTorch device for inference based on the input
     parameters and available information. It handles three scenarios:
     1. If a specific device is provided, it validates and returns it.
-    2. If no device is specified (None), it uses the device of the input image.
+    2. If no device is specified (None), it uses the device of the input tensor image.
     3. If a string is provided, it attempts to convert it to a torch.device.
 
     Args:
         device (str | torch.device | None): The desired device for inference.
-            If None, the device of the input image will be used.
+            If None, the device of the input hsi will be used.
         info (ValidationInfo): An object containing additional validation information,
-            including the input image data.
+            including the input hsi data.
 
     Returns:
         torch.device: The resolved PyTorch device for inference.
 
     Raises:
-        ValueError: If no device is specified and the image is not present in the info data,
+        ValueError: If no device is specified and the hsi is not present in the info data,
             or if the provided device string is invalid.
         TypeError: If the provided device is neither None, a string, nor a torch.device.
     """
     if device is None:
         if "image" not in info.data:
-            raise ValueError("Image is not present in the data, INTERNAL ERROR")
+            raise ValueError("Hyperspectral image tensor is not present in the data, INTERNAL ERROR")
         image: torch.Tensor = info.data["image"]
         device = image.device
     elif isinstance(device, str):
@@ -260,7 +259,7 @@ class HSI(BaseModel):
     ] = ("C", "H", "W")
     device: Annotated[
         torch.device,
-        PlainValidator(resolve_inference_device),
+        PlainValidator(resolve_inference_device_hsi),
         Field(
             validate_default=True,
             exclude=True,
@@ -311,7 +310,7 @@ class HSI(BaseModel):
         return get_channel_axis(self.orientation)
 
     @property
-    def spatial_mask(self) -> torch.Tensor:
+    def spatial_binary_mask(self) -> torch.Tensor:
         """Returns a 2D spatial representation of the binary mask.
 
         This property extracts a single 2D slice from the 3D binary mask, assuming that
@@ -330,11 +329,11 @@ class HSI(BaseModel):
         Examples:
             >>> # If self.binary_mask has shape (100, 100, 5) with spectral_axis=2:
             >>> hsi_image = HSI(binary_mask=torch.rand(100, 100, 5), orientation=("H", "W", "C"))
-            >>> hsi_image.spatial_mask.shape
+            >>> hsi_image.spatial_binary_mask.shape
             torch.Size([100, 100])
             >>> If self.binary_mask has shape (5, 100, 100) with spectral_axis=0:
             >>> hsi_image = HSI(binary_mask=torch.rand(5, 100, 100), orientation=("C", "H", "W"))
-            >>> hsi_image.spatial_mask.shape
+            >>> hsi_image.spatial_binary_mask.shape
             torch.Size([100, 100])
         """
         mask = self.binary_mask if self.binary_mask is not None else torch.ones_like(self.image)
@@ -359,7 +358,7 @@ class HSI(BaseModel):
             device (str or torch.device): The device to move the image and binary mask to.
 
         Returns:
-            Self: The updated Image object.
+            Self: The updated HSI object.
 
         Examples:
             >>> # Create an HSI object
@@ -626,22 +625,22 @@ class HSI(BaseModel):
         target_orientation = validate_orientation(target_orientation)
 
         if inplace:
-            image = self
+            hsi = self
         else:
-            image = self.model_copy()
+            hsi = self.model_copy()
 
         if target_orientation == self.orientation:
-            return image
+            return hsi
 
-        permute_dims = [image.orientation.index(dim) for dim in target_orientation]
+        permute_dims = [hsi.orientation.index(dim) for dim in target_orientation]
 
         # permute the image
-        image.image = image.image.permute(permute_dims)
+        hsi.image = hsi.image.permute(permute_dims)
 
         # permute the binary mask
-        if image.binary_mask is not None:
-            image.binary_mask = image.binary_mask.permute(permute_dims)
+        if hsi.binary_mask is not None:
+            hsi.binary_mask = hsi.binary_mask.permute(permute_dims)
 
-        image.orientation = target_orientation
+        hsi.orientation = target_orientation
 
-        return image
+        return hsi
