@@ -98,6 +98,11 @@ def test_noise_tunnel(explainable_toy_model):
         noise_tunnel._attribution_method = None
         noise_tunnel.attribute(image)
 
+    with pytest.raises(ValueError):
+        noise_tunnel = NoiseTunnel(input_x_gradient)
+        noise_tunnel.chained_explainer = None
+        noise_tunnel.attribute(image)
+
 
 def test_occlusion(explainable_toy_model):
     occlusion = Occlusion(explainable_toy_model)

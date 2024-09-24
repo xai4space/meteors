@@ -172,8 +172,6 @@ class HyperNoiseTunnel(Explainer):
     def __init__(self, attribution_method):
         super().__init__(attribution_method)
         validate_attribution_method_initialization(attribution_method)
-        if not attribution_method._attribution_method:
-            raise ValueError("Attribution method is not initialized")
         self._attribution_method: Attribution = BaseHyperNoiseTunnel(attribution_method._attribution_method)
 
     def attribute(
