@@ -99,8 +99,8 @@ def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> torch.Tensor:
         source = source.unsqueeze(0)
 
     # If the source tensor has more dimensions than the target tensor, remove dimensions from the source tensor
-    while source.dim() > target.dim():
-        source = source.squeeze(0)
+    if source.dim() > target.dim():
+        source = source.squeeze()
 
     # If the source tensor has a different shape than the target tensor, broadcast the source tensor to match the target tensor
     if source.shape != target.shape:
