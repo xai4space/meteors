@@ -10,6 +10,15 @@ from meteors.attr.explainer import validate_attribution_method_initialization
 
 
 class NoiseTunnel(Explainer):
+    """
+    NoiseTunnel explainer class for generating attributions using the Noise Tunnel method.
+    This attribution method works on top of a different one to better approximate its explanations.
+    The Noise Tunnel (Smooth Grad) adds Gaussian noise to each input in the batch and applies the given attribution algorithm to each modified sample.
+    This method is based on the [`captum` implementation](https://captum.ai/api/noise_tunnel.html)
+
+    Attributes:
+        _attribution_method (CaptumNoiseTunnel): The Noise Tunnel method from the `captum` library.
+    """
     def __init__(self, attribution_method: Explainer):
         super().__init__(attribution_method)
         validate_attribution_method_initialization(attribution_method)

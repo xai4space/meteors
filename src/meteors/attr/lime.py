@@ -297,7 +297,9 @@ def validate_mask_shape(mask_type: Literal["segmentation", "band"], hsi: HSI, ma
 class Lime(Explainer):
     """Lime class is a subclass of Explainer and represents the Lime explainer. Lime is an interpretable model-agnostic
     explanation method that explains the predictions of a black-box model by approximating it with a simpler
-    interpretable model.
+    interpretable model. The Lime method is based on the [`captum` implementation](https://captum.ai/api/lime.html)
+    and is an implementation of an idea coming from the [original paper on Lime](https://arxiv.org/abs/1602.04938),
+    where more details about this method can be found.
 
     Args:
         explainable_model (ExplainableModel): The explainable model to be explained.

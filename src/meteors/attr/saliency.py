@@ -14,6 +14,15 @@ from meteors.attr import Explainer
 
 
 class Saliency(Explainer):
+    """
+    Saliency explainer class for generating attributions using the Saliency method.
+    This baseline method for computing input attribution calculates gradients with respect to inputs.
+    It also has an option to return the absolute value of the gradients, which is the default behaviour.
+    Implementation of this method is based on the [`captum` repository](https://captum.ai/api/saliency.html)
+
+    Attributes:
+        _attribution_method (CaptumSaliency): The Saliency method from the `captum` library.
+    """
     def __init__(
         self,
         explainable_model: ExplainableModel,

@@ -37,6 +37,9 @@ def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | s
 
 
 class BaseHyperNoiseTunnel(Attribution):
+    """"
+    Compute the attribution of the given inputs using the hyper noise tunnel method.
+    """
     def __init__(self, model: GradientAttribution):
         self.attribute_main = model.attribute
         sig = inspect.signature(self.attribute_main)
@@ -169,6 +172,16 @@ class BaseHyperNoiseTunnel(Attribution):
 
 
 class HyperNoiseTunnel(Explainer):
+    """
+    Hyper Noise Tunnel is our novel method, designed specifically to explain hyperspectral satellite images. 
+    It is inspired by the behaviour of the classical Noise Tunnel (Smooth Grad) method, 
+    but instead of sampling noise into the original image, it randomly removes some of the bands. 
+    In the process, the created _noised_ samples are close to the distribution of the original image 
+    yet differ enough to smoothen the produced attribution map.
+
+    Attributes:
+        _attribution_method (BaseHyperNoiseTunnel): The Hyper Noise Base Tunnel method
+    """
     def __init__(self, attribution_method):
         super().__init__(attribution_method)
         validate_attribution_method_initialization(attribution_method)
