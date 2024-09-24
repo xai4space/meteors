@@ -241,6 +241,11 @@ def test_align_band_names_with_mask():
 
     assert changed_band_names == {"R": 0}
 
+    with pytest.raises(ValueError):
+        band_names = {"R": 0, "G": 1}
+        band_mask = torch.tensor([[1, 2, 3], [0, 0, 0], [0, 0, 0]])
+        mt_attr.attributes.align_band_names_with_mask(band_names, band_mask)
+
 
 def test_validate_hsi_attributions():
     # Create a sample HSIAttributes object
@@ -410,9 +415,6 @@ def test_attributes():
         assert attributes.mask.device == device
 
 
-test_attributes()
-
-
 def test_validate_scorer():
     # Test valid score
     hsi = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
@@ -483,9 +485,6 @@ def test_change_orientation_attributes():
     new_orientation = ("H", "C", "A")
     with pytest.raises(ValueError):
         attrs.change_orientation(new_orientation, True)
-
-
-test_change_orientation_attributes()
 
 
 def test_spatial_attributes():
@@ -562,6 +561,15 @@ def test_spatial_attributes():
         assert spatial_attributes.hsi.device == device
         assert spatial_attributes.attributes.device == device
         assert spatial_attributes.segmentation_mask.device == device
+
+    with pytest.raises(ValueError):
+        attributes_with_no_mask = HSISpatialAttributes(
+            hsi=image,
+            attributes=attributes,
+            mask=None,
+            device=device,
+        )
+        attributes_with_no_mask.segmentation_mask
 
 
 def test_spectral_attributes():
@@ -653,3 +661,13 @@ def test_spectral_attributes():
         assert spectral_attributes.hsi.device == device
         assert spectral_attributes.attributes.device == device
         assert spectral_attributes.band_mask.device == device
+
+    with pytest.raises(ValueError):
+        attributes_with_no_mask = HSISpectralAttributes(
+            hsi=image,
+            attributes=attributes,
+            band_names=band_names,
+            mask=None,
+            device=device,
+        )
+        attributes_with_no_mask.band_mask
