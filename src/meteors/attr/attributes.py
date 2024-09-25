@@ -433,13 +433,15 @@ class HSISpatialAttributes(HSIAttributes):
 
         In the case of spatial attributes, the flattened attributes are 2D spatial attributes of shape (rows, columns) and the spectral dimension is removed.
 
+        Examples:
+            >>> segmentation_mask = torch.zeros((3, 2, 2))
+            >>> attrs = HSISpatialAttributes(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
+            >>> attrs.flattened_attributes
+                tensor([[0., 0.],
+                        [0., 0.]])
+
         Returns:
             torch.Tensor: A flattened tensor of attributes.
-        >>> segmentation_mask = torch.zeros((3, 2, 2))
-        >>> attrs = HSISpatialAttributes(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
-        >>> attrs.flattened_attributes
-            tensor([[0., 0.],
-                    [0., 0.]])
         """
         return self.attributes.select(dim=self.hsi.spectral_axis, index=0)
 

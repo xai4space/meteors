@@ -2,7 +2,7 @@ name: Docs
 
 on:
   release:
-    types: [published]
+    types: [released]
   workflow_dispatch:
 
 jobs:
@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code 📂
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Rye 🌾
         id: setup-rye
@@ -68,6 +70,9 @@ jobs:
 
       - name: Move Assets to Docs ➡️
         run: |
+          if [ -d "docs/assets" ]; then
+            rm -rf docs/assets
+          fi
           mv assets docs/
 
       - name: Build Docs Website 🌐
