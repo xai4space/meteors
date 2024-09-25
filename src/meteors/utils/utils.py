@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing_extensions import Type, Any, TypeVar, Callable, Iterable
 
+from loguru import logger
+
 import torch
 
 from meteors import HSI
@@ -79,7 +81,7 @@ def expand_spectral_mask(hsi: HSI, spectral_mask_single_dim: torch.Tensor, repea
     return spectral_mask
 
 
-def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> torch.Tensor:
+def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Adjust the shape of a source tensor to match the shape of target tensor. The function squeezes or unsqueezes the
     source tensor if the dimensions of source and target don't match. Afterwards, it tries to broadcasts the source
     tensor to match the target dimensions.
@@ -89,10 +91,10 @@ def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> torch.Tensor:
         source (torch.Tensor): The source tensor.
 
     Returns:
-        torch.Tensor: The source tensor with the shape adjusted to match the target tensor.
+        tuple(torch.Tensor, torch.Tensor): The source tensor and the target tensor with the shape adjusted to match the target tensor.
     """
     if source.shape == target.shape:
-        return source
+        return target, source
 
     # If the source tensor has fewer dimensions than the target tensor, add dimensions to the source tensor
     while source.dim() < target.dim():
@@ -104,9 +106,15 @@ def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> torch.Tensor:
 
     # If the source tensor has a different shape than the target tensor, broadcast the source tensor to match the target tensor
     if source.shape != target.shape:
-        source = source.expand_as(target)
+        try:
+            source = source.expand_as(target)
+        except RuntimeError:
+            logger.warning(
+                "The source tensor could not be broadcasted to match the target tensor shape. Broadcasting target tensor to match the source tensor shape."
+            )
+            target = target.expand_as(source)
 
-    return source
+    return target, source
 
 
 def agg_segmentation_postprocessing(
@@ -155,7 +163,7 @@ def agg_segmentation_postprocessing(
         """
         nonlocal classes_numb
         # Adjust the shape of the mask to match the shape of the output
-        mask = adjust_shape(output, mask)
+        output, mask = adjust_shape(output, mask)
 
         # If the output is soft labels, get the class with the highest probability
         if soft_labels:
