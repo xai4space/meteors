@@ -81,7 +81,7 @@ def expand_spectral_mask(hsi: HSI, spectral_mask_single_dim: torch.Tensor, repea
     return spectral_mask
 
 
-def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> tuple(torch.Tensor, torch.Tensor):
+def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Adjust the shape of a source tensor to match the shape of target tensor. The function squeezes or unsqueezes the
     source tensor if the dimensions of source and target don't match. Afterwards, it tries to broadcasts the source
     tensor to match the target dimensions.
@@ -109,9 +109,10 @@ def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> tuple(torch.Tens
         try:
             source = source.expand_as(target)
         except RuntimeError:
-            logger.warning("The source tensor could not be broadcasted to match the target tensor shape. Broadcasting target tensor to match the source tensor shape.")
-            target = target.expand_as(source)            
-        
+            logger.warning(
+                "The source tensor could not be broadcasted to match the target tensor shape. Broadcasting target tensor to match the source tensor shape."
+            )
+            target = target.expand_as(source)
 
     return target, source
 

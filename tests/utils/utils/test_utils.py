@@ -160,29 +160,41 @@ def test_adjust_shape():
     target = torch.tensor([[1, 2], [3, 4]])
     source = torch.tensor([[5, 6], [7, 8]])
     expected_result = torch.tensor([[5, 6], [7, 8]])
-    result = utils.adjust_shape(target, source)
-    assert torch.allclose(result, expected_result)
+    result_target, result_source = utils.adjust_shape(target, source)
+    assert torch.allclose(result_source, expected_result)
+    assert torch.allclose(result_target, target)
 
     # Test case 2: Source tensor has fewer dimensions
     target = torch.tensor([[1, 2], [3, 4]])
     source = torch.tensor([5, 6])
     expected_result = torch.tensor([[5, 6], [5, 6]])
-    result = utils.adjust_shape(target, source)
-    assert torch.allclose(result, expected_result)
+    result_target, result_source = utils.adjust_shape(target, source)
+    assert torch.allclose(result_source, expected_result)
+    assert torch.allclose(result_target, target)
 
     # Test case 3: Source tensor has more dimensions
     target = torch.tensor([[1, 2], [3, 4]])
     source = torch.tensor([[[5, 6]]])
     expected_result = torch.tensor([[5, 6], [5, 6]])
-    result = utils.adjust_shape(target, source)
-    assert torch.allclose(result, expected_result)
+    result_target, result_source = utils.adjust_shape(target, source)
+    assert torch.allclose(result_source, expected_result)
+    assert torch.allclose(result_target, target)
 
     # Test case 4: Source tensor has different shape and needs broadcasting
     target = torch.tensor([[1, 2], [3, 4]])
     source = torch.tensor([5, 6])
     expected_result = torch.tensor([[5, 6], [5, 6]])
-    result = utils.adjust_shape(target, source)
-    assert torch.allclose(result, expected_result)
+    result_target, result_source = utils.adjust_shape(target, source)
+    assert torch.allclose(result_source, expected_result)
+    assert torch.allclose(result_target, target)
+
+    # Test case 5: Target tensor needs broadcasting
+    target = torch.tensor([5, 6])
+    source = torch.tensor([[1, 2], [3, 4]])
+    expected_result = torch.tensor([[5, 6], [5, 6]])
+    result_target, result_source = utils.adjust_shape(target, source)
+    assert torch.allclose(result_source, source)
+    assert torch.allclose(result_target, expected_result)
 
 
 def test_aggregate_by_mask():
