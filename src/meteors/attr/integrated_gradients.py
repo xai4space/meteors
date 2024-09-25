@@ -13,6 +13,16 @@ from meteors.attr.explainer import validate_and_transform_baseline
 
 
 class IntegratedGradients(Explainer):
+    """
+    IntegratedGradients explainer class for generating attributions using the Integrated Gradients method.
+    The Integrated Gradients method is based on the [`captum` implementation](https://captum.ai/docs/extension/integrated_gradients)
+    and is an implementation of an idea coming from the [original paper on Integrated Gradients](https://arxiv.org/pdf/1703.01365),
+    where more details about this method can be found.
+
+    Attributes:
+        _attribution_method (CaptumIntegratedGradients): The Integrated Gradients method from the `captum` library.
+    """
+
     def __init__(self, explainable_model: ExplainableModel, multiply_by_inputs: bool = True):
         super().__init__(explainable_model)
         self._attribution_method = CaptumIntegratedGradients(

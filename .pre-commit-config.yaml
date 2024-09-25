@@ -22,6 +22,8 @@ repos:
             examples/lime/clip_model.py
             # jupyter notebooks
             examples/lime/lime.ipynb
+            # docs references
+            docs/reference.md
           )$
   - repo: https://github.com/PyCQA/docformatter
     rev: v1.7.5
@@ -51,6 +53,8 @@ repos:
             custom_components/foldingathomecontrol/translations/pt.json|
             # examples with jupyter notebooks
             examples/.*
+            # docs references
+            docs/reference.md
           )$
         entry: rye run codespell
   - repo: https://github.com/pre-commit/pre-commit-hooks
