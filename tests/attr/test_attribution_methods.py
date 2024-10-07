@@ -106,11 +106,56 @@ def test_noise_tunnel(explainable_toy_model):
 
 def test_occlusion(explainable_toy_model):
     occlusion = Occlusion(explainable_toy_model)
-    assert occlusion is not None
+    assert occlusion is not None and occlusion._attribution_method is not None
 
     image = HSI(image=torch.rand(3, 10, 10), wavelengths=[0, 100, 200])
-    attributions = occlusion.attribute(image, sliding_window_shapes=(2, 2), strides=(2, 2))
+    attributions = occlusion.attribute(image, sliding_window_shapes=(1, 2, 2), strides=(1, 2, 2))
     assert attributions.attributes.shape == image.image.shape
+
+    attributions = occlusion.attribute(image, sliding_window_shapes=1, strides=1)
+    assert attributions.attributes.shape == image.image.shape
+
+    with pytest.raises(AssertionError):
+        occlusion.attribute(image, sliding_window_shapes=(2, 2), strides=(2, 2, 2))
+
+    with pytest.raises(AssertionError):
+        occlusion.attribute(image, sliding_window_shapes=(2, 2, 2), strides=(2, 2))
+
+    attributions = occlusion.get_spatial_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2))
+    assert attributions.attributes.shape == image.image.shape
+
+    attributions = occlusion.get_spatial_attributes(image, sliding_window_shapes=2, strides=2)
+    assert attributions.attributes.shape == image.image.shape
+
+    with pytest.raises(AssertionError):
+        occlusion.get_spatial_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2, 2))
+
+    with pytest.raises(AssertionError):
+        occlusion.get_spatial_attributes(image, sliding_window_shapes=(2, 2, 2), strides=(2, 2))
+
+    attributions = occlusion.get_spectral_attributes(image, sliding_window_shapes=1, strides=1)
+    assert attributions.attributes.shape == image.image.shape
+
+    attributions = occlusion.get_spectral_attributes(image, sliding_window_shapes=(1,), strides=(1,))
+    assert attributions.attributes.shape == image.image.shape
+
+    with pytest.raises(AssertionError):
+        occlusion.get_spectral_attributes(image, sliding_window_shapes=2, strides=(2, 2))
+
+    with pytest.raises(AssertionError):
+        occlusion.get_spectral_attributes(image, sliding_window_shapes=(2, 2), strides=2)
+
+    with pytest.raises(AssertionError):
+        occlusion.get_spectral_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2))
+
+    with pytest.raises(AssertionError):
+        occlusion.get_spectral_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2, 2))
+
+    with pytest.raises(AssertionError):
+        occlusion.get_spectral_attributes(image, sliding_window_shapes=(2, 2, 2), strides=(2, 2))
+
+    with pytest.raises(AssertionError):
+        occlusion.get_spectral_attributes(image, sliding_window_shapes=(2, 2, 2), strides=(2, 2, 2))
 
     with pytest.raises(ValueError):
         occlusion._attribution_method = None
