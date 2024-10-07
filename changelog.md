@@ -5,9 +5,9 @@
 ### 🩺 Bug Fixes
 - infinite loop in segmentation (#87)
 
-## v0.0.4 (2024-09-24)
+### 🔨 Features
 
-- feat: HyperNoiseTunnel and captum attribution methods (#51)
+- HyperNoiseTunnel and captum attribution methods (#51)
 
 ## v0.0.3 (2024-09-23)
 
