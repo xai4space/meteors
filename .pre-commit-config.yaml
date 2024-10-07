@@ -25,12 +25,6 @@ repos:
             # docs references
             docs/reference.md
           )$
-  - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.5
-    hooks:
-      - id: docformatter
-        additional_dependencies: [tomli]
-        args: [--in-place, --config=pyproject.toml]
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
