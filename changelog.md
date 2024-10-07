@@ -3,6 +3,7 @@
 ## v0.0.4 (2024-09-25)
 
 ### 🩺 Bug Fixes
+
 - infinite loop in segmentation (#87)
 
 ### 🔨 Features
