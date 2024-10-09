@@ -1,0 +1,9 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 85%
+    patch:
+      default:
+        # new patches of code may have less coverage
+        target: 80%
