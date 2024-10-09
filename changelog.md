@@ -1,8 +1,14 @@
 # Changelog
 
-## v0.0.4 (2024-09-24)
+## v0.0.4 (2024-09-25)
 
-- feat: HyperNoiseTunnel and captum attribution methods (#51)
+### 🩺 Bug Fixes
+
+- infinite loop in segmentation (#87)
+
+### 🔨 Features
+
+- HyperNoiseTunnel and captum attribution methods (#51)
 
 ## v0.0.3 (2024-09-23)
 
