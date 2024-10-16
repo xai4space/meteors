@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from meteors.utils.models import ExplainableModel
 import meteors.attr.explainer as explainer_module
 from meteors import HSI
+from meteors.exceptions import ShapeMismatchError, ExplainerInitializationError
 
 import pytest
 
@@ -76,7 +77,7 @@ def test_validate_and_transform_baseline():
 
     # Test case 5: Tensor baseline with mismatching shape
     baseline = torch.rand(3, 224, 225)
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         explainer_module.validate_and_transform_baseline(baseline, hsi)
 
 
@@ -109,7 +110,7 @@ def test_explainer():
     chained_explainer = explainer_module.Explainer(explainer)
 
     # chained explainer with chained explainer - should raise ValueError
-    with pytest.raises(ValueError):
+    with pytest.raises(ExplainerInitializationError):
         explainer_module.Explainer(chained_explainer)
 
     assert not explainer.has_convergence_delta()

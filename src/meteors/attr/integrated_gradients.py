@@ -11,6 +11,8 @@ from meteors.attr import HSIAttributes, Explainer
 
 from meteors.attr.explainer import validate_and_transform_baseline
 
+from meteors.exceptions import ExplanationError, ExplainerInitializationError
+
 
 class IntegratedGradients(Explainer):
     """
@@ -40,7 +42,7 @@ class IntegratedGradients(Explainer):
         return_convergence_delta: bool = False,
     ) -> HSIAttributes:
         if self._attribution_method is None:
-            raise ValueError("IntegratedGradients explainer is not initialized")
+            raise ExplainerInitializationError("IntegratedGradients explainer is not initialized")
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
@@ -62,11 +64,14 @@ class IntegratedGradients(Explainer):
         else:
             attributions, approximation_error = ig_attributions, None
 
-        attributes = HSIAttributes(
-            hsi=hsi,
-            attributes=attributions.squeeze(0),
-            score=approximation_error,
-            attribution_method=self.get_name(),
-        )
+        try:
+            attributes = HSIAttributes(
+                hsi=hsi,
+                attributes=attributions.squeeze(0),
+                score=approximation_error,
+                attribution_method=self.get_name(),
+            )
+        except Exception as e:
+            raise ExplanationError(f"Error while creating HSIAttributes: {e}")
 
         return attributes

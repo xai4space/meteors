@@ -7,6 +7,7 @@ import numpy as np
 from meteors import HSI
 import meteors.attr as mt_attr
 from meteors.attr import HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
+from meteors.exceptions import ShapeMismatchError, HSIAttributesError, MaskCreationError, OrientationError
 
 
 # Temporary solution for wavelengths
@@ -174,11 +175,11 @@ def test_validate_shapes():
 
     # Test case 2: Invalid shapes
     invalid_attributes = torch.ones((150, 240, 241))
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         mt_attr.attributes.validate_shapes(invalid_attributes, image)
 
     invalid_image = HSI(image=torch.ones((len(wavelengths), 240, 241)), wavelengths=wavelengths)
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         mt_attr.attributes.validate_shapes(attributes, invalid_image)
 
 
@@ -230,7 +231,7 @@ def test_align_band_names_with_mask():
     # Test case 4: Invalid band names
     band_names = {"R": 0}
     invalid_band_mask = torch.tensor([[0, 1, 0], [0, 2, 0], [0, 0, 0]])
-    with pytest.raises(ValueError):
+    with pytest.raises(MaskCreationError):
         mt_attr.attributes.align_band_names_with_mask(band_names, invalid_band_mask)
 
     # Test case 5:  band names to much bands
@@ -241,7 +242,7 @@ def test_align_band_names_with_mask():
 
     assert changed_band_names == {"R": 0}
 
-    with pytest.raises(ValueError):
+    with pytest.raises(MaskCreationError):
         band_names = {"R": 0, "G": 1}
         band_mask = torch.tensor([[1, 2, 3], [0, 0, 0], [0, 0, 0]])
         mt_attr.attributes.align_band_names_with_mask(band_names, band_mask)
@@ -277,7 +278,7 @@ def test_validate_hsi_attributions():
 
     # Validate invalid shape
     invalid_attributes = torch.ones((1, 4, 4))
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         HSIAttributes(
             hsi=image,
             attributes=invalid_attributes,
@@ -288,7 +289,7 @@ def test_validate_hsi_attributions():
         )
 
     # Not implemented yet functions
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(HSIAttributesError):
         image_attributes.flattened_attributes
 
 
@@ -324,7 +325,7 @@ def test_resolve_inference_device_attributes():
     # Test no image in the info
     device = None
     info = ValidationInfoMock(data={})
-    with pytest.raises(ValueError):
+    with pytest.raises(HSIAttributesError):
         mt_attr.attributes.resolve_inference_device_attributes(device, info)
 
     # Test wrong type device
@@ -372,11 +373,11 @@ def test_attributes():
     assert attributes.attribution_method == "Lime"
     assert attributes.device == device
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(HSIAttributesError):
         attributes.flattened_attributes
 
     # Not valid attribution shape
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         HSIAttributes(
             hsi=image,
             attributes=torch.ones((1, 4, 4)),
@@ -387,7 +388,7 @@ def test_attributes():
         )
 
     # Not valid mask shape
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         HSIAttributes(
             hsi=image,
             attributes=torch.ones((3, 4, 4)),
@@ -415,7 +416,7 @@ def test_attributes():
         assert attributes.mask.device == device
 
 
-def test_validate_scorer():
+def test_validate_score():
     # Test valid score
     hsi = HSI(image=torch.ones((3, 4, 4)), wavelengths=[400, 500, 600])
     score = 0.8
@@ -483,7 +484,7 @@ def test_change_orientation_attributes():
 
     # test case with invalid orientation
     new_orientation = ("H", "C", "A")
-    with pytest.raises(ValueError):
+    with pytest.raises(OrientationError):
         attrs.change_orientation(new_orientation, True)
 
 
@@ -525,7 +526,7 @@ def test_spatial_attributes():
 
     # not valid attributes shape
     invalid_attributes = torch.ones((1, 4, 4))
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         HSISpatialAttributes(
             hsi=image,
             attributes=invalid_attributes,
@@ -534,7 +535,7 @@ def test_spatial_attributes():
         )
 
     # Not valid segmentation mask shape
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         HSISpatialAttributes(
             hsi=image,
             attributes=attributes,
@@ -543,7 +544,7 @@ def test_spatial_attributes():
         )
 
     # no segmentation mask passed
-    with pytest.raises(ValueError):
+    with pytest.raises(HSIAttributesError):
         attributes = HSISpatialAttributes(
             hsi=image,
             attributes=attributes,
@@ -562,7 +563,7 @@ def test_spatial_attributes():
         assert spatial_attributes.attributes.device == device
         assert spatial_attributes.segmentation_mask.device == device
 
-    with pytest.raises(ValueError):
+    with pytest.raises(HSIAttributesError):
         HSISpatialAttributes(
             hsi=image,
             attributes=attributes,
@@ -570,7 +571,7 @@ def test_spatial_attributes():
             device=device,
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(HSIAttributesError):
         attributes_with_no_mask = HSISpatialAttributes(
             hsi=image,
             attributes=attributes,
@@ -631,7 +632,7 @@ def test_spectral_attributes():
 
     # not valid attributes shape
     invalid_attributes = torch.ones((1, 4, 4))
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         HSISpectralAttributes(
             hsi=image,
             attributes=invalid_attributes,
@@ -641,7 +642,7 @@ def test_spectral_attributes():
         )
 
     # Not valid band mask shape
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         HSISpectralAttributes(
             hsi=image,
             attributes=attributes,
@@ -651,7 +652,7 @@ def test_spectral_attributes():
         )
 
     # no band mask passed
-    with pytest.raises(ValueError):
+    with pytest.raises(HSIAttributesError):
         attributes = HSISpectralAttributes(
             hsi=image,
             attributes=attributes,
@@ -671,7 +672,7 @@ def test_spectral_attributes():
         assert spectral_attributes.attributes.device == device
         assert spectral_attributes.band_mask.device == device
 
-    with pytest.raises(ValueError):
+    with pytest.raises(HSIAttributesError):
         HSISpectralAttributes(
             hsi=image,
             attributes=attributes,

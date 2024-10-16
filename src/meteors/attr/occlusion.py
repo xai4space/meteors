@@ -12,6 +12,9 @@ from meteors.attr import Explainer
 from meteors.attr.explainer import validate_and_transform_baseline
 
 
+from meteors.exceptions import ExplanationError, ExplainerInitializationError
+
+
 class Occlusion(Explainer):
     """
     Occlusion explainer class for generating attributions using the Occlusion method.
@@ -69,7 +72,7 @@ class Occlusion(Explainer):
             torch.Size([10, 20, 30])
         """
         if self._attribution_method is None:
-            raise ValueError("Occlusion explainer is not initialized")
+            raise ExplainerInitializationError("Occlusion explainer is not initialized")
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
@@ -78,8 +81,10 @@ class Occlusion(Explainer):
         if isinstance(strides, int):
             strides = (strides, strides, strides)
 
-        assert len(strides) == 3, "Strides must be a tuple of three integers"
-        assert len(sliding_window_shapes) == 3, "Sliding window shapes must be a tuple of three integers"
+        if len(strides) != 3:
+            raise ExplanationError("Strides must be a tuple of three integers")
+        if len(sliding_window_shapes) != 3:
+            raise ExplanationError("Sliding window shapes must be a tuple of three integers")
 
         occlusion_attributions = self._attribution_method.attribute(
             hsi.get_image().unsqueeze(0),
@@ -92,7 +97,10 @@ class Occlusion(Explainer):
             show_progress=show_progress,
         )
         occlusion_attributions = occlusion_attributions.squeeze(0)
-        attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
+        try:
+            attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
+        except Exception as e:
+            raise ExplanationError(f"Error in generating Occlusion attributions: {e}")
 
         return attributes
 
@@ -137,7 +145,7 @@ class Occlusion(Explainer):
             torch.Size([10, 20, 30])
         """
         if self._attribution_method is None:
-            raise ValueError("Occlusion explainer is not initialized")
+            raise ExplainerInitializationError("Occlusion explainer is not initialized")
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
@@ -146,10 +154,10 @@ class Occlusion(Explainer):
         if isinstance(strides, int):
             strides = (strides, strides)
 
-        assert len(strides) == 2, "Strides must be a tuple of two integers or a single integer"
-        assert (
-            len(sliding_window_shapes) == 2
-        ), "Sliding window shapes must be a tuple of two integers or a single integer"
+        if len(strides) != 2:
+            raise ExplanationError("Strides must be a tuple of two integers")
+        if len(sliding_window_shapes) != 2:
+            raise ExplanationError("Sliding window shapes must be a tuple of two integers")
 
         list_sliding_window_shapes = list(sliding_window_shapes)
         list_sliding_window_shapes.insert(hsi.spectral_axis, hsi.image.shape[hsi.spectral_axis])
@@ -170,11 +178,13 @@ class Occlusion(Explainer):
             show_progress=show_progress,
         )
         occlusion_attributions = occlusion_attributions.squeeze(0)
-        spatial_attributes = HSIAttributes(
-            hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name()
-        )
 
-        return spatial_attributes
+        try:
+            attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
+        except Exception as e:
+            raise ExplanationError(f"Error in generating Occlusion attributions: {e}")
+
+        return attributes
 
     def get_spectral_attributes(
         self,
@@ -216,21 +226,23 @@ class Occlusion(Explainer):
             torch.Size([10, 20, 30])
         """
         if self._attribution_method is None:
-            raise ValueError("Occlusion explainer is not initialized")
+            raise ExplainerInitializationError("Occlusion explainer is not initialized")
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
         if isinstance(sliding_window_shapes, tuple):
-            assert (
-                len(sliding_window_shapes) == 1
-            ), "Sliding window shapes must be a single integer or a tuple of a single integer"
+            if len(sliding_window_shapes) != 1:
+                raise ExplanationError("Sliding window shapes must be a single integer or a tuple of a single integer")
             sliding_window_shapes = sliding_window_shapes[0]
         if isinstance(strides, tuple):
-            assert len(strides) == 1, "Strides must be a single integer or a tuple of a single integer"
+            if len(strides) != 1:
+                raise ExplanationError("Strides must be a single integer or a tuple of a single integer")
             strides = strides[0]
 
-        assert isinstance(sliding_window_shapes, int), "Sliding window shapes must be a single integer"
-        assert isinstance(strides, int), "Strides must be a single integer"
+        if not isinstance(sliding_window_shapes, int):
+            raise TypeError("Sliding window shapes must be a single integer")
+        if not isinstance(strides, int):
+            raise TypeError("Strides must be a single integer")
 
         full_sliding_window_shapes = list(hsi.image.shape)
         full_sliding_window_shapes[hsi.spectral_axis] = sliding_window_shapes
@@ -251,8 +263,9 @@ class Occlusion(Explainer):
             show_progress=show_progress,
         )
         occlusion_attributions = occlusion_attributions.squeeze(0)
-        spectral_attributes = HSIAttributes(
-            hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name()
-        )
+        try:
+            attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
+        except Exception as e:
+            raise ExplanationError(f"Error in generating Occlusion attributions: {e}")
 
-        return spectral_attributes
+        return attributes

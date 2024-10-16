@@ -13,6 +13,7 @@ from meteors.utils.utils import agg_segmentation_postprocessing
 
 from meteors import HSI
 from meteors.attr import HSISpatialAttributes, HSISpectralAttributes
+from meteors.exceptions import ShapeMismatchError, MaskCreationError, BandSelectionError
 
 # Temporary solution for wavelengths
 wavelengths = [
@@ -369,7 +370,7 @@ def test_validate_mask_shape():
 
     incorrectly_broadcastable_band_mask = torch.randint(0, 3, (3, 240, 1))
     incorrectly_broadcastable_hsi = HSI(image=torch.randn(1, 240, 240), wavelengths=[462.08])
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         mt_lime.validate_mask_shape("band", hsi=incorrectly_broadcastable_hsi, mask=incorrectly_broadcastable_band_mask)
 
 
@@ -426,12 +427,12 @@ def test_lime_explainer():
     assert lime._attribution_method is not None
 
 
-def test__get_slick_segmentation_mask():
+def test__get_slic_segmentation_mask():
     # Create a sample hsi
     hsi = HSI(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47])
 
     # Call the method
-    segmentation_mask = mt_lime.Lime._get_slick_segmentation_mask(hsi, num_interpret_features=10)
+    segmentation_mask = mt_lime.Lime._get_slic_segmentation_mask(hsi, num_interpret_features=10)
 
     # Check the output
     assert isinstance(segmentation_mask, torch.Tensor)
@@ -445,7 +446,7 @@ def test__get_slick_segmentation_mask():
     mask[0, 20, 20] = 0
 
     hsi = HSI(image=torch.randn(3, 240, 240), wavelengths=[462.08, 465.27, 468.47], binary_mask=mask)
-    segmentation_mask = mt_lime.Lime._get_slick_segmentation_mask(hsi, num_interpret_features=10)
+    segmentation_mask = mt_lime.Lime._get_slic_segmentation_mask(hsi, num_interpret_features=10)
 
     # Check the output
     assert isinstance(segmentation_mask, torch.Tensor)
@@ -522,12 +523,12 @@ def test_get_segmentation_mask():
 
     # Test case 3: Invalid segmentation method
     hsi = HSI(image=torch.ones((3, 240, 240)), wavelengths=[462.08, 465.27, 468.47])
-    with pytest.raises(ValueError):
+    with pytest.raises(MaskCreationError):
         mt_lime.Lime.get_segmentation_mask(hsi, segmentation_method="invalid")
 
     # Test case 4: Invalid segmentation hsi
     hsi = torch.ones((3, 240, 240))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime.get_segmentation_mask(hsi, segmentation_method="slic")
 
 
@@ -552,17 +553,17 @@ def test__make_band_names_indexable():
 
     # Test case 4: Incorrect segment name type
     segment_name_invalid = 123
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._make_band_names_indexable(segment_name_invalid)
 
     # Test case 5: Incorrect segment name type
     segment_name_invalid = [123]
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._make_band_names_indexable(segment_name_invalid)
 
     # Test case 6: Incorrect segment name type
     segment_name_invalid = (123,)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._make_band_names_indexable(segment_name_invalid)
 
 
@@ -584,7 +585,7 @@ def test__extract_bands_from_spyndex():
 
     # Test case 3: Invalid band name
     segment_name = "D"
-    with pytest.raises(ValueError):
+    with pytest.raises(BandSelectionError):
         mt_lime.Lime._extract_bands_from_spyndex(segment_name)
 
     # Test case 4: Spatial Index
@@ -600,7 +601,7 @@ def test__extract_bands_from_spyndex():
 
     # Test case 5: Invalid spatial index
     segment_name = "AV"
-    with pytest.raises(ValueError):
+    with pytest.raises(BandSelectionError):
         mt_lime.Lime._extract_bands_from_spyndex(segment_name)
 
     # Test case 6: band name with spatial index
@@ -796,7 +797,7 @@ def test__get_band_indices_from_input_band_indices():
 
     # Test invalid band_ranges_indices
     band_indices = 123
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._get_band_indices_from_input_band_indices(wavelengths, band_indices)
 
 
@@ -868,7 +869,7 @@ def test__get_band_indices_from_band_wavelengths():
 
     # Test invalid band_ranges_wavelengths
     band_wavelengths = 123
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._get_band_indices_from_band_wavelengths(wavelengths, band_wavelengths)
 
 
@@ -955,11 +956,11 @@ def test__get_band_wavelengths_indices_from_band_names():
 
     # Test invialid band names
     band_names = 123
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
     band_names = "invalid band"
-    with pytest.raises(ValueError):
+    with pytest.raises(BandSelectionError):
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
 
@@ -1223,30 +1224,30 @@ def test_get_band_mask():
 
     # Test case 8: Invalid input (no band names, groups, or ranges provided)
     hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
-    with pytest.raises(AssertionError):
+    with pytest.raises(MaskCreationError):
         mt_lime.Lime.get_band_mask(hsi)
 
     # Test case 9: Invalid input (incorrect band names)
     hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_names = ["R", "G", "B", "Invalid"]
-    with pytest.raises(ValueError):
+    with pytest.raises(MaskCreationError):
         mt_lime.Lime.get_band_mask(hsi, band_names=band_names)
 
     # Test case 10: Invalid input (incorrect band ranges wavelengths)
     hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_wavelengths = {"RGB": [(wavelengths[-1] + 10, wavelengths[-1] + 20)]}
-    with pytest.raises(ValueError):
+    with pytest.raises(MaskCreationError):
         mt_lime.Lime.get_band_mask(hsi, band_wavelengths=band_wavelengths)
 
     # Test case 11: Invalid input (incorrect band ranges indices)
     hsi = HSI(image=torch.ones((len(wavelengths), 10, 10)), wavelengths=wavelengths)
     band_indices = {"RGB": [(len(wavelengths), len(wavelengths) + 1)]}
-    with pytest.raises(ValueError):
+    with pytest.raises(MaskCreationError):
         mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices)
 
     # Test case 12: Invalid input image
     hsi = torch.ones((len(wavelengths), 10, 10))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices)
 
     # Test case 13: Band mask with multiple inputs
@@ -1258,9 +1259,6 @@ def test_get_band_mask():
     mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices, band_names=band_names)
 
     mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices, band_wavelengths=band_wavelengths)
-
-
-test_get_band_mask()
 
 
 def test_get_spatial_attributes_regression():
@@ -1561,7 +1559,7 @@ def test_get_spatial_attributes_segmentation():
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
     # Test No segmentation postprocessing
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         spatial_attributes = lime.get_spatial_attributes(
             hsi, segmentation_mask, target=0, postprocessing_segmentation_output=None
         )
@@ -1921,7 +1919,7 @@ def test_get_spectral_attributes_segmentation():
     assert spectral_attributes.attributes.shape == hsi.image.shape
 
     # Test case 5: No segmentation postprocessing
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         spectral_attributes = lime.get_spectral_attributes(
             hsi,
             band_mask,
