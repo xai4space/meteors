@@ -38,7 +38,7 @@ class NoiseTunnel(Explainer):
         draw_baseline_from_distrib=False,
     ) -> HSIAttributes:
         if self._attribution_method is None:
-            raise ValueError("NoiseTunnel explainer is not initialized")  # initialization ERROR
+            raise ExplainerInitializationError("NoiseTunnel explainer is not initialized")
         if self.chained_explainer is None:
             raise ExplainerInitializationError(
                 f"The attribution method {self.chained_explainer.__class__.__name__} is not properly initialized"

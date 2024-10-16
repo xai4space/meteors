@@ -7,6 +7,8 @@ from meteors import HSI
 
 import pytest
 
+from meteors.exceptions import ExplainerInitializationError, ExplanationError
+
 
 class ToyModel(nn.Module):
     def __init__(self):
@@ -36,7 +38,7 @@ def test_integrated_gradients(explainable_toy_model):
     attributions = ig.attribute(image, return_convergence_delta=True)
     assert attributions.score is not None
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ExplainerInitializationError):
         ig._attribution_method = None
         ig.attribute(image)
 
@@ -53,7 +55,7 @@ def test_saliency(explainable_toy_model):
     assert not saliency.has_convergence_delta()
     assert not saliency.multiplies_by_inputs
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ExplainerInitializationError):
         saliency._attribution_method = None
         saliency.attribute(image)
 
@@ -69,7 +71,7 @@ def test_input_x_gradient(explainable_toy_model):
 
     assert not input_x_gradient.has_convergence_delta()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ExplainerInitializationError):
         input_x_gradient._attribution_method = None
         input_x_gradient.attribute(image)
 
@@ -91,14 +93,14 @@ def test_noise_tunnel(explainable_toy_model):
     with pytest.raises(TypeError):
         NoiseTunnel(InputXGradient)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ExplainerInitializationError):
         NoiseTunnel(noise_tunnel)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ExplainerInitializationError):
         noise_tunnel._attribution_method = None
         noise_tunnel.attribute(image)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ExplainerInitializationError):
         noise_tunnel = NoiseTunnel(input_x_gradient)
         noise_tunnel.chained_explainer = None
         noise_tunnel.attribute(image)
@@ -115,10 +117,10 @@ def test_occlusion(explainable_toy_model):
     attributions = occlusion.attribute(image, sliding_window_shapes=1, strides=1)
     assert attributions.attributes.shape == image.image.shape
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ExplanationError):
         occlusion.attribute(image, sliding_window_shapes=(2, 2), strides=(2, 2, 2))
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ExplanationError):
         occlusion.attribute(image, sliding_window_shapes=(2, 2, 2), strides=(2, 2))
 
     attributions = occlusion.get_spatial_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2))
@@ -127,10 +129,10 @@ def test_occlusion(explainable_toy_model):
     attributions = occlusion.get_spatial_attributes(image, sliding_window_shapes=2, strides=2)
     assert attributions.attributes.shape == image.image.shape
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ExplanationError):
         occlusion.get_spatial_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2, 2))
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ExplanationError):
         occlusion.get_spatial_attributes(image, sliding_window_shapes=(2, 2, 2), strides=(2, 2))
 
     attributions = occlusion.get_spectral_attributes(image, sliding_window_shapes=1, strides=1)
@@ -139,27 +141,24 @@ def test_occlusion(explainable_toy_model):
     attributions = occlusion.get_spectral_attributes(image, sliding_window_shapes=(1,), strides=(1,))
     assert attributions.attributes.shape == image.image.shape
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ExplanationError):
         occlusion.get_spectral_attributes(image, sliding_window_shapes=2, strides=(2, 2))
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ExplanationError):
         occlusion.get_spectral_attributes(image, sliding_window_shapes=(2, 2), strides=2)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ExplanationError):
         occlusion.get_spectral_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2))
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ExplanationError):
         occlusion.get_spectral_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2, 2))
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ExplanationError):
         occlusion.get_spectral_attributes(image, sliding_window_shapes=(2, 2, 2), strides=(2, 2))
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ExplanationError):
         occlusion.get_spectral_attributes(image, sliding_window_shapes=(2, 2, 2), strides=(2, 2, 2))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ExplainerInitializationError):
         occlusion._attribution_method = None
         occlusion.attribute(image, sliding_window_shapes=(2, 2), strides=(2, 2))
-
-
-test_occlusion(ExplainableModel(problem_type="regression", forward_func=ToyModel()))

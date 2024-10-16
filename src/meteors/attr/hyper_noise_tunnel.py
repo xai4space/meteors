@@ -14,6 +14,8 @@ from meteors.attr import Explainer, HSIAttributes
 from meteors.attr.explainer import validate_and_transform_baseline, validate_attribution_method_initialization
 from meteors import HSI
 
+from meteors.exceptions import ExplanationError
+
 
 def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | str | None = None) -> torch.Tensor:
     """Randomly selects `k` elements from the range [0, n) without replacement.
@@ -219,7 +221,10 @@ class HyperNoiseTunnel(Explainer):
         )
         attributes = attributes.squeeze(0)
 
-        hsi_attributes = HSIAttributes(hsi=hsi, attributes=attributes, attribution_method=self.get_name())
+        try:
+            hsi_attributes = HSIAttributes(hsi=hsi, attributes=attributes, attribution_method=self.get_name())
+        except Exception as e:
+            raise ExplanationError(f"Error while creating HSIAttributes object: {e}")
 
         # change back the attributes orientation
         if change_orientation:

@@ -13,7 +13,7 @@ import torch
 from meteors.utils.models import ExplainableModel
 from meteors import HSI
 from meteors.attr import HSIAttributes
-from meteors.exceptions import ShapeMismatchError
+from meteors.exceptions import ShapeMismatchError, ExplainerInitializationError
 
 
 def validate_attribution_method_initialization(attribution_method: Explainer) -> None:
@@ -99,9 +99,9 @@ class Explainer(ABC):
         if isinstance(callable, Explainer):
             self._is_final_explainer = False
             if isinstance(callable.explainable_model, Explainer) or not callable._is_final_explainer:
-                raise ValueError(
+                raise ExplainerInitializationError(
                     "Cannot chain Explainer with another Explainer. The maximum depth of chaining is 1"
-                )  # Incorrect initialization ERROR
+                )
             self.chained_explainer = callable
             self.explainable_model: ExplainableModel = callable.explainable_model
             logger.info(

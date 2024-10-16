@@ -6,7 +6,8 @@ from .exceptions import (
     ExplainerInitializationError,
     ExplanationError,
     HSIError,
-    AttributesInitializationError,
+    HSIAttributesError,
+    InvalidSegmentError,
 )
 
 
@@ -18,5 +19,6 @@ __all__ = [
     "ExplainerInitializationError",
     "ExplanationError",
     "HSIError",
-    "AttributesInitializationError",
+    "HSIAttributesError",
+    "InvalidSegmentError",
 ]
