@@ -2,6 +2,7 @@ import pytest
 
 import torch
 
+from meteors.exceptions import ShapeMismatchError
 from meteors.utils import utils
 from meteors import HSI
 
@@ -220,7 +221,7 @@ def test_aggregate_by_mask():
     # Test case 4: Mismatched shapes
     data = torch.randn(3, 3, 3)
     mask = torch.zeros((3, 3, 2), dtype=torch.long)
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         utils.aggregate_by_mask(data, mask, torch.mean)
 
     # Test case 5: Single value per mask

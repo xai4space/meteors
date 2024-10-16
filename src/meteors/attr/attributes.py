@@ -9,6 +9,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator, ValidationInfo, AfterValidator, BeforeValidator
 
 from meteors import HSI
+from meteors.exceptions import ShapeMismatchError
 
 
 # Constants
@@ -97,10 +98,10 @@ def validate_shapes(attributes: torch.Tensor, hsi: HSI) -> None:
         hsi (HSI): The hsi object to compare the shape with.
 
     Raises:
-        ValueError: If the shape of the attributes tensor does not match the shape of the hsi.
+        ShapeMismatchError: If the shape of the attributes tensor does not match the shape of the hsi.
     """
     if list(attributes.shape) != list(hsi.image.shape):
-        raise ValueError("Attributes must have the same shape as the hsi")
+        raise ShapeMismatchError("Attributes", "HSI", attributes.shape, hsi.image.shape)
 
 
 def align_band_names_with_mask(
@@ -218,7 +219,7 @@ def resolve_inference_device_attributes(device: str | torch.device | None, info:
         try:
             device = torch.device(device)
         except Exception as e:
-            raise ValueError(f"Device {device} is not valid") from e
+            raise ValueError(f"Device {device} is not valid") from e  # Invalid inference device ERROR
     if not isinstance(device, torch.device):
         raise TypeError("Device should be a string or torch device")
 
@@ -379,7 +380,7 @@ class HSIAttributes(BaseModel):
             Self: The updated Image object with the new orientation.
 
         Raises:
-            ValueError: If the target orientation is not a valid tuple of three one-letter strings.
+            OrientationError: If the target orientation is not a valid tuple of three one-letter strings.
         """
         current_orientation = self.orientation
         hsi = self.hsi.change_orientation(target_orientation, inplace=inplace)
@@ -518,11 +519,11 @@ class HSISpectralAttributes(HSIAttributes):
         """Validates the hsi attributions and performs necessary operations to ensure compatibility with the device.
 
         Raises:
-            ValueError: If the shapes of the attributes and hsi tensors do not match.
+            ShapeMismatchError: If the shapes of the attributes and hsi tensors do not match.
             ValueError: If the band mask is not provided.
         """
         super()._validate_hsi_attributions_and_mask()
         if self.mask is None:
-            raise ValueError("Band mask is not provided")
+            raise ValueError("Band mask is not provided")  # incorrect initialization ERROR
 
         self.band_names = align_band_names_with_mask(self.band_names, self.mask)

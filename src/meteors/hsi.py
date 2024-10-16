@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing_extensions import Annotated, Self
 import warnings
 
+from meteors.exceptions.shapes import OrientationError, ShapeMismatchError
+
 import torch
 import numpy as np
 from loguru import logger
@@ -37,14 +39,14 @@ def validate_orientation(value: tuple[str, str, str] | list[str] | str) -> tuple
         tuple[str, str, str]: The validated orientation value.
 
     Raises:
-        ValueError: If the value is not a tuple of three one-letter strings
+        OrientationError: If the value is not a tuple of three one-letter strings
             or if it does not contain 'W', 'H', and 'C' in any order.
     """
     if not isinstance(value, tuple):
         value = tuple(value)  # type: ignore
 
     if len(value) != 3 or set(value) != {"H", "W", "C"}:
-        raise ValueError("Orientation must be a tuple of 'H', 'W', and 'C' in any order.")
+        raise OrientationError(value)
     return value  # type: ignore
 
 
@@ -97,7 +99,9 @@ def resolve_inference_device_hsi(device: str | torch.device | None, info: Valida
     """
     if device is None:
         if "image" not in info.data:
-            raise ValueError("Hyperspectral image tensor is not present in the data, INTERNAL ERROR")
+            raise ValueError(
+                "Hyperspectral image tensor is not present in the data, INTERNAL ERROR"
+            )  # Validation Incorrect initialization of HSI ERROR
         image: torch.Tensor = info.data["image"]
         device = image.device
     elif isinstance(device, str):
@@ -139,7 +143,9 @@ def ensure_wavelengths_tensor(
         if not isinstance(wavelengths, torch.Tensor):
             wavelengths = torch.as_tensor(wavelengths)
     except Exception as e:
-        raise ValueError(f"Failed to convert wavelengths to a PyTorch tensor: {str(e)}") from e
+        raise ValueError(
+            f"Failed to convert wavelengths to a PyTorch tensor: {str(e)}"
+        ) from e  # Validation Incorrect initialization of HSI ERROR
 
     return wavelengths
 
@@ -153,10 +159,16 @@ def validate_shapes(wavelengths: torch.Tensor, image: torch.Tensor, spectral_axi
         spectral_axis (int): Index of the band axis in the image tensor.
 
     Raises:
-        ValueError: If the length of wavelengths does not correspond to the number of channels in the image tensor.
+        ShapeMismatchError: If the length of wavelengths does not correspond to the number of channels in the image tensor.
     """
     if wavelengths.shape[0] != image.shape[spectral_axis]:
-        raise ValueError("Length of wavelengths must match the number of channels in the image.")
+        raise ShapeMismatchError(
+            "HSI spectral dimension",
+            "wavelengths",
+            image.shape[spectral_axis],
+            wavelengths.shape[0],
+            additional_message="Length of wavelengths must match the number of channels in the image.",
+        )
 
 
 def process_and_validate_binary_mask(
@@ -184,12 +196,15 @@ def process_and_validate_binary_mask(
     Raises:
         ValueError: If the input mask is invalid or if required information is missing from info.
         ValueError: If the resulting binary mask doesn't match the shape of the reference image.
+        TypeError: If the input binary mask is not in a correct format - a numpy array, PyTorch tensor, or string.
     """
     if mask is not None and not isinstance(mask, (torch.Tensor, np.ndarray, str)):
-        raise ValueError("Binary mask must be None, a PyTorch tensor, a numpy array, or the string 'artificial'")
+        raise TypeError("Binary mask must be None, a PyTorch tensor, a numpy array, or the string 'artificial'")
 
     if "image" not in info.data or "orientation" not in info.data or "device" not in info.data:
-        raise ValueError("Missing required information in ValidationInfo")
+        raise ValueError(
+            "Missing required information in ValidationInfo"
+        )  # Validation Incorrect initialization of HSI ERROR
 
     image: torch.Tensor = info.data["image"]
     spectral_axis: int = get_channel_axis(info.data["orientation"])
@@ -208,7 +223,9 @@ def process_and_validate_binary_mask(
                 dim=spectral_axis,
             )
         else:
-            raise ValueError("String mask specification must be 'artificial'")
+            raise ValueError(
+                "String mask specification must be 'artificial'"
+            )  # Validation Incorrect initialization of HSI ERROR
     else:
         binary_mask = mask.bool().to(device)
 
@@ -216,7 +233,7 @@ def process_and_validate_binary_mask(
         try:
             binary_mask = binary_mask.expand_as(image)
         except RuntimeError:
-            raise ValueError(f"Binary mask shape {binary_mask.shape} does not match image shape {image.shape}")
+            raise ShapeMismatchError("Binary mask", "HSI shape", binary_mask.shape, image.shape)
 
     return binary_mask
 
@@ -620,7 +637,7 @@ class HSI(BaseModel):
             Self: The updated HSI object with the new orientation.
 
         Raises:
-            ValueError: If the target orientation is not a valid tuple of three one-letter strings.
+            OrientationError: If the target orientation is not a valid tuple of three one-letter strings.
         """
         target_orientation = validate_orientation(target_orientation)
 

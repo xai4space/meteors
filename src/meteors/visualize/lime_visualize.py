@@ -201,9 +201,11 @@ def validate_consistent_band_and_wavelengths(
     """
     for attr in spectral_attributes:
         if band_names != attr.band_names:
-            raise ValueError("Band names are inconsistent among spectral attributes.")
+            raise ValueError("Band names are inconsistent among spectral attributes.")  # inconsistent band names ERROR
         if not torch.equal(wavelengths, attr.hsi.wavelengths):
-            raise ValueError("Wavelengths are inconsistent among spectral attributes.")
+            raise ValueError(
+                "Wavelengths are inconsistent among spectral attributes."
+            )  # inconsistent wavelengths ERROR
 
 
 def setup_visualization(ax: Axes | None, title: str, xlabel: str, ylabel: str) -> Axes:
@@ -248,6 +250,8 @@ def visualize_spectral_attributes_by_waveband(
 
     Returns:
         Axes: The matplotlib axes object containing the visualization.
+    Raises:
+        TypeError: If the spectral attributes are not an HSISpectralAttributes object or a list of HSISpectralAttributes objects.
     """
     if isinstance(spectral_attributes, HSISpectralAttributes):
         spectral_attributes = [spectral_attributes]
@@ -255,8 +259,8 @@ def visualize_spectral_attributes_by_waveband(
         isinstance(spectral_attributes, list)
         and all(isinstance(attr, HSISpectralAttributes) for attr in spectral_attributes)
     ):
-        raise ValueError(
-            "spectral_attributes must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
+        raise TypeError(
+            "spectral_attributes parameter must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
         )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
@@ -358,6 +362,8 @@ def visualize_spectral_attributes_by_magnitude(
 
     Returns:
         Axes: The matplotlib Axes object containing the visualization.
+    Raises:
+        TypeError: If the spectral attributes are not an HSISpectralAttributes object or a list of HSISpectralAttributes objects.
     """
     if isinstance(spectral_attributes, HSISpectralAttributes):
         spectral_attributes = [spectral_attributes]
@@ -365,8 +371,8 @@ def visualize_spectral_attributes_by_magnitude(
         isinstance(spectral_attributes, list)
         and all(isinstance(attr, HSISpectralAttributes) for attr in spectral_attributes)
     ):
-        raise ValueError(
-            "spectral_attributes must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
+        raise TypeError(
+            "spectral_attributes parameter must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
         )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True

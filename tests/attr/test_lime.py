@@ -13,6 +13,7 @@ from meteors.utils.utils import agg_segmentation_postprocessing
 
 from meteors import HSI
 from meteors.attr import HSISpatialAttributes, HSISpectralAttributes
+from meteors.exceptions import ShapeMismatchError
 
 # Temporary solution for wavelengths
 wavelengths = [
@@ -369,7 +370,7 @@ def test_validate_mask_shape():
 
     incorrectly_broadcastable_band_mask = torch.randint(0, 3, (3, 240, 1))
     incorrectly_broadcastable_hsi = HSI(image=torch.randn(1, 240, 240), wavelengths=[462.08])
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         mt_lime.validate_mask_shape("band", hsi=incorrectly_broadcastable_hsi, mask=incorrectly_broadcastable_band_mask)
 
 
@@ -527,7 +528,7 @@ def test_get_segmentation_mask():
 
     # Test case 4: Invalid segmentation hsi
     hsi = torch.ones((3, 240, 240))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime.get_segmentation_mask(hsi, segmentation_method="slic")
 
 
@@ -552,17 +553,17 @@ def test__make_band_names_indexable():
 
     # Test case 4: Incorrect segment name type
     segment_name_invalid = 123
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._make_band_names_indexable(segment_name_invalid)
 
     # Test case 5: Incorrect segment name type
     segment_name_invalid = [123]
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._make_band_names_indexable(segment_name_invalid)
 
     # Test case 6: Incorrect segment name type
     segment_name_invalid = (123,)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._make_band_names_indexable(segment_name_invalid)
 
 
@@ -796,7 +797,7 @@ def test__get_band_indices_from_input_band_indices():
 
     # Test invalid band_ranges_indices
     band_indices = 123
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._get_band_indices_from_input_band_indices(wavelengths, band_indices)
 
 
@@ -868,7 +869,7 @@ def test__get_band_indices_from_band_wavelengths():
 
     # Test invalid band_ranges_wavelengths
     band_wavelengths = 123
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._get_band_indices_from_band_wavelengths(wavelengths, band_wavelengths)
 
 
@@ -955,7 +956,7 @@ def test__get_band_wavelengths_indices_from_band_names():
 
     # Test invialid band names
     band_names = 123
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
     band_names = "invalid band"
@@ -1246,7 +1247,7 @@ def test_get_band_mask():
 
     # Test case 12: Invalid input image
     hsi = torch.ones((len(wavelengths), 10, 10))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices)
 
     # Test case 13: Band mask with multiple inputs
@@ -1258,9 +1259,6 @@ def test_get_band_mask():
     mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices, band_names=band_names)
 
     mt_lime.Lime.get_band_mask(hsi, band_indices=band_indices, band_wavelengths=band_wavelengths)
-
-
-test_get_band_mask()
 
 
 def test_get_spatial_attributes_regression():
@@ -1561,7 +1559,7 @@ def test_get_spatial_attributes_segmentation():
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
     # Test No segmentation postprocessing
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         spatial_attributes = lime.get_spatial_attributes(
             hsi, segmentation_mask, target=0, postprocessing_segmentation_output=None
         )
@@ -1921,7 +1919,7 @@ def test_get_spectral_attributes_segmentation():
     assert spectral_attributes.attributes.shape == hsi.image.shape
 
     # Test case 5: No segmentation postprocessing
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         spectral_attributes = lime.get_spectral_attributes(
             hsi,
             band_mask,

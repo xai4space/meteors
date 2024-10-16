@@ -2,10 +2,11 @@ import pytest
 
 import torch
 import numpy as np
-from pydantic import ValidationError
 
 import meteors.hsi as mt_image
 from meteors import HSI
+
+from meteors.exceptions import ShapeMismatchError, OrientationError
 
 
 # Temporary solution for wavelengths
@@ -139,17 +140,17 @@ def test_validate_orientation():
 
     # Test invalid orientation with wrong length
     orientation = ("C", "H")
-    with pytest.raises(ValueError):
+    with pytest.raises(OrientationError):
         mt_image.validate_orientation(orientation)
 
     # Test invalid orientation with wrong elements
     orientation = ("C", "H", "A")
-    with pytest.raises(ValueError):
+    with pytest.raises(OrientationError):
         mt_image.validate_orientation(orientation)
 
     # test invalid orientation with repeated elements
     orientation = "HHH"
-    with pytest.raises(ValueError):
+    with pytest.raises(OrientationError):
         mt_image.validate_orientation(orientation)
 
 
@@ -264,13 +265,13 @@ def test_validate_shapes():
     wavelengths = torch.rand(10)
     image = torch.randn(5, 5, 10)
     band_axis = 1
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         mt_image.validate_shapes(wavelengths, image, band_axis)
 
     wavelengths = torch.rand(10)
     image = torch.randn(5, 5, 5)
     band_axis = 2
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         mt_image.validate_shapes(wavelengths, image, band_axis)
 
 
@@ -318,7 +319,7 @@ def test_process_and_validate_binary_mask():
     info = ValidationInfoMock(
         data={"image": torch.randn(3, 5, 5), "orientation": ("C", "H", "W"), "device": torch.device("cpu")}
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_image.process_and_validate_binary_mask(mask, info)
 
     # Test invalid binary mask shape
@@ -326,7 +327,7 @@ def test_process_and_validate_binary_mask():
     info = ValidationInfoMock(
         data={"image": torch.randn(3, 5, 5), "orientation": ("C", "H", "W"), "device": torch.device("cpu")}
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         mt_image.process_and_validate_binary_mask(mask, info)
 
     # Test invalid binary mask shape
@@ -404,7 +405,7 @@ def test_image():
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     binary_mask = 123
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         HSI(image=sample, wavelengths=wavelengths, binary_mask=binary_mask)
 
     # Test invalid device type
@@ -496,7 +497,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
-    with pytest.raises(ValidationError):
+    with pytest.raises(ShapeMismatchError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid image data with mismatched band axis
@@ -505,7 +506,7 @@ def test_validate_image_data():
     orientation = ("H", "C", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
-    with pytest.raises(ValidationError):
+    with pytest.raises(ShapeMismatchError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid mask shape
@@ -514,7 +515,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 10)
-    with pytest.raises(ValidationError):
+    with pytest.raises(ShapeMismatchError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid binary mask shape
@@ -523,7 +524,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 6, 5)
-    with pytest.raises(ValidationError):
+    with pytest.raises(ShapeMismatchError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
 
