@@ -201,11 +201,9 @@ def validate_consistent_band_and_wavelengths(
     """
     for attr in spectral_attributes:
         if band_names != attr.band_names:
-            raise ValueError("Band names are inconsistent among spectral attributes.")  # inconsistent band names ERROR
+            raise ValueError("Band names are inconsistent among spectral attributes.")
         if not torch.equal(wavelengths, attr.hsi.wavelengths):
-            raise ValueError(
-                "Wavelengths are inconsistent among spectral attributes."
-            )  # inconsistent wavelengths ERROR
+            raise ValueError("Wavelengths are inconsistent among spectral attributes.")
 
 
 def setup_visualization(ax: Axes | None, title: str, xlabel: str, ylabel: str) -> Axes:
@@ -436,7 +434,7 @@ def visualize_spatial_aggregated_attributes(
             We recommend using torch functions. Defaults to torch.mean.
 
     Raises:
-        ValueError: If the shape of the aggregated mask does not match the shape of the spatial attributes.
+        ShapeMismatchError: If the shape of the aggregated mask does not match the shape of the spatial attributes.
 
     Returns:
         tuple[Figure, Axes] | None: If use_pyplot is False, returns the figure and axes objects.
@@ -492,7 +490,7 @@ def visualize_spectral_aggregated_attributes(
             We recommend using torch functions. Defaults to torch.mean.
 
     Raises:
-        ValueError: If the shape of the band mask does not match the shape of the spectral attributes.
+        ShapeMismatchError: If the shape of the band mask does not match the shape of the spectral attributes.
 
     Returns:
         tuple[Figure, Axes] | None: If use_pyplot is False, returns the figure and axes objects.

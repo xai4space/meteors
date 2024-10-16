@@ -101,7 +101,9 @@ def validate_shapes(attributes: torch.Tensor, hsi: HSI) -> None:
         ShapeMismatchError: If the shape of the attributes tensor does not match the shape of the hsi.
     """
     if list(attributes.shape) != list(hsi.image.shape):
-        raise ShapeMismatchError("Attributes", "HSI", attributes.shape, hsi.image.shape)
+        raise ShapeMismatchError(
+            f"Attributes and HSI have different, unmatching shapes: {attributes.shape}, {hsi.image.shape}"
+        )
 
 
 def align_band_names_with_mask(

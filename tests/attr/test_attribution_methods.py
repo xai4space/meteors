@@ -160,3 +160,6 @@ def test_occlusion(explainable_toy_model):
     with pytest.raises(ValueError):
         occlusion._attribution_method = None
         occlusion.attribute(image, sliding_window_shapes=(2, 2), strides=(2, 2))
+
+
+test_occlusion(ExplainableModel(problem_type="regression", forward_func=ToyModel()))

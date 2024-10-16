@@ -9,6 +9,7 @@ from meteors import HSI
 from meteors.attr import HSIAttributes
 
 from meteors.attr import Explainer
+from meteors.exceptions import ExplanationError, ExplainerInitializationError
 
 ## VALIDATORS
 
@@ -40,13 +41,16 @@ class Saliency(Explainer):
         additional_forward_args: Any = None,
     ) -> HSIAttributes:
         if self._attribution_method is None:
-            raise ValueError("Saliency explainer is not initialized")
+            raise ExplainerInitializationError("Saliency explainer is not initialized")
 
         saliency_attributions = self._attribution_method.attribute(
             hsi.get_image().unsqueeze(0), target=target, abs=abs, additional_forward_args=additional_forward_args
         )
-        attributes = HSIAttributes(
-            hsi=hsi, attributes=saliency_attributions.squeeze(0), attribution_method=self.get_name()
-        )
+        try:
+            attributes = HSIAttributes(
+                hsi=hsi, attributes=saliency_attributions.squeeze(0), attribution_method=self.get_name()
+            )
+        except Exception as e:
+            raise ExplanationError(f"Error in generating Saliency attributions: {e}")
 
         return attributes

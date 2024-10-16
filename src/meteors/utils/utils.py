@@ -227,11 +227,7 @@ def aggregate_by_mask(
     """
     if data.shape != mask.shape:
         raise ShapeMismatchError(
-            first_array="data",
-            second_array="mask",
-            expected_shape=data.shape,
-            actual_shape=mask.shape,
-            additional_message="Can't perform aggregation by mask",
+            "Can't perform aggregation by mask. The shapes of the data and mask tensors must match. Data shape: {data.shape}, Mask shape: {mask.shape}"
         )
 
     # Get unique values in the mask

@@ -60,7 +60,9 @@ def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None,
         baseline = torch.zeros_like(hsi.image) + baseline
     elif isinstance(baseline, torch.Tensor):
         if baseline.shape != hsi.image.shape:
-            raise ShapeMismatchError("Baseline", "HSI", baseline.shape, hsi.image.shape)
+            raise ShapeMismatchError(
+                f"Passed baseline and HSI have incorrect shapes: {baseline.shape} and {hsi.image.shape}"
+            )
 
     baseline = baseline.to(hsi.image.device)  # cast the baseline to the same device as the hsi tensor
     return baseline

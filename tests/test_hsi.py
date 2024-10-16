@@ -6,8 +6,8 @@ import numpy as np
 import meteors.hsi as mt_image
 from meteors import HSI
 
-from meteors.exceptions import ShapeMismatchError, OrientationError
-
+from meteors.exceptions import ShapeMismatchError, OrientationError, HSIError, BandSelectionError
+from pydantic import ValidationError
 
 # Temporary solution for wavelengths
 wavelengths_main = [
@@ -341,7 +341,7 @@ def test_process_and_validate_binary_mask():
     # Test no image in the info
     mask = torch.ones(3, 5, 5)
     info = ValidationInfoMock(data={})
-    with pytest.raises(ValueError):
+    with pytest.raises(HSIError):
         mt_image.process_and_validate_binary_mask(mask, info)
 
 
@@ -497,7 +497,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
-    with pytest.raises(ShapeMismatchError):
+    with pytest.raises(ValidationError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid image data with mismatched band axis
@@ -506,7 +506,7 @@ def test_validate_image_data():
     orientation = ("H", "C", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
-    with pytest.raises(ShapeMismatchError):
+    with pytest.raises(ValidationError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid mask shape
@@ -515,7 +515,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 10)
-    with pytest.raises(ShapeMismatchError):
+    with pytest.raises(ValidationError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid binary mask shape
@@ -524,7 +524,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 6, 5)
-    with pytest.raises(ShapeMismatchError):
+    with pytest.raises(ValidationError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
 
@@ -647,7 +647,7 @@ def test_extract_band_by_name():
 
     # Test selecting an invalid band
     band_name = "InvalidBand"
-    with pytest.raises(ValueError):
+    with pytest.raises(BandSelectionError):
         hsi_image.extract_band_by_name(
             band_name=band_name,
             selection_method=method,

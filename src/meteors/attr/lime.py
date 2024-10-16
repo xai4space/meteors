@@ -269,7 +269,7 @@ def validate_mask_shape(mask_type: Literal["segmentation", "band"], hsi: HSI, ma
         ) from e
 
     if broadcasted_shape != image_shape:
-        raise ShapeMismatchError("HSI", mask_type + " mask", image_shape, mask_shape)
+        raise ShapeMismatchError(f"HSI and {mask_type} mask have mismatched shapes: {image_shape}, {mask_shape}")
 
     # check on which dims the shapes match - the segmentation mask can differ only in the band dimension, band mask can differ in the height and width dimensions
     shape_matches = [broadcasted_shape[i] == mask_shape[i] for i in range(3)]

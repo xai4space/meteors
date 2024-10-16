@@ -12,6 +12,9 @@ from meteors.attr import Explainer
 from meteors.attr.explainer import validate_and_transform_baseline
 
 
+from meteors.exceptions import ExplanationError, ExplainerInitializationError
+
+
 class Occlusion(Explainer):
     """
     Occlusion explainer class for generating attributions using the Occlusion method.
@@ -69,7 +72,7 @@ class Occlusion(Explainer):
             torch.Size([10, 20, 30])
         """
         if self._attribution_method is None:
-            raise ValueError("Occlusion explainer is not initialized")
+            raise ExplainerInitializationError("Occlusion explainer is not initialized")
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
@@ -92,7 +95,10 @@ class Occlusion(Explainer):
             show_progress=show_progress,
         )
         occlusion_attributions = occlusion_attributions.squeeze(0)
-        attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
+        try:
+            attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
+        except Exception as e:
+            raise ExplanationError(f"Error in generating Occlusion attributions: {e}")
 
         return attributes
 
@@ -137,7 +143,7 @@ class Occlusion(Explainer):
             torch.Size([10, 20, 30])
         """
         if self._attribution_method is None:
-            raise ValueError("Occlusion explainer is not initialized")
+            raise ExplainerInitializationError("Occlusion explainer is not initialized")
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
@@ -170,11 +176,13 @@ class Occlusion(Explainer):
             show_progress=show_progress,
         )
         occlusion_attributions = occlusion_attributions.squeeze(0)
-        spatial_attributes = HSIAttributes(
-            hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name()
-        )
 
-        return spatial_attributes
+        try:
+            attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
+        except Exception as e:
+            raise ExplanationError(f"Error in generating Occlusion attributions: {e}")
+
+        return attributes
 
     def get_spectral_attributes(
         self,
@@ -216,7 +224,7 @@ class Occlusion(Explainer):
             torch.Size([10, 20, 30])
         """
         if self._attribution_method is None:
-            raise ValueError("Occlusion explainer is not initialized")
+            raise ExplainerInitializationError("Occlusion explainer is not initialized")
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
@@ -251,8 +259,9 @@ class Occlusion(Explainer):
             show_progress=show_progress,
         )
         occlusion_attributions = occlusion_attributions.squeeze(0)
-        spectral_attributes = HSIAttributes(
-            hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name()
-        )
+        try:
+            attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
+        except Exception as e:
+            raise ExplanationError(f"Error in generating Occlusion attributions: {e}")
 
-        return spectral_attributes
+        return attributes
