@@ -3,6 +3,8 @@ from .hsi import HSI
 from . import utils
 from . import visualize
 from . import attr
+from . import shap
+
 
 from loguru import logger
 import sys
@@ -10,9 +12,4 @@ import sys
 logger.remove()
 logger.add(sys.stdout, level="WARNING")
 
-__all__ = [
-    "HSI",
-    "utils",
-    "visualize",
-    "attr",
-]
+__all__ = ["HSI", "utils", "visualize", "attr", "shap"]

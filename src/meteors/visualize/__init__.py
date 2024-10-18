@@ -14,7 +14,10 @@ from .lime_visualize import (
     visualize_aggregated_attributes,
 )
 
+from . import shap
+
 __all__ = [
+    "shap",
     "visualize_spectral_attributes_by_waveband",
     "visualize_spectral_attributes_by_magnitude",
     "visualize_spectral_attributes",
