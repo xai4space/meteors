@@ -41,33 +41,57 @@ class Occlusion(Explainer):
         show_progress: bool = False,
         postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
     ) -> HSIAttributes | list[HSIAttributes]:
-        """Compute attributions for the input HSI using the Occlusion method.
+        """
+        Method for generating attributions using the Occlusion method.
 
         Args:
-            hsi (HSI): The input hyperspectral image.
-            target (int | None, optional): Target for attribution. Defaults to None.
+            hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
+                If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
+                The output will be a list of HSIAttributes objects.
+            target (list[int] | int | None, optional): target class index for computing the attributions. If None,
+                methods assume that the output has only one class. If the output has multiple classes, the target index
+                must be provided. For multiple input images, a list of target indices can be provided, one for each
+                image or single target value will be used for all images. Defaults to None.
             sliding_window_shapes (int | tuple[int, int, int]):
                 The shape of the sliding window. If an integer is provided, it will be used for all dimensions.
                 Defaults to (1, 1, 1).
             strides (int | tuple[int, int, int], optional): The stride of the sliding window. Defaults to (1, 1, 1).
-            baseline (int | float | torch.Tensor, optional): The baseline value(s) for the input. Defaults to None.
-            additional_forward_args (Any, optional):
-                Additional arguments to be passed to the forward function. Defaults to None.
-            perturbations_per_eval (int, optional):
-                Number of perturbations to be evaluated per call to forward function. Defaults to 1.
+                Simply put, the stride is the number of pixels by which the sliding window is moved in each dimension.
+            baseline (int | float | torch.Tensor, optional): Baselines define reference value which replaces each
+                feature when occluded is computed and can be provided as:
+                    - integer or float representing a constant value used as the baseline for all input pixels.
+                    - tensor with the same shape as the input tensor, providing a baseline for each input pixel.
+                        if the input is a list of HSI objects, the baseline can be a tensor with the same shape as
+                        the input tensor for each HSI object.
+            additional_forward_args (Any, optional): If the forward function requires additional arguments other than
+                the inputs for which attributions should not be computed, this argument can be provided.
+                It must be either a single additional argument of a Tensor or arbitrary (non-tuple) type or a tuple
+                containing multiple additional arguments including tensors or any arbitrary python types.
+                These arguments are provided to forward_func in order following the arguments in inputs.
+                Note that attributions are not computed with respect to these arguments. Default: None
+            perturbations_per_eval (int, optional): Allows multiple occlusions to be included in one batch
+                (one call to forward_fn). By default, perturbations_per_eval is 1, so each occlusion is processed
+                individually. Each forward pass will contain a maximum of perturbations_per_eval * #examples samples.
+                For DataParallel models, each batch is split among the available devices, so evaluations on each
+                available device contain at most (perturbations_per_eval * #examples) / num_devices samples. When
+                working with multiple examples, the number of perturbations per evaluation should be set to at least
+                the number of examples. Defaults to 1.
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
+            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None, optional):
+                A segmentation postprocessing function for segmentation problem type. This is required for segmentation
+                problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
+                attribution method is not used.
 
         Returns:
             HSIAttributes: An object containing the computed attributions.
 
         Example:
-            >>> model = lambda x: torch.sum(x, dim=1)
-            >>> explainable_model = ExplainableModel(model, problem_type="regression")
-            >>> hsi = HSI(image=torch.rand(10, 20, 30), wavelengths=torch.arange(10))
             >>> occlusion = Occlusion(explainable_model)
-            >>> result = occlusion.attribute(hsi, sliding_window_shapes=(3, 3, 3), baseline=0)
-            >>> result.attributes.shape
-            torch.Size([10, 20, 30])
+            >>> hsi = HSI(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
+            >>> attributions = occlusion.attribute(hsi, baseline=0, sliding_window_shapes=(4, 3, 3), strides=(1, 1, 1))
+            >>> attributions = occlusion.attribute([hsi, hsi], baseline=0, sliding_window_shapes=(4, 3, 3), strides=(1, 2, 2))
+            >>> len(attributions)
+            2
         """
         if self._attribution_method is None:
             raise ValueError("Occlusion explainer is not initialized")
@@ -152,30 +176,53 @@ class Occlusion(Explainer):
         is applied to the spatial dimensions only.
 
         Args:
-            hsi (HSI): The input hyperspectral image.
-            target (int | None, optional): Target for attribution. Defaults to None.
+            hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
+                If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
+                The output will be a list of HSIAttributes objects.
+            target (list[int] | int | None, optional): target class index for computing the attributions. If None,
+                methods assume that the output has only one class. If the output has multiple classes, the target index
+                must be provided. For multiple input images, a list of target indices can be provided, one for each
+                image or single target value will be used for all images. Defaults to None.
             sliding_window_shapes (int | tuple[int, int]): The shape of the sliding window for spatial dimensions.
                 If an integer is provided, it will be used for both spatial dimensions. Defaults to (1, 1).
             strides (int | tuple[int, int], optional): The stride of the sliding window for spatial dimensions.
-                Defaults to 1.
-            baseline (int | float | torch.Tensor, optional): The baseline value(s) for the input. Defaults to None.
-            additional_forward_args (Any, optional): Additional arguments to be passed to the forward function.
-                Defaults to None.
-            perturbations_per_eval (int, optional):
-                Number of perturbations to be evaluated per call to forward function. Defaults to 1.
+                Defaults to 1. Simply put, the stride is the number of pixels by which the sliding window is moved
+                in each spatial dimension.
+            baseline (int | float | torch.Tensor, optional): Baselines define reference value which replaces each
+                feature when occluded is computed and can be provided as:
+                    - integer or float representing a constant value used as the baseline for all input pixels.
+                    - tensor with the same shape as the input tensor, providing a baseline for each input pixel.
+                        if the input is a list of HSI objects, the baseline can be a tensor with the same shape as
+                        the input tensor for each HSI object.
+            additional_forward_args (Any, optional): If the forward function requires additional arguments other than
+                the inputs for which attributions should not be computed, this argument can be provided.
+                It must be either a single additional argument of a Tensor or arbitrary (non-tuple) type or a tuple
+                containing multiple additional arguments including tensors or any arbitrary python types.
+                These arguments are provided to forward_func in order following the arguments in inputs.
+                Note that attributions are not computed with respect to these arguments. Default: None
+            perturbations_per_eval (int, optional): Allows multiple occlusions to be included in one batch
+                (one call to forward_fn). By default, perturbations_per_eval is 1, so each occlusion is processed
+                individually. Each forward pass will contain a maximum of perturbations_per_eval * #examples samples.
+                For DataParallel models, each batch is split among the available devices, so evaluations on each
+                available device contain at most (perturbations_per_eval * #examples) / num_devices samples. When
+                working with multiple examples, the number of perturbations per evaluation should be set to at least
+                the number of examples. Defaults to 1.
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
+            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None, optional):
+                A segmentation postprocessing function for segmentation problem type. This is required for segmentation
+                problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
+                attribution method is not used.
 
         Returns:
             HSIAttributes: An object containing the computed spatial attributions.
 
         Example:
-            >>> model = lambda x: torch.sum(x, dim=1)
-            >>> explainable_model = ExplainableModel(model, problem_type="regression")
-            >>> hsi = HSI(image=torch.rand(10, 20, 30), wavelengths=torch.arange(10))
             >>> occlusion = Occlusion(explainable_model)
-            >>> result = occlusion.get_spatial_attributes(hsi, sliding_window_shapes=(3, 3), baseline=0)
-            >>> result.attributes.shape
-            torch.Size([10, 20, 30])
+            >>> hsi = HSI(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
+            >>> attributions = occlusion.get_spatial_attributes(hsi, baseline=0, sliding_window_shapes=(3, 3), strides=(1, 1))
+            >>> attributions = occlusion.get_spatial_attributes([hsi, hsi], baseline=0, sliding_window_shapes=(3, 3), strides=(2, 2))
+            >>> len(attributions)
+            2
         """
         if self._attribution_method is None:
             raise ValueError("Occlusion explainer is not initialized")
@@ -273,29 +320,53 @@ class Occlusion(Explainer):
         is applied to the spectral dimension only.
 
         Args:
-            hsi (HSI): The input hyperspectral image.
-            target (int | None, optional): Target for attribution. Defaults to None.
+            hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
+                If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
+                The output will be a list of HSIAttributes objects.
+            target (list[int] | int | None, optional): target class index for computing the attributions. If None,
+                methods assume that the output has only one class. If the output has multiple classes, the target index
+                must be provided. For multiple input images, a list of target indices can be provided, one for each
+                image or single target value will be used for all images. Defaults to None.
             sliding_window_shapes (int | tuple[int]): The size of the sliding window for the spectral dimension.
                 Defaults to 1.
-            strides (int | tuple[int], optional): The stride of the sliding window for the spectral dimension. Defaults to 1.
-            baseline (int | float | torch.Tensor, optional): The baseline value(s) for the input. Defaults to None.
-            additional_forward_args (Any, optional): Additional arguments to be passed to the forward function.
-                Defaults to None.
-            perturbations_per_eval (int, optional):
-                Number of perturbations to be evaluated per call to forward function. Defaults to 1.
+            strides (int | tuple[int], optional): The stride of the sliding window for the spectral dimension.
+                Defaults to 1. Simply put, the stride is the number of pixels by which the sliding window is moved
+                in spectral dimension.
+            baseline (int | float | torch.Tensor, optional): Baselines define reference value which replaces each
+                feature when occluded is computed and can be provided as:
+                    - integer or float representing a constant value used as the baseline for all input pixels.
+                    - tensor with the same shape as the input tensor, providing a baseline for each input pixel.
+                        if the input is a list of HSI objects, the baseline can be a tensor with the same shape as
+                        the input tensor for each HSI object.
+            additional_forward_args (Any, optional): If the forward function requires additional arguments other than
+                the inputs for which attributions should not be computed, this argument can be provided.
+                It must be either a single additional argument of a Tensor or arbitrary (non-tuple) type or a tuple
+                containing multiple additional arguments including tensors or any arbitrary python types.
+                These arguments are provided to forward_func in order following the arguments in inputs.
+                Note that attributions are not computed with respect to these arguments. Default: None
+            perturbations_per_eval (int, optional): Allows multiple occlusions to be included in one batch
+                (one call to forward_fn). By default, perturbations_per_eval is 1, so each occlusion is processed
+                individually. Each forward pass will contain a maximum of perturbations_per_eval * #examples samples.
+                For DataParallel models, each batch is split among the available devices, so evaluations on each
+                available device contain at most (perturbations_per_eval * #examples) / num_devices samples. When
+                working with multiple examples, the number of perturbations per evaluation should be set to at least
+                the number of examples. Defaults to 1.
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
+            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None, optional):
+                A segmentation postprocessing function for segmentation problem type. This is required for segmentation
+                problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
+                attribution method is not used.
 
         Returns:
             HSIAttributes: An object containing the computed spectral attributions.
 
         Example:
-            >>> model = lambda x: torch.sum(x, dim=1)
-            >>> explainable_model = ExplainableModel(model, problem_type="regression")
-            >>> hsi = HSI(image=torch.rand(10, 20, 30), wavelengths=torch.arange(10))
             >>> occlusion = Occlusion(explainable_model)
-            >>> result = occlusion.get_spectral_attributes(hsi, sliding_window_shapes=3, baseline=0)
-            >>> result.attributes.shape
-            torch.Size([10, 20, 30])
+            >>> hsi = HSI(image=torch.ones((10, 240, 240)), wavelengths=torch.arange(10))
+            >>> attributions = occlusion.get_spectral_attributes(hsi, baseline=0, sliding_window_shapes=3, strides=1)
+            >>> attributions = occlusion.get_spectral_attributes([hsi, hsi], baseline=0, sliding_window_shapes=3, strides=2)
+            >>> len(attributions)
+            2
         """
         if self._attribution_method is None:
             raise ValueError("Occlusion explainer is not initialized")

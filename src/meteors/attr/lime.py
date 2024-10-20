@@ -1009,7 +1009,7 @@ class Lime(Explainer):
             perturbations_per_eval (int, optional): The number of perturbations to evaluate at once (Simply the inner batch size).
                 Defaults to 4.
             verbose (bool, optional): Whether to show the progress bar. Defaults to False.
-                postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None): A
+            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None): A
                 segmentation postprocessing function for segmentation problem type. This is required for segmentation problem type as
                 lime surrogate model needs to be optimized on the 1d output, and the model should be able to modify the model output with
                 inner lime active region mask as input and return the 1d output (for example number of pixel for each class) and not class mask.
