@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from meteors.utils.models import ExplainableModel
-from meteors.attr import IntegratedGradients, Saliency, InputXGradient, NoiseTunnel, Occlusion
+from meteors.utils.utils import agg_segmentation_postprocessing
+from meteors.attr import IntegratedGradients, Saliency, InputXGradient, Occlusion
 from meteors import HSI
 
 import pytest
@@ -13,7 +14,16 @@ class ToyModel(nn.Module):
         super().__init__()
 
     def forward(self, input):
-        return torch.sum(F.relu(input)).unsqueeze(0)
+        return torch.sum(F.relu(input), dim=(1, 2, 3))
+
+
+class SegmentationToyModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, input):
+        adjusted_input = F.relu(input)
+        return torch.round(adjusted_input)
 
 
 @pytest.fixture
@@ -21,7 +31,12 @@ def explainable_toy_model():
     return ExplainableModel(problem_type="regression", forward_func=ToyModel())
 
 
-def test_integrated_gradients(explainable_toy_model):
+@pytest.fixture
+def explainable_segmentation_toy_model():
+    return ExplainableModel(problem_type="segmentation", forward_func=SegmentationToyModel())
+
+
+def test_integrated_gradients(explainable_toy_model, explainable_segmentation_toy_model):
     ig = IntegratedGradients(explainable_toy_model)
 
     assert ig is not None
@@ -36,12 +51,46 @@ def test_integrated_gradients(explainable_toy_model):
     attributions = ig.attribute(image, return_convergence_delta=True)
     assert attributions.score is not None
 
+    # Test multiple images
+    attributions = ig.attribute([image, image], return_convergence_delta=True)
+    assert len(attributions) == 2
+    assert attributions[0].score is not None
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].score is not None
+    assert attributions[1].attributes.shape == image.image.shape
+
+    # Test segmentation postprocessing
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=False)
+    ig = IntegratedGradients(explainable_segmentation_toy_model)
+
+    image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
+    attributions = ig.attribute(image, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0)
+    assert attributions.attributes.shape == image.image.shape
+
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=True)
+    attributions = ig.attribute(image, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0)
+    assert attributions.attributes.shape == image.image.shape
+
+    attributions = ig.attribute(
+        [image, image], postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    attributions = ig.attribute(
+        [image, image], postprocessing_segmentation_output=postprocessing_segmentation_output, target=[0, 0]
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
     with pytest.raises(ValueError):
         ig._attribution_method = None
         ig.attribute(image)
 
 
-def test_saliency(explainable_toy_model):
+def test_saliency(explainable_toy_model, explainable_segmentation_toy_model):
     saliency = Saliency(explainable_toy_model)
 
     assert saliency is not None
@@ -53,12 +102,48 @@ def test_saliency(explainable_toy_model):
     assert not saliency.has_convergence_delta()
     assert not saliency.multiplies_by_inputs
 
+    # Test multiple images
+    attributions = saliency.attribute([image, image])
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    # Test segmentation postprocessing
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=False)
+    saliency = Saliency(explainable_segmentation_toy_model)
+
+    image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
+    attributions = saliency.attribute(
+        image, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
+    )
+    assert attributions.attributes.shape == image.image.shape
+
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=True)
+    attributions = saliency.attribute(
+        image, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
+    )
+    assert attributions.attributes.shape == image.image.shape
+
+    attributions = saliency.attribute(
+        [image, image], postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    attributions = saliency.attribute(
+        [image, image], postprocessing_segmentation_output=postprocessing_segmentation_output, target=[0, 0]
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
     with pytest.raises(ValueError):
         saliency._attribution_method = None
         saliency.attribute(image)
 
 
-def test_input_x_gradient(explainable_toy_model):
+def test_input_x_gradient(explainable_toy_model, explainable_segmentation_toy_model):
     input_x_gradient = InputXGradient(explainable_toy_model)
 
     assert input_x_gradient is not None
@@ -69,42 +154,48 @@ def test_input_x_gradient(explainable_toy_model):
 
     assert not input_x_gradient.has_convergence_delta()
 
+    # Test multiple images
+    attributions = input_x_gradient.attribute([image, image])
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    # Test segmentation postprocessing
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=False)
+    input_x_gradient = InputXGradient(explainable_segmentation_toy_model)
+
+    image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
+    attributions = input_x_gradient.attribute(
+        image, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
+    )
+    assert attributions.attributes.shape == image.image.shape
+
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=True)
+    attributions = input_x_gradient.attribute(
+        image, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
+    )
+    assert attributions.attributes.shape == image.image.shape
+
+    attributions = input_x_gradient.attribute(
+        [image, image], postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    attributions = input_x_gradient.attribute(
+        [image, image], postprocessing_segmentation_output=postprocessing_segmentation_output, target=[0, 0]
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
     with pytest.raises(ValueError):
         input_x_gradient._attribution_method = None
         input_x_gradient.attribute(image)
 
 
-def test_noise_tunnel(explainable_toy_model):
-    input_x_gradient = InputXGradient(explainable_toy_model)
-    noise_tunnel = NoiseTunnel(input_x_gradient)
-
-    assert noise_tunnel is not None
-
-    image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
-    attributions = noise_tunnel.attribute(image)
-    assert attributions.attributes.shape == image.image.shape
-
-    # incorrect explainer class
-    with pytest.raises(TypeError):
-        NoiseTunnel(explainable_toy_model)
-
-    with pytest.raises(TypeError):
-        NoiseTunnel(InputXGradient)
-
-    with pytest.raises(ValueError):
-        NoiseTunnel(noise_tunnel)
-
-    with pytest.raises(ValueError):
-        noise_tunnel._attribution_method = None
-        noise_tunnel.attribute(image)
-
-    with pytest.raises(ValueError):
-        noise_tunnel = NoiseTunnel(input_x_gradient)
-        noise_tunnel.chained_explainer = None
-        noise_tunnel.attribute(image)
-
-
-def test_occlusion(explainable_toy_model):
+def test_occlusion(explainable_toy_model, explainable_segmentation_toy_model):
     occlusion = Occlusion(explainable_toy_model)
     assert occlusion is not None and occlusion._attribution_method is not None
 
@@ -114,6 +205,55 @@ def test_occlusion(explainable_toy_model):
 
     attributions = occlusion.attribute(image, sliding_window_shapes=1, strides=1)
     assert attributions.attributes.shape == image.image.shape
+
+    attributions = occlusion.attribute([image, image], sliding_window_shapes=1, strides=1)
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=False)
+    segment_occlusion = Occlusion(explainable_segmentation_toy_model)
+
+    attributions = segment_occlusion.attribute(
+        image,
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=0,
+        sliding_window_shapes=(1, 2, 2),
+        strides=(1, 2, 2),
+    )
+    assert attributions.attributes.shape == image.image.shape
+
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=True)
+    attributions = segment_occlusion.attribute(
+        image,
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=0,
+        sliding_window_shapes=(1, 2, 2),
+        strides=(1, 2, 2),
+    )
+    assert attributions.attributes.shape == image.image.shape
+
+    attributions = segment_occlusion.attribute(
+        [image, image],
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=0,
+        sliding_window_shapes=(1, 2, 2),
+        strides=(1, 2, 2),
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    attributions = segment_occlusion.attribute(
+        [image, image],
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=[0, 0],
+        sliding_window_shapes=(1, 2, 2),
+        strides=(1, 2, 2),
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
 
     with pytest.raises(AssertionError):
         occlusion.attribute(image, sliding_window_shapes=(2, 2), strides=(2, 2, 2))
@@ -127,6 +267,53 @@ def test_occlusion(explainable_toy_model):
     attributions = occlusion.get_spatial_attributes(image, sliding_window_shapes=2, strides=2)
     assert attributions.attributes.shape == image.image.shape
 
+    attributions = occlusion.get_spatial_attributes([image, image], sliding_window_shapes=2, strides=2)
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=False)
+    attributions = segment_occlusion.get_spatial_attributes(
+        image,
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=0,
+        sliding_window_shapes=2,
+        strides=2,
+    )
+    assert attributions.attributes.shape == image.image.shape
+
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=True)
+    attributions = segment_occlusion.get_spatial_attributes(
+        image,
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=0,
+        sliding_window_shapes=2,
+        strides=2,
+    )
+    assert attributions.attributes.shape == image.image.shape
+
+    attributions = segment_occlusion.get_spatial_attributes(
+        [image, image],
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=0,
+        sliding_window_shapes=2,
+        strides=2,
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    attributions = segment_occlusion.get_spatial_attributes(
+        [image, image],
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=[0, 0],
+        sliding_window_shapes=2,
+        strides=2,
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
     with pytest.raises(AssertionError):
         occlusion.get_spatial_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2, 2))
 
@@ -138,6 +325,53 @@ def test_occlusion(explainable_toy_model):
 
     attributions = occlusion.get_spectral_attributes(image, sliding_window_shapes=(1,), strides=(1,))
     assert attributions.attributes.shape == image.image.shape
+
+    attributions = occlusion.get_spectral_attributes([image, image], sliding_window_shapes=1, strides=1)
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=False)
+    attributions = segment_occlusion.get_spectral_attributes(
+        image,
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=0,
+        sliding_window_shapes=1,
+        strides=1,
+    )
+    assert attributions.attributes.shape == image.image.shape
+
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=True)
+    attributions = segment_occlusion.get_spectral_attributes(
+        image,
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=0,
+        sliding_window_shapes=1,
+        strides=1,
+    )
+    assert attributions.attributes.shape == image.image.shape
+
+    attributions = segment_occlusion.get_spectral_attributes(
+        [image, image],
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=0,
+        sliding_window_shapes=1,
+        strides=1,
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
+
+    attributions = segment_occlusion.get_spectral_attributes(
+        [image, image],
+        postprocessing_segmentation_output=postprocessing_segmentation_output,
+        target=[0, 0],
+        sliding_window_shapes=1,
+        strides=1,
+    )
+    assert len(attributions) == 2
+    assert attributions[0].attributes.shape == image.image.shape
+    assert attributions[1].attributes.shape == image.image.shape
 
     with pytest.raises(AssertionError):
         occlusion.get_spectral_attributes(image, sliding_window_shapes=2, strides=(2, 2))

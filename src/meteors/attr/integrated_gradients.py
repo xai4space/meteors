@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Callable, Any
 
 import torch
 from captum.attr import IntegratedGradients as CaptumIntegratedGradients
@@ -25,48 +25,93 @@ class IntegratedGradients(Explainer):
 
     def __init__(self, explainable_model: ExplainableModel, multiply_by_inputs: bool = True):
         super().__init__(explainable_model)
+        self.multiply_by_inputs = multiply_by_inputs
         self._attribution_method = CaptumIntegratedGradients(
-            explainable_model.forward_func, multiply_by_inputs=multiply_by_inputs
+            explainable_model.forward_func, multiply_by_inputs=self.multiply_by_inputs
         )
 
     def attribute(
         self,
-        hsi: HSI,
+        hsi: list[HSI] | HSI,
         baseline: int | float | torch.Tensor = None,
-        target: int | None = None,
+        target: list[int] | int | None = None,
+        additional_forward_args: Any = None,
         method: Literal[
             "riemann_right", "riemann_left", "riemann_middle", "riemann_trapezoid", "gausslegendre"
         ] = "gausslegendre",
         return_convergence_delta: bool = False,
-    ) -> HSIAttributes:
+        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
+    ) -> HSIAttributes | list[HSIAttributes]:
         if self._attribution_method is None:
             raise ValueError("IntegratedGradients explainer is not initialized")
 
-        baseline = validate_and_transform_baseline(baseline, hsi)
+        if isinstance(hsi, list):
+            if isinstance(baseline, torch.Tensor) and baseline.ndim == 4:
+                baseline = torch.stack(
+                    [validate_and_transform_baseline(baseline[i], hsi[i]) for i in range(len(hsi))], dim=0
+                )
+            else:
+                baseline = torch.stack(
+                    [validate_and_transform_baseline(baseline, hsi[i]) for i in range(len(hsi))], dim=0
+                )
+            input_tensor = torch.stack([hsi_image.get_image().requires_grad_(True) for hsi_image in hsi], dim=0)
+        else:
+            baseline = validate_and_transform_baseline(baseline, hsi).unsqueeze(0)
+            input_tensor = hsi.get_image().unsqueeze(0).requires_grad_(True)
 
-        ig_attributions = self._attribution_method.attribute(
-            hsi.get_image().unsqueeze(0),
-            baselines=baseline.unsqueeze(0),
-            target=target,
-            method=method,
-            return_convergence_delta=return_convergence_delta,
-        )
+        if postprocessing_segmentation_output is not None:
+
+            def adjusted_forward_func(x: torch.Tensor) -> torch.Tensor:
+                return postprocessing_segmentation_output(self._attribution_method.forward_func(x), torch.tensor(1.0))
+
+            segmentation_attribution_method = CaptumIntegratedGradients(
+                adjusted_forward_func, multiply_by_inputs=self.multiply_by_inputs
+            )
+
+            ig_attributions = segmentation_attribution_method.attribute(
+                input_tensor,
+                baselines=baseline,
+                target=target,
+                additional_forward_args=additional_forward_args,
+                method=method,
+                return_convergence_delta=return_convergence_delta,
+            )
+        else:
+            ig_attributions = self._attribution_method.attribute(
+                input_tensor,
+                baselines=baseline,
+                target=target,
+                additional_forward_args=additional_forward_args,
+                method=method,
+                return_convergence_delta=return_convergence_delta,
+            )
+
         if return_convergence_delta:
             attributions, approximation_error_tensor = ig_attributions
 
-            # ig_attributions is a tuple of attributions and approximation_error_tensor, where tensor has the same length as the number of example inputs
-            approximation_error = (
-                approximation_error_tensor.item() if target is None else approximation_error_tensor[target].item()
-            )
-
+            if isinstance(hsi, list):
+                approximation_error = approximation_error_tensor.reshape(-1).tolist()
+                assert len(approximation_error) == len(hsi), "Approximation error should be returned for each HSI"
+            else:
+                approximation_error = approximation_error_tensor.item()
         else:
-            attributions, approximation_error = ig_attributions, None
+            if isinstance(hsi, list):
+                attributions, approximation_error = ig_attributions, [None] * len(hsi)
+            else:
+                attributions, approximation_error = ig_attributions, None
 
-        attributes = HSIAttributes(
-            hsi=hsi,
-            attributes=attributions.squeeze(0),
-            score=approximation_error,
-            attribution_method=self.get_name(),
-        )
+        attributes: HSIAttributes | list[HSIAttributes]
+        if isinstance(hsi, list):
+            attributes = [
+                HSIAttributes(hsi=hsi_image, attributes=attribution, score=error, attribution_method=self.get_name())
+                for hsi_image, attribution, error in zip(hsi, attributions, approximation_error)
+            ]
+        else:
+            attributes = HSIAttributes(
+                hsi=hsi,
+                attributes=attributions.squeeze(0),
+                score=approximation_error,
+                attribution_method=self.get_name(),
+            )
 
         return attributes

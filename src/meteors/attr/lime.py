@@ -945,13 +945,14 @@ class Lime(Explainer):
             return band_mask, dict_labels_to_segment_ids
         return band_mask
 
-    def attribute(
+    # TODO: Make lime accept multiple inputs
+    def attribute(  # type: ignore
         self,
         hsi: HSI,
         target: int | None = None,
         attribution_type: Literal["spatial", "spectral"] | None = None,
         **kwargs,
-    ) -> HSISpectralAttributes | HSISpatialAttributes:
+    ) -> HSISpatialAttributes | HSISpectralAttributes:
         """A wrapper function to attribute the image using the LIME method. It executes either the
         `get_spatial_attributes` or `get_spectral_attributes` method based on the provided `attribution_type`. For more
         detailed description of the methods, please refer to the respective method documentation.

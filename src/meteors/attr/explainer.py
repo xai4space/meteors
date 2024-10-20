@@ -77,7 +77,7 @@ class Explainer(ABC):
         chained_explainer (Explainer | None): The chained explainer. Defaults to None.
     """
 
-    attribute: Callable[[HSI, int | None], HSIAttributes]
+    attribute: Callable[[list[HSI] | HSI, list[int] | int | None], HSIAttributes | list[HSIAttributes]]
 
     def __init__(self, callable: ExplainableModel | Explainer) -> None:
         if not isinstance(callable, ExplainableModel) and not isinstance(callable, Explainer):

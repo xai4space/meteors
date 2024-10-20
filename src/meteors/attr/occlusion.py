@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 import torch
 from captum.attr import Occlusion as CaptumOcclusion
@@ -31,15 +31,16 @@ class Occlusion(Explainer):
 
     def attribute(
         self,
-        hsi: HSI,
-        target: int | None = None,
+        hsi: list[HSI] | HSI,
+        target: list[int] | int | None = None,
         sliding_window_shapes: int | tuple[int, int, int] = (1, 1, 1),
         strides: int | tuple[int, int, int] = (1, 1, 1),
         baseline: int | float | torch.Tensor = None,
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-    ) -> HSIAttributes:
+        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
+    ) -> HSIAttributes | list[HSIAttributes]:
         """Compute attributions for the input HSI using the Occlusion method.
 
         Args:
@@ -71,7 +72,19 @@ class Occlusion(Explainer):
         if self._attribution_method is None:
             raise ValueError("Occlusion explainer is not initialized")
 
-        baseline = validate_and_transform_baseline(baseline, hsi)
+        if isinstance(hsi, list):
+            if isinstance(baseline, torch.Tensor) and baseline.ndim == 4:
+                baseline = torch.stack(
+                    [validate_and_transform_baseline(baseline[i], hsi[i]) for i in range(len(hsi))], dim=0
+                )
+            else:
+                baseline = torch.stack(
+                    [validate_and_transform_baseline(baseline, hsi[i]) for i in range(len(hsi))], dim=0
+                )
+            input_tensor = torch.stack([hsi_image.get_image().requires_grad_(True) for hsi_image in hsi], dim=0)
+        else:
+            baseline = validate_and_transform_baseline(baseline, hsi).unsqueeze(0)
+            input_tensor = hsi.get_image().unsqueeze(0).requires_grad_(True)
 
         if isinstance(sliding_window_shapes, int):
             sliding_window_shapes = (sliding_window_shapes, sliding_window_shapes, sliding_window_shapes)
@@ -81,32 +94,60 @@ class Occlusion(Explainer):
         assert len(strides) == 3, "Strides must be a tuple of three integers"
         assert len(sliding_window_shapes) == 3, "Sliding window shapes must be a tuple of three integers"
 
-        occlusion_attributions = self._attribution_method.attribute(
-            hsi.get_image().unsqueeze(0),
-            sliding_window_shapes=sliding_window_shapes,
-            strides=strides,
-            target=target,
-            baselines=baseline.unsqueeze(0),
-            additional_forward_args=additional_forward_args,
-            perturbations_per_eval=perturbations_per_eval,
-            show_progress=show_progress,
-        )
-        occlusion_attributions = occlusion_attributions.squeeze(0)
-        attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
+        if postprocessing_segmentation_output is not None:
+
+            def adjusted_forward_func(x: torch.Tensor) -> torch.Tensor:
+                return postprocessing_segmentation_output(self._attribution_method.forward_func(x), torch.tensor(1.0))
+
+            segmentation_attribution_method = CaptumOcclusion(adjusted_forward_func)
+
+            occlusion_attributions = segmentation_attribution_method.attribute(
+                input_tensor,
+                sliding_window_shapes=sliding_window_shapes,
+                strides=strides,
+                target=target,
+                baselines=baseline,
+                additional_forward_args=additional_forward_args,
+                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+                show_progress=show_progress,
+            )
+        else:
+            occlusion_attributions = self._attribution_method.attribute(
+                input_tensor,
+                sliding_window_shapes=sliding_window_shapes,
+                strides=strides,
+                target=target,
+                baselines=baseline,
+                additional_forward_args=additional_forward_args,
+                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+                show_progress=show_progress,
+            )
+
+        attributes: HSIAttributes | list[HSIAttributes]
+        if isinstance(hsi, list):
+            attributes = [
+                HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
+                for hsi_image, attribution in zip(hsi, occlusion_attributions)
+            ]
+        else:
+            attributes = HSIAttributes(
+                hsi=hsi, attributes=occlusion_attributions.squeeze(0), attribution_method=self.get_name()
+            )
 
         return attributes
 
     def get_spatial_attributes(
         self,
-        hsi: HSI,
-        target: int | None = None,
+        hsi: list[HSI] | HSI,
+        target: list[int] | int | None = None,
         sliding_window_shapes: int | tuple[int, int] = (1, 1),
         strides: int | tuple[int, int] = 1,
         baseline: int | float | torch.Tensor = None,
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-    ) -> HSIAttributes:
+        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
+    ) -> HSIAttributes | list[HSIAttributes]:
         """Compute spatial attributions for the input HSI using the Occlusion method. In this case, the sliding window
         is applied to the spatial dimensions only.
 
@@ -139,7 +180,19 @@ class Occlusion(Explainer):
         if self._attribution_method is None:
             raise ValueError("Occlusion explainer is not initialized")
 
-        baseline = validate_and_transform_baseline(baseline, hsi)
+        if isinstance(hsi, list):
+            if isinstance(baseline, torch.Tensor) and baseline.ndim == 4:
+                baseline = torch.stack(
+                    [validate_and_transform_baseline(baseline[i], hsi[i]) for i in range(len(hsi))], dim=0
+                )
+            else:
+                baseline = torch.stack(
+                    [validate_and_transform_baseline(baseline, hsi[i]) for i in range(len(hsi))], dim=0
+                )
+            input_tensor = torch.stack([hsi_image.get_image().requires_grad_(True) for hsi_image in hsi], dim=0)
+        else:
+            baseline = validate_and_transform_baseline(baseline, hsi).unsqueeze(0)
+            input_tensor = hsi.get_image().unsqueeze(0).requires_grad_(True)
 
         if isinstance(sliding_window_shapes, int):
             sliding_window_shapes = (sliding_window_shapes, sliding_window_shapes)
@@ -152,41 +205,70 @@ class Occlusion(Explainer):
         ), "Sliding window shapes must be a tuple of two integers or a single integer"
 
         list_sliding_window_shapes = list(sliding_window_shapes)
-        list_sliding_window_shapes.insert(hsi.spectral_axis, hsi.image.shape[hsi.spectral_axis])
-        sliding_window_shapes = tuple(list_sliding_window_shapes)  # type: ignore
-
         list_strides = list(strides)
-        list_strides.insert(hsi.spectral_axis, hsi.image.shape[hsi.spectral_axis])
+        if isinstance(hsi, list):
+            list_sliding_window_shapes.insert(hsi[0].spectral_axis, hsi[0].image.shape[hsi[0].spectral_axis])
+            list_strides.insert(hsi[0].spectral_axis, hsi[0].image.shape[hsi[0].spectral_axis])
+        else:
+            list_sliding_window_shapes.insert(hsi.spectral_axis, hsi.image.shape[hsi.spectral_axis])
+            list_strides.insert(hsi.spectral_axis, hsi.image.shape[hsi.spectral_axis])
+        sliding_window_shapes = tuple(list_sliding_window_shapes)  # type: ignore
         strides = tuple(list_strides)  # type: ignore
 
-        occlusion_attributions = self._attribution_method.attribute(
-            hsi.get_image().unsqueeze(0),
-            sliding_window_shapes=sliding_window_shapes,
-            strides=strides,
-            target=target,
-            baselines=baseline.unsqueeze(0),
-            additional_forward_args=additional_forward_args,
-            perturbations_per_eval=perturbations_per_eval,
-            show_progress=show_progress,
-        )
-        occlusion_attributions = occlusion_attributions.squeeze(0)
-        spatial_attributes = HSIAttributes(
-            hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name()
-        )
+        if postprocessing_segmentation_output is not None:
+
+            def adjusted_forward_func(x: torch.Tensor) -> torch.Tensor:
+                return postprocessing_segmentation_output(self._attribution_method.forward_func(x), torch.tensor(1.0))
+
+            segmentation_attribution_method = CaptumOcclusion(adjusted_forward_func)
+
+            occlusion_attributions = segmentation_attribution_method.attribute(
+                input_tensor,
+                sliding_window_shapes=sliding_window_shapes,
+                strides=strides,
+                target=target,
+                baselines=baseline,
+                additional_forward_args=additional_forward_args,
+                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+                show_progress=show_progress,
+            )
+        else:
+            occlusion_attributions = self._attribution_method.attribute(
+                input_tensor,
+                sliding_window_shapes=sliding_window_shapes,
+                strides=strides,
+                target=target,
+                baselines=baseline,
+                additional_forward_args=additional_forward_args,
+                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+                show_progress=show_progress,
+            )
+
+        spatial_attributes: HSIAttributes | list[HSIAttributes]
+        if isinstance(hsi, list):
+            spatial_attributes = [
+                HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
+                for hsi_image, attribution in zip(hsi, occlusion_attributions)
+            ]
+        else:
+            spatial_attributes = HSIAttributes(
+                hsi=hsi, attributes=occlusion_attributions.squeeze(0), attribution_method=self.get_name()
+            )
 
         return spatial_attributes
 
     def get_spectral_attributes(
         self,
-        hsi: HSI,
-        target: int | None = None,
+        hsi: list[HSI] | HSI,
+        target: list[int] | int | None = None,
         sliding_window_shapes: int | tuple[int] = 1,
         strides: int | tuple[int] = 1,
         baseline: int | float | torch.Tensor = None,
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-    ) -> HSIAttributes:
+        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
+    ) -> HSIAttributes | list[HSIAttributes]:
         """Compute spectral attributions for the input HSI using the Occlusion method. In this case, the sliding window
         is applied to the spectral dimension only.
 
@@ -218,7 +300,19 @@ class Occlusion(Explainer):
         if self._attribution_method is None:
             raise ValueError("Occlusion explainer is not initialized")
 
-        baseline = validate_and_transform_baseline(baseline, hsi)
+        if isinstance(hsi, list):
+            if isinstance(baseline, torch.Tensor) and baseline.ndim == 4:
+                baseline = torch.stack(
+                    [validate_and_transform_baseline(baseline[i], hsi[i]) for i in range(len(hsi))], dim=0
+                )
+            else:
+                baseline = torch.stack(
+                    [validate_and_transform_baseline(baseline, hsi[i]) for i in range(len(hsi))], dim=0
+                )
+            input_tensor = torch.stack([hsi_image.get_image().requires_grad_(True) for hsi_image in hsi], dim=0)
+        else:
+            baseline = validate_and_transform_baseline(baseline, hsi).unsqueeze(0)
+            input_tensor = hsi.get_image().unsqueeze(0).requires_grad_(True)
 
         if isinstance(sliding_window_shapes, tuple):
             assert (
@@ -232,27 +326,58 @@ class Occlusion(Explainer):
         assert isinstance(sliding_window_shapes, int), "Sliding window shapes must be a single integer"
         assert isinstance(strides, int), "Strides must be a single integer"
 
-        full_sliding_window_shapes = list(hsi.image.shape)
-        full_sliding_window_shapes[hsi.spectral_axis] = sliding_window_shapes
-        sliding_window_shapes = tuple(full_sliding_window_shapes)
+        if isinstance(hsi, list):
+            full_sliding_window_shapes = list(hsi[0].image.shape)
+            full_sliding_window_shapes[hsi[0].spectral_axis] = sliding_window_shapes
+            full_strides = list(hsi[0].image.shape)
+            full_strides[hsi[0].spectral_axis] = strides
+        else:
+            full_sliding_window_shapes = list(hsi.image.shape)
+            full_sliding_window_shapes[hsi.spectral_axis] = sliding_window_shapes
+            full_strides = list(hsi.image.shape)
+            full_strides[hsi.spectral_axis] = strides
 
-        full_strides = list(hsi.image.shape)
-        full_strides[hsi.spectral_axis] = strides
+        sliding_window_shapes = tuple(full_sliding_window_shapes)
         strides = tuple(full_strides)
 
-        occlusion_attributions = self._attribution_method.attribute(
-            hsi.get_image().unsqueeze(0),
-            sliding_window_shapes=sliding_window_shapes,
-            strides=strides,
-            target=target,
-            baselines=baseline.unsqueeze(0),
-            additional_forward_args=additional_forward_args,
-            perturbations_per_eval=perturbations_per_eval,
-            show_progress=show_progress,
-        )
-        occlusion_attributions = occlusion_attributions.squeeze(0)
-        spectral_attributes = HSIAttributes(
-            hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name()
-        )
+        if postprocessing_segmentation_output is not None:
+
+            def adjusted_forward_func(x: torch.Tensor) -> torch.Tensor:
+                return postprocessing_segmentation_output(self._attribution_method.forward_func(x), torch.tensor(1.0))
+
+            segmentation_attribution_method = CaptumOcclusion(adjusted_forward_func)
+
+            occlusion_attributions = segmentation_attribution_method.attribute(
+                input_tensor,
+                sliding_window_shapes=sliding_window_shapes,
+                strides=strides,
+                target=target,
+                baselines=baseline,
+                additional_forward_args=additional_forward_args,
+                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+                show_progress=show_progress,
+            )
+        else:
+            occlusion_attributions = self._attribution_method.attribute(
+                input_tensor,
+                sliding_window_shapes=sliding_window_shapes,
+                strides=strides,
+                target=target,
+                baselines=baseline,
+                additional_forward_args=additional_forward_args,
+                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+                show_progress=show_progress,
+            )
+
+        spectral_attributes: HSIAttributes | list[HSIAttributes]
+        if isinstance(hsi, list):
+            spectral_attributes = [
+                HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
+                for hsi_image, attribution in zip(hsi, occlusion_attributions)
+            ]
+        else:
+            spectral_attributes = HSIAttributes(
+                hsi=hsi, attributes=occlusion_attributions.squeeze(0), attribution_method=self.get_name()
+            )
 
         return spectral_attributes
