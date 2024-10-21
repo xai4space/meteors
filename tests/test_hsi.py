@@ -7,6 +7,7 @@ from pydantic import ValidationError
 import meteors.hsi as mt_image
 from meteors import HSI
 
+from meteors.exceptions import ShapeMismatchError, BandSelectionError
 
 # Temporary solution for wavelengths
 wavelengths_main = [
@@ -207,7 +208,7 @@ def test_resolve_inference_device_hsi():
     # Test no image in the info
     device = None
     info = ValidationInfoMock(data={})
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         mt_image.resolve_inference_device_hsi(device, info)
 
     # Test wrong type device
@@ -264,13 +265,13 @@ def test_validate_shapes():
     wavelengths = torch.rand(10)
     image = torch.randn(5, 5, 10)
     band_axis = 1
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         mt_image.validate_shapes(wavelengths, image, band_axis)
 
     wavelengths = torch.rand(10)
     image = torch.randn(5, 5, 5)
     band_axis = 2
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         mt_image.validate_shapes(wavelengths, image, band_axis)
 
 
@@ -318,7 +319,7 @@ def test_process_and_validate_binary_mask():
     info = ValidationInfoMock(
         data={"image": torch.randn(3, 5, 5), "orientation": ("C", "H", "W"), "device": torch.device("cpu")}
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         mt_image.process_and_validate_binary_mask(mask, info)
 
     # Test invalid binary mask shape
@@ -326,7 +327,7 @@ def test_process_and_validate_binary_mask():
     info = ValidationInfoMock(
         data={"image": torch.randn(3, 5, 5), "orientation": ("C", "H", "W"), "device": torch.device("cpu")}
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         mt_image.process_and_validate_binary_mask(mask, info)
 
     # Test invalid binary mask shape
@@ -340,7 +341,7 @@ def test_process_and_validate_binary_mask():
     # Test no image in the info
     mask = torch.ones(3, 5, 5)
     info = ValidationInfoMock(data={})
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         mt_image.process_and_validate_binary_mask(mask, info)
 
 
@@ -397,21 +398,21 @@ def test_image():
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     orientation = "invalid"
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         HSI(image=sample, wavelengths=wavelengths, orientation=orientation)
 
     # Test invalid binary mask type
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     binary_mask = 123
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         HSI(image=sample, wavelengths=wavelengths, binary_mask=binary_mask)
 
     # Test invalid device type
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     device = "invalid"
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         HSI(image=sample, wavelengths=wavelengths, device=device)
 
 
@@ -646,7 +647,7 @@ def test_extract_band_by_name():
 
     # Test selecting an invalid band
     band_name = "InvalidBand"
-    with pytest.raises(ValueError):
+    with pytest.raises(BandSelectionError):
         hsi_image.extract_band_by_name(
             band_name=band_name,
             selection_method=method,

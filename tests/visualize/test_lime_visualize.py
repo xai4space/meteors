@@ -316,7 +316,7 @@ def test_visualize_spectral_attributes_by_waveband():
     assert ax.get_legend() is not None
 
     # Test invalid input
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         visualize.visualize_spectral_attributes_by_waveband("invalid input", None)
 
     # Test empty list
@@ -516,7 +516,7 @@ def test_visualize_spectral_attributes_by_magnitude():
     plt.close("all")
 
     # Test invalid input
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         visualize.visualize_spectral_attributes_by_magnitude("invalid input", None)
 
     # Test empty list

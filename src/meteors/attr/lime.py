@@ -22,6 +22,11 @@ from meteors.utils.utils import torch_dtype_to_python_dtype, change_dtype_of_lis
 from meteors.attr import Explainer
 from meteors.attr import HSISpatialAttributes, HSISpectralAttributes
 from meteors.attr.attributes import ensure_torch_tensor
+from meteors.exceptions import (
+    ShapeMismatchError,
+    BandSelectionError,
+    MaskCreationError,
+)
 
 try:
     from fast_slic import Slic as slic
@@ -268,7 +273,7 @@ def validate_mask_shape(mask_type: Literal["segmentation", "band"], hsi: HSI, ma
         ) from e
 
     if broadcasted_shape != image_shape:
-        raise ValueError(f"Image and mask shapes are not compatible: {image_shape} and {mask_shape}")
+        raise ShapeMismatchError(f"HSI and {mask_type} mask have mismatched shapes: {image_shape}, {mask_shape}")
 
     # check on which dims the shapes match - the segmentation mask can differ only in the band dimension, band mask can differ in the height and width dimensions
     shape_matches = [broadcasted_shape[i] == mask_shape[i] for i in range(3)]
@@ -367,7 +372,7 @@ class Lime(Explainer):
             torch.Tensor: The segmentation mask as a tensor.
 
         Raises:
-            ValueError: If the input hsi is not an instance of the HSI class.
+            TypeError: If the input hsi is not an instance of the HSI class.
             ValueError: If an unsupported segmentation method is specified.
 
         Examples:
@@ -386,14 +391,17 @@ class Lime(Explainer):
                           [2, 2]])
         """
         if not isinstance(hsi, HSI):
-            raise ValueError("hsi should be an instance of HSI class")
+            raise TypeError("hsi should be an instance of HSI class")
 
-        if segmentation_method == "slic":
-            return Lime._get_slick_segmentation_mask(hsi, **segmentation_method_params)
-        elif segmentation_method == "patch":
-            return Lime._get_patch_segmentation_mask(hsi, **segmentation_method_params)
-        else:
-            raise ValueError(f"Unsupported segmentation method: {segmentation_method}")
+        try:
+            if segmentation_method == "slic":
+                return Lime._get_slic_segmentation_mask(hsi, **segmentation_method_params)
+            elif segmentation_method == "patch":
+                return Lime._get_patch_segmentation_mask(hsi, **segmentation_method_params)
+            else:
+                raise ValueError(f"Unsupported segmentation method: {segmentation_method}")
+        except Exception as e:
+            raise MaskCreationError(f"Error creating segmentation mask using method {segmentation_method}: {e}")
 
     @staticmethod
     def get_band_mask(
@@ -428,7 +436,7 @@ class Lime(Explainer):
             mapping band names to segment IDs.
 
         Raises:
-            ValueError: If the input hsi is not an instance of the HSI class.
+            TypeError: If the input hsi is not an instance of the HSI class.
             ValueError: If no band names, indices, or wavelengths are provided.
 
         Examples:
@@ -447,67 +455,69 @@ class Lime(Explainer):
             {"RGB": 1}
         """
         if not isinstance(hsi, HSI):
-            raise ValueError("hsi should be an instance of HSI class")
+            raise TypeError("hsi should be an instance of HSI class")
 
-        assert (
-            band_names is not None or band_indices is not None or band_wavelengths is not None
-        ), "No band names, indices, or wavelengths are provided."
+        try:
+            if not (band_names is not None or band_indices is not None or band_wavelengths is not None):
+                raise ValueError("No band names, indices, or wavelengths are provided.")
 
-        # validate types
-        dict_labels_to_segment_ids = None
-        if band_names is not None:
-            logger.debug("Getting band mask from band names of spectral bands")
-            if band_wavelengths is not None or band_indices is not None:
-                ignored_params = [
-                    param
-                    for param in ["band_wavelengths", "band_indices"]
-                    if param in locals() and locals()[param] is not None
-                ]
-                ignored_params_str = " and ".join(ignored_params)
-                logger.info(
-                    f"Only the band names will be used to create the band mask. The additional parameters {ignored_params_str} will be ignored."
-                )
-            try:
-                validate_band_names(band_names)
-                band_groups, dict_labels_to_segment_ids = Lime._get_band_wavelengths_indices_from_band_names(
-                    hsi.wavelengths, band_names
-                )
-            except Exception as e:
-                raise ValueError(f"Incorrect band names provided: {e}") from e
-        elif band_wavelengths is not None:
-            logger.debug("Getting band mask from band groups given by ranges of wavelengths")
-            if band_indices is not None:
-                logger.info(
-                    "Only the band wavelengths will be used to create the band mask. The band_indices will be ignored."
-                )
-            validate_band_format(band_wavelengths, variable_name="band_wavelengths")
-            try:
-                band_groups = Lime._get_band_indices_from_band_wavelengths(
-                    hsi.wavelengths,
-                    band_wavelengths,
-                )
-            except Exception as e:
-                raise ValueError(
-                    f"Incorrect band ranges wavelengths provided, please check if provided wavelengths are correct: {e}"
-                ) from e
-        elif band_indices is not None:
-            logger.debug("Getting band mask from band groups given by ranges of indices")
-            validate_band_format(band_indices, variable_name="band_indices")
-            try:
-                band_groups = Lime._get_band_indices_from_input_band_indices(hsi.wavelengths, band_indices)
-            except Exception as e:
-                raise ValueError(
-                    f"Incorrect band ranges indices provided, please check if provided indices are correct: {e}"
-                ) from e
+            # validate types
+            dict_labels_to_segment_ids = None
+            if band_names is not None:
+                logger.debug("Getting band mask from band names of spectral bands")
+                if band_wavelengths is not None or band_indices is not None:
+                    ignored_params = [
+                        param
+                        for param in ["band_wavelengths", "band_indices"]
+                        if param in locals() and locals()[param] is not None
+                    ]
+                    ignored_params_str = " and ".join(ignored_params)
+                    logger.info(
+                        f"Only the band names will be used to create the band mask. The additional parameters {ignored_params_str} will be ignored."
+                    )
+                try:
+                    validate_band_names(band_names)
+                    band_groups, dict_labels_to_segment_ids = Lime._get_band_wavelengths_indices_from_band_names(
+                        hsi.wavelengths, band_names
+                    )
+                except Exception as e:
+                    raise BandSelectionError(f"Incorrect band names provided: {e}") from e
+            elif band_wavelengths is not None:
+                logger.debug("Getting band mask from band groups given by ranges of wavelengths")
+                if band_indices is not None:
+                    logger.info(
+                        "Only the band wavelengths will be used to create the band mask. The band_indices will be ignored."
+                    )
+                validate_band_format(band_wavelengths, variable_name="band_wavelengths")
+                try:
+                    band_groups = Lime._get_band_indices_from_band_wavelengths(
+                        hsi.wavelengths,
+                        band_wavelengths,
+                    )
+                except Exception as e:
+                    raise ValueError(
+                        f"Incorrect band ranges wavelengths provided, please check if provided wavelengths are correct: {e}"
+                    ) from e
+            elif band_indices is not None:
+                logger.debug("Getting band mask from band groups given by ranges of indices")
+                validate_band_format(band_indices, variable_name="band_indices")
+                try:
+                    band_groups = Lime._get_band_indices_from_input_band_indices(hsi.wavelengths, band_indices)
+                except Exception as e:
+                    raise ValueError(
+                        f"Incorrect band ranges indices provided, please check if provided indices are correct: {e}"
+                    ) from e
 
-        return Lime._create_tensor_band_mask(
-            hsi,
-            band_groups,
-            dict_labels_to_segment_ids=dict_labels_to_segment_ids,
-            device=device,
-            repeat_dimensions=repeat_dimensions,
-            return_dict_labels_to_segment_ids=True,
-        )
+            return Lime._create_tensor_band_mask(
+                hsi,
+                band_groups,
+                dict_labels_to_segment_ids=dict_labels_to_segment_ids,
+                device=device,
+                repeat_dimensions=repeat_dimensions,
+                return_dict_labels_to_segment_ids=True,
+            )
+        except Exception as e:
+            raise MaskCreationError(f"Error creating band mask: {e}") from e
 
     @staticmethod
     def _make_band_names_indexable(segment_name: list[str] | tuple[str, ...] | str) -> tuple[str, ...] | str:
@@ -520,7 +530,7 @@ class Lime(Explainer):
             tuple[str, ...] | str: The converted segment name.
 
         Raises:
-            ValueError: If the segment_name is not of type list or string.
+            TypeError: If the segment_name is not of type list or string.
         """
         if (
             isinstance(segment_name, tuple) and all(isinstance(subitem, str) for subitem in segment_name)
@@ -528,7 +538,7 @@ class Lime(Explainer):
             return segment_name
         elif isinstance(segment_name, list) and all(isinstance(subitem, str) for subitem in segment_name):
             return tuple(segment_name)
-        raise ValueError(f"Incorrect segment {segment_name} type. Should be either a list or string")
+        raise TypeError(f"Incorrect segment {segment_name} type. Should be either a list or string")
 
     @staticmethod
     # @lru_cache(maxsize=32) Can't use with lists as they are not hashable
@@ -544,7 +554,7 @@ class Lime(Explainer):
                 or a single band name if only one band is extracted.
 
         Raises:
-            ValueError: If the provided band name is invalid.
+            BandSelectionError: If the provided band name is invalid.
                 The band name must be either in `spyndex.indices` or `spyndex.bands`.
         """
         if isinstance(segment_name, str):
@@ -559,7 +569,7 @@ class Lime(Explainer):
             elif band_name in spyndex.bands:
                 band_names_segment.append(band_name)
             else:
-                raise ValueError(
+                raise BandSelectionError(
                     f"Invalid band name {band_name}, band name must be either in `spyndex.indices` or `spyndex.bands`"
                 )
 
@@ -609,6 +619,9 @@ class Lime(Explainer):
             tuple[dict[tuple[str, ...] | str, list[int]], dict[tuple[str, ...] | str, int]]:
                 A tuple containing the dictionary with mapping segment labels into wavelength indices and the mapping
                 from segment labels into segment ids.
+
+        Raises:
+            TypeError: If the band names are not in the correct format.
         """
         if isinstance(band_names, str):
             band_names = [band_names]
@@ -621,7 +634,7 @@ class Lime(Explainer):
             dict_labels_to_segment_ids = band_names.copy()
             segments_list = tuple(band_names.keys())  # type: ignore
         else:
-            raise ValueError("Incorrect band_names type. It should be a dict or a list")
+            raise TypeError("Incorrect band_names type. It should be a dict or a list")
         segments_list_after_mapping = [Lime._extract_bands_from_spyndex(segment) for segment in segments_list]
         band_indices: dict[tuple[str, ...] | str, list[int]] = {}
         for original_segment, segment in zip(segments_list, segments_list_after_mapping):
@@ -686,10 +699,10 @@ class Lime(Explainer):
             dict: A dictionary mapping segment labels to index ranges.
 
         Raises:
-            ValueError: If band_wavelengths is not a dictionary.
+            TypeError: If band_wavelengths is not a dictionary.
         """
         if not isinstance(band_wavelengths, dict):
-            raise ValueError("band_wavelengths should be a dictionary")
+            raise TypeError("band_wavelengths should be a dictionary")
 
         band_indices: dict[str | tuple[str, ...], list[int]] = {}
         for segment_label, segment in band_wavelengths.items():
@@ -760,10 +773,10 @@ class Lime(Explainer):
             dict[str | tuple[str, ...], list[int]]: A dictionary mapping segment labels to a list of band indices.
 
         Raises:
-            ValueError: If `band_indices` is not a dictionary.
+            TypeError: If `band_indices` is not a dictionary.
         """
         if not isinstance(input_band_indices, dict):
-            raise ValueError("band_indices should be a dictionary")
+            raise TypeError("band_indices should be a dictionary")
 
         band_indices: dict[str | tuple[str, ...], list[int]] = {}
         for segment_label, indices in input_band_indices.items():
@@ -1022,9 +1035,9 @@ class Lime(Explainer):
                 the segmentation mask, and the score of the interpretable model used for the explanation.
 
         Raises:
-            ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
+            RuntimeError: If the Lime object is not initialized or is not an instance of LimeBase.
             AssertionError: If explainable model type is `segmentation` and `postprocessing_segmentation_output` is not provided.
-            AssertionError: If the hsi is not an instance of the HSI class.
+            TypeError: If the hsi is not an instance of the HSI class.
 
         Examples:
             >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
@@ -1044,16 +1057,18 @@ class Lime(Explainer):
             1.0
         """
         if self._attribution_method is None or not isinstance(self._attribution_method, LimeBase):
-            raise ValueError("Lime object not initialized")  # pragma: no cover
+            raise RuntimeError("Lime object not initialized")  # pragma: no cover
 
-        assert isinstance(hsi, HSI), "hsi should be an instance of HSI class"
+        if not isinstance(hsi, HSI):
+            raise TypeError("hsi object should be an instance of HSI class")
 
         if self.explainable_model.problem_type == "segmentation":
-            assert postprocessing_segmentation_output, (
-                "postprocessing_segmentation_output is required for segmentation problem type, please provide "
-                "the `postprocessing_segmentation_output`. For a reference "
-                "we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
-            )
+            if not postprocessing_segmentation_output:
+                raise ValueError(
+                    "postprocessing_segmentation_output is required for segmentation problem type, please provide "
+                    "the `postprocessing_segmentation_output`. For a reference "
+                    "we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
+                )
         elif postprocessing_segmentation_output is not None:
             logger.warning(
                 "postprocessing_segmentation_output is provided but the problem is not segmentation, will be ignored"
@@ -1061,7 +1076,11 @@ class Lime(Explainer):
             postprocessing_segmentation_output = None
 
         if segmentation_mask is None:
-            segmentation_mask = self.get_segmentation_mask(hsi, segmentation_method, **segmentation_method_params)
+            try:
+                segmentation_mask = self.get_segmentation_mask(hsi, segmentation_method, **segmentation_method_params)
+            except Exception as e:
+                raise MaskCreationError(f"Error creating segmentation mask: {e}") from e
+
         segmentation_mask = ensure_torch_tensor(
             segmentation_mask, "Segmentation mask should be None, numpy array, or torch tensor"
         )
@@ -1081,14 +1100,16 @@ class Lime(Explainer):
             show_progress=verbose,
             return_input_shape=True,
         )
-
-        spatial_attribution = HSISpatialAttributes(
-            hsi=hsi,
-            attributes=lime_attributes.squeeze(0),
-            mask=segmentation_mask.expand_as(hsi.image),
-            score=score,
-            attribution_method="Lime",
-        )
+        try:
+            spatial_attribution = HSISpatialAttributes(
+                hsi=hsi,
+                attributes=lime_attributes.squeeze(0),
+                mask=segmentation_mask.expand_as(hsi.image),
+                score=score,
+                attribution_method="Lime",
+            )
+        except Exception as e:
+            raise AttributeError(f"Error during creating spatial attribution {e}") from e
 
         return spatial_attribution
 
@@ -1137,8 +1158,8 @@ class Lime(Explainer):
 
         Raises:
             ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
-            AssertionError: If explainable model type is `segmentation` and `postprocessing_segmentation_output` is not provided.
-            AssertionError: If the hsi is not an instance of the HSI class.
+            ValueError: If explainable model type is `segmentation` and `postprocessing_segmentation_output` is not provided.
+            TypeError: If the hsi is not an instance of the HSI class.
 
         Examples:
             >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
@@ -1162,21 +1183,23 @@ class Lime(Explainer):
         """
 
         if self._attribution_method is None or not isinstance(self._attribution_method, LimeBase):
-            raise ValueError("Lime object not initialized")  # pragma: no cover
+            raise RuntimeError("Lime object not initialized")  # pragma: no cover
+
+        if not isinstance(hsi, HSI):
+            raise TypeError("hsi object should be an instance of HSI class")
 
         if self.explainable_model.problem_type == "segmentation":
-            assert postprocessing_segmentation_output, (
-                "postprocessing_segmentation_output is required for segmentation problem type, please provide "
-                "the `postprocessing_segmentation_output`. For a reference "
-                "we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
-            )
+            if not postprocessing_segmentation_output:
+                raise ValueError(
+                    "postprocessing_segmentation_output is required for segmentation problem type, please provide "
+                    "the `postprocessing_segmentation_output`. For a reference "
+                    "we provided an example function to use `agg_segmentation_postprocessing` from `meteors.utils.utils` module"
+                )
         elif postprocessing_segmentation_output is not None:
             logger.warning(
                 "postprocessing_segmentation_output is provided but the problem is not segmentation, will be ignored"
             )
             postprocessing_segmentation_output = None
-
-        assert isinstance(hsi, HSI), "hsi should be an instance of HSI class"
 
         if band_mask is None:
             band_mask, band_names = self.get_band_mask(hsi, band_names)
@@ -1212,19 +1235,22 @@ class Lime(Explainer):
             return_input_shape=True,
         )
 
-        spectral_attribution = HSISpectralAttributes(
-            hsi=hsi,
-            attributes=lime_attributes.squeeze(0),
-            mask=band_mask.expand_as(hsi.image),
-            band_names=band_names,
-            score=score,
-            attribution_method="Lime",
-        )
+        try:
+            spectral_attribution = HSISpectralAttributes(
+                hsi=hsi,
+                attributes=lime_attributes.squeeze(0),
+                mask=band_mask.expand_as(hsi.image),
+                band_names=band_names,
+                score=score,
+                attribution_method="Lime",
+            )
+        except Exception as e:
+            raise AttributeError(f"Error during creating spectral attribution {e}") from e
 
         return spectral_attribution
 
     @staticmethod
-    def _get_slick_segmentation_mask(
+    def _get_slic_segmentation_mask(
         hsi: HSI, num_interpret_features: int = 10, *args: Any, **kwargs: Any
     ) -> torch.Tensor:
         """Creates a segmentation mask using the SLIC method.

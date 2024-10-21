@@ -39,14 +39,22 @@ class Saliency(Explainer):
         abs: bool = True,
         additional_forward_args: Any = None,
     ) -> HSIAttributes:
+        """
+        Raises:
+            RuntimeError: If the explainer is not initialized.
+            HSIAttributesError: If an error occurs during the generation of the attributions
+        """
         if self._attribution_method is None:
-            raise ValueError("Saliency explainer is not initialized")
+            raise RuntimeError("Saliency explainer is not initialized, INITIALIZATION ERROR")
 
         saliency_attributions = self._attribution_method.attribute(
             hsi.get_image().unsqueeze(0), target=target, abs=abs, additional_forward_args=additional_forward_args
         )
-        attributes = HSIAttributes(
-            hsi=hsi, attributes=saliency_attributions.squeeze(0), attribution_method=self.get_name()
-        )
+        try:
+            attributes = HSIAttributes(
+                hsi=hsi, attributes=saliency_attributions.squeeze(0), attribution_method=self.get_name()
+            )
+        except Exception as e:
+            raise AttributeError(f"Error in generating Saliency attributions: {e}") from e
 
         return attributes
