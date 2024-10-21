@@ -6,8 +6,7 @@ from .integrated_gradients import IntegratedGradients
 from .saliency import Saliency
 from .occlusion import Occlusion
 from .input_x_gradients import InputXGradient
-from .noise_tunnel import NoiseTunnel
-from .hyper_noise_tunnel import HyperNoiseTunnel
+from .noise_tunnel import HyperNoiseTunnel, NoiseTunnel
 
 __all__ = [
     "HSIAttributes",
