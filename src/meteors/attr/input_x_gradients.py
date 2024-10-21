@@ -7,7 +7,7 @@ from captum.attr import InputXGradient as CaptumInputXGradient
 from meteors.utils.models import ExplainableModel
 from meteors import HSI
 from meteors.attr import HSIAttributes, Explainer
-from meteors.exceptions import ExplanationError, ExplainerInitializationError
+from meteors.exceptions import HSIAttributesError
 
 
 class InputXGradient(Explainer):
@@ -30,8 +30,13 @@ class InputXGradient(Explainer):
         target: int | None = None,
         additional_forward_args: Any = None,
     ) -> HSIAttributes:
+        """
+        Raises:
+            RuntimeError: If the explainer is not initialized.
+            HSIAttributesError: If an error occurs during the generation of the attributions.
+        """
         if self._attribution_method is None:
-            raise ExplainerInitializationError("InputXGradient explainer is not initialized")  # initialization ERROR
+            raise RuntimeError("InputXGradient explainer is not initialized, INITIALIZATION ERROR")
 
         gradient_attribution = self._attribution_method.attribute(
             hsi.get_image().unsqueeze(0), target=target, additional_forward_args=additional_forward_args
@@ -41,6 +46,6 @@ class InputXGradient(Explainer):
                 hsi=hsi, attributes=gradient_attribution.squeeze(0), attribution_method=self.get_name()
             )
         except Exception as e:
-            raise ExplanationError(f"Error in generating InputXGradient attributions: {e}")
+            raise HSIAttributesError(f"Error in generating InputXGradient attributions: {e}") from e
 
         return attributes

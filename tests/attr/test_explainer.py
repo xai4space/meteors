@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from meteors.utils.models import ExplainableModel
 import meteors.attr.explainer as explainer_module
 from meteors import HSI
-from meteors.exceptions import ShapeMismatchError, ExplainerInitializationError
+from meteors.exceptions import ShapeMismatchError
 
 import pytest
 
@@ -110,7 +110,7 @@ def test_explainer():
     chained_explainer = explainer_module.Explainer(explainer)
 
     # chained explainer with chained explainer - should raise ValueError
-    with pytest.raises(ExplainerInitializationError):
+    with pytest.raises(ValueError):
         explainer_module.Explainer(chained_explainer)
 
     assert not explainer.has_convergence_delta()

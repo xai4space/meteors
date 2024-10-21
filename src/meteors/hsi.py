@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing_extensions import Annotated, Self
 import warnings
 
-from meteors.exceptions import OrientationError, ShapeMismatchError, HSIError, BandSelectionError
+from meteors.exceptions import ShapeMismatchError, BandSelectionError
 
 import torch
 import numpy as np
@@ -39,14 +39,14 @@ def validate_orientation(value: tuple[str, str, str] | list[str] | str) -> tuple
         tuple[str, str, str]: The validated orientation value.
 
     Raises:
-        OrientationError: If the value is not a tuple of three one-letter strings
+        ValueError: If the value is not a tuple of three one-letter strings
             or if it does not contain 'W', 'H', and 'C' in any order.
     """
     if not isinstance(value, tuple):
         value = tuple(value)  # type: ignore
 
     if len(value) != 3 or set(value) != {"H", "W", "C"}:
-        raise OrientationError(value)
+        raise ValueError(value)
     return value  # type: ignore
 
 
@@ -93,13 +93,15 @@ def resolve_inference_device_hsi(device: str | torch.device | None, info: Valida
         torch.device: The resolved PyTorch device for inference.
 
     Raises:
-        HSIError: raised if the hsi is not present in the info data,
+        RuntimeError: raised if the hsi is not present in the info data,
         TypeError: If the provided device is neither None, a string, nor a torch.device.
         ValueError: If the provided device string is invalid.
     """
     if device is None:
         if "image" not in info.data:
-            raise HSIError("Hyperspectral image tensor is not present in the HSI object, an internal error occurred")
+            raise RuntimeError(
+                "Hyperspectral image tensor is not present in the HSI object, an internal error occurred"
+            )
         image: torch.Tensor = info.data["image"]
         device = image.device
     elif isinstance(device, str):
@@ -186,7 +188,7 @@ def process_and_validate_binary_mask(
         torch.Tensor: A boolean PyTorch tensor representing the validated and processed binary mask.
 
     Raises:
-        HSIError: If the input mask is invalid or if required information is missing from info.
+        RuntimeError: If the input mask is invalid or if required information is missing from info.
         ShapeMismatchError: If the resulting binary mask doesn't match the shape of the reference image.
         TypeError: If the input binary mask is not in a correct format - a numpy array, PyTorch tensor, or string.
     """
@@ -194,7 +196,7 @@ def process_and_validate_binary_mask(
         raise TypeError("Binary mask must be None, a PyTorch tensor, a numpy array, or the string 'artificial'")
 
     if "image" not in info.data or "orientation" not in info.data or "device" not in info.data:
-        raise HSIError(
+        raise RuntimeError(
             "Missing required information in ValidationInfo. Required fields: 'image', 'orientation', 'device', ValidationInfo data: "
             + str(info.data)
         )
@@ -216,7 +218,7 @@ def process_and_validate_binary_mask(
                 dim=spectral_axis,
             )
         else:
-            raise HSIError("Unsupported binary_mask field for HSI. Mask specification must be 'artificial'")
+            raise ValueError("Unsupported binary_mask field for HSI. Mask specification must be 'artificial'")
     else:
         binary_mask = mask.bool().to(device)
 
@@ -630,7 +632,7 @@ class HSI(BaseModel):
             Self: The updated HSI object with the new orientation.
 
         Raises:
-            OrientationError: If the target orientation is not a valid tuple of three one-letter strings.
+            ValueError: If the target orientation is not a valid tuple of three one-letter strings.
         """
         target_orientation = validate_orientation(target_orientation)
 

@@ -2,11 +2,12 @@ import pytest
 
 import torch
 import numpy as np
+from pydantic import ValidationError
 
 import meteors.hsi as mt_image
 from meteors import HSI
 
-from meteors.exceptions import ShapeMismatchError, OrientationError, HSIError, BandSelectionError
+from meteors.exceptions import ShapeMismatchError, BandSelectionError
 
 # Temporary solution for wavelengths
 wavelengths_main = [
@@ -139,17 +140,17 @@ def test_validate_orientation():
 
     # Test invalid orientation with wrong length
     orientation = ("C", "H")
-    with pytest.raises(OrientationError):
+    with pytest.raises(ValueError):
         mt_image.validate_orientation(orientation)
 
     # Test invalid orientation with wrong elements
     orientation = ("C", "H", "A")
-    with pytest.raises(OrientationError):
+    with pytest.raises(ValueError):
         mt_image.validate_orientation(orientation)
 
     # test invalid orientation with repeated elements
     orientation = "HHH"
-    with pytest.raises(OrientationError):
+    with pytest.raises(ValueError):
         mt_image.validate_orientation(orientation)
 
 
@@ -207,7 +208,7 @@ def test_resolve_inference_device_hsi():
     # Test no image in the info
     device = None
     info = ValidationInfoMock(data={})
-    with pytest.raises(HSIError):
+    with pytest.raises(RuntimeError):
         mt_image.resolve_inference_device_hsi(device, info)
 
     # Test wrong type device
@@ -334,13 +335,13 @@ def test_process_and_validate_binary_mask():
     info = ValidationInfoMock(
         data={"image": torch.randn(3, 5, 5), "orientation": ("C", "H", "W"), "device": torch.device("cpu")}
     )
-    with pytest.raises(HSIError):
+    with pytest.raises(ValueError):
         mt_image.process_and_validate_binary_mask(mask, info)
 
     # Test no image in the info
     mask = torch.ones(3, 5, 5)
     info = ValidationInfoMock(data={})
-    with pytest.raises(HSIError):
+    with pytest.raises(RuntimeError):
         mt_image.process_and_validate_binary_mask(mask, info)
 
 
@@ -397,7 +398,7 @@ def test_image():
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     orientation = "invalid"
-    with pytest.raises(OrientationError):
+    with pytest.raises(RuntimeError):
         HSI(image=sample, wavelengths=wavelengths, orientation=orientation)
 
     # Test invalid binary mask type
@@ -411,7 +412,7 @@ def test_image():
     sample = torch.tensor([[[0]]])
     wavelengths = [0]
     device = "invalid"
-    with pytest.raises(HSIError):
+    with pytest.raises(RuntimeError):
         HSI(image=sample, wavelengths=wavelengths, device=device)
 
 
@@ -496,7 +497,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
-    with pytest.raises(ShapeMismatchError):
+    with pytest.raises(ValidationError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid image data with mismatched band axis
@@ -505,7 +506,7 @@ def test_validate_image_data():
     orientation = ("H", "C", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 5)
-    with pytest.raises(ShapeMismatchError):
+    with pytest.raises(ValidationError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid mask shape
@@ -514,7 +515,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 5, 10)
-    with pytest.raises(ShapeMismatchError):
+    with pytest.raises(ValidationError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
     # Test invalid binary mask shape
@@ -523,7 +524,7 @@ def test_validate_image_data():
     orientation = ("C", "H", "W")
     device = torch.device("cpu")
     binary_mask = torch.ones(3, 6, 5)
-    with pytest.raises(ShapeMismatchError):
+    with pytest.raises(ValidationError):
         HSI(image=image, wavelengths=wavelengths, orientation=orientation, device=device, binary_mask=binary_mask)
 
 
@@ -735,5 +736,5 @@ def test_orientation_change():
 
     # test case with invalid orientation
     new_orientation = ("H", "C", "A")
-    with pytest.raises(OrientationError):
+    with pytest.raises(ValueError):
         image.change_orientation(new_orientation, inplace=True)

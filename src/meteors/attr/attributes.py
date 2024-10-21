@@ -127,9 +127,9 @@ def align_band_names_with_mask(
                         the original band_names.
 
     Raises:
-        ValueError: If the band_names dictionary contains a 'not_included' category and some
+        MaskCreationError: If the band_names dictionary contains a 'not_included' category and some
                     unique values in the mask are not present in the band_names.
-
+        MaskCreationError: If the band_names dictionary does not contain all unique values in the mask.
     Warns:
         UserWarning: If a 'not_included' category (0) is added to the band_names.
 
@@ -302,7 +302,7 @@ class HSIAttributes(BaseModel):
         Returns:
             torch.Tensor: A flattened tensor of attributes.
         """
-        raise HSIAttributesError("This method should be implemented in the subclass")
+        raise NotImplementedError("The `flattened_attributes` property must be implemented in the subclass")
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -425,6 +425,9 @@ class HSISpatialAttributes(HSIAttributes):
 
         Returns:
             torch.Tensor: The segmentation mask tensor.
+
+        Raises:
+            HSIAttributesError: If the segmentation mask is not provided in the attributes object.
         """
         if self.mask is None:
             raise HSIAttributesError("Segmentation mask is not provided in the attributes object")
@@ -452,8 +455,7 @@ class HSISpatialAttributes(HSIAttributes):
         """Validates the hsi attributions and performs necessary operations to ensure compatibility with the device.
 
         Raises:
-            ValueError: If the shapes of the attributes and hsi tensors do not match.
-            ValueError: If the segmentation mask is not provided.
+            HSIAttributesError: If the segmentation mask is not provided in the attributes object.
         """
         super()._validate_hsi_attributions_and_mask()
         if self.mask is None:
@@ -521,8 +523,7 @@ class HSISpectralAttributes(HSIAttributes):
         """Validates the hsi attributions and performs necessary operations to ensure compatibility with the device.
 
         Raises:
-            ShapeMismatchError: If the shapes of the attributes and hsi tensors do not match.
-            ValueError: If the band mask is not provided.
+            HSIAttributesError: If the band mask is not provided in the attributes object
         """
         super()._validate_hsi_attributions_and_mask()
         if self.mask is None:

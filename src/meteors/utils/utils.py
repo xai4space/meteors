@@ -93,6 +93,9 @@ def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> tuple[torch.Tens
 
     Returns:
         tuple(torch.Tensor, torch.Tensor): The source tensor and the target tensor with the shape adjusted to match the target tensor.
+
+    Raises:
+        RuntimeError: If the source tensor could not be broadcasted to match the target tensor shape.
     """
     if source.shape == target.shape:
         return target, source

@@ -24,11 +24,8 @@ from meteors.attr import HSISpatialAttributes, HSISpectralAttributes
 from meteors.attr.attributes import ensure_torch_tensor
 from meteors.exceptions import (
     ShapeMismatchError,
-    ExplainerInitializationError,
-    ExplanationError,
     BandSelectionError,
     MaskCreationError,
-    InvalidSegmentError,
 )
 
 try:
@@ -498,7 +495,7 @@ class Lime(Explainer):
                         band_wavelengths,
                     )
                 except Exception as e:
-                    raise InvalidSegmentError(
+                    raise ValueError(
                         f"Incorrect band ranges wavelengths provided, please check if provided wavelengths are correct: {e}"
                     ) from e
             elif band_indices is not None:
@@ -507,7 +504,7 @@ class Lime(Explainer):
                 try:
                     band_groups = Lime._get_band_indices_from_input_band_indices(hsi.wavelengths, band_indices)
                 except Exception as e:
-                    raise InvalidSegmentError(
+                    raise ValueError(
                         f"Incorrect band ranges indices provided, please check if provided indices are correct: {e}"
                     ) from e
 
@@ -1038,7 +1035,7 @@ class Lime(Explainer):
                 the segmentation mask, and the score of the interpretable model used for the explanation.
 
         Raises:
-            ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
+            RuntimeError: If the Lime object is not initialized or is not an instance of LimeBase.
             AssertionError: If explainable model type is `segmentation` and `postprocessing_segmentation_output` is not provided.
             TypeError: If the hsi is not an instance of the HSI class.
 
@@ -1060,7 +1057,7 @@ class Lime(Explainer):
             1.0
         """
         if self._attribution_method is None or not isinstance(self._attribution_method, LimeBase):
-            raise ExplainerInitializationError("Lime object not initialized")  # pragma: no cover
+            raise RuntimeError("Lime object not initialized")  # pragma: no cover
 
         if not isinstance(hsi, HSI):
             raise TypeError("hsi object should be an instance of HSI class")
@@ -1079,7 +1076,11 @@ class Lime(Explainer):
             postprocessing_segmentation_output = None
 
         if segmentation_mask is None:
-            segmentation_mask = self.get_segmentation_mask(hsi, segmentation_method, **segmentation_method_params)
+            try:
+                segmentation_mask = self.get_segmentation_mask(hsi, segmentation_method, **segmentation_method_params)
+            except Exception as e:
+                raise MaskCreationError(f"Error creating segmentation mask: {e}") from e
+
         segmentation_mask = ensure_torch_tensor(
             segmentation_mask, "Segmentation mask should be None, numpy array, or torch tensor"
         )
@@ -1108,7 +1109,7 @@ class Lime(Explainer):
                 attribution_method="Lime",
             )
         except Exception as e:
-            raise ExplanationError(f"Error during creating spatial attribution {e}")
+            raise AttributeError(f"Error during creating spatial attribution {e}") from e
 
         return spatial_attribution
 
@@ -1182,7 +1183,7 @@ class Lime(Explainer):
         """
 
         if self._attribution_method is None or not isinstance(self._attribution_method, LimeBase):
-            raise ExplainerInitializationError("Lime object not initialized")  # pragma: no cover
+            raise RuntimeError("Lime object not initialized")  # pragma: no cover
 
         if not isinstance(hsi, HSI):
             raise TypeError("hsi object should be an instance of HSI class")
@@ -1244,7 +1245,7 @@ class Lime(Explainer):
                 attribution_method="Lime",
             )
         except Exception as e:
-            raise ExplanationError(f"Error during creating spectral attribution {e}")
+            raise AttributeError(f"Error during creating spectral attribution {e}") from e
 
         return spectral_attribution
 

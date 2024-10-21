@@ -12,7 +12,7 @@ from meteors.attr import Explainer
 from meteors.attr.explainer import validate_and_transform_baseline
 
 
-from meteors.exceptions import ExplanationError, ExplainerInitializationError
+from meteors.exceptions import HSIAttributesError
 
 
 class Occlusion(Explainer):
@@ -70,9 +70,14 @@ class Occlusion(Explainer):
             >>> result = occlusion.attribute(hsi, sliding_window_shapes=(3, 3, 3), baseline=0)
             >>> result.attributes.shape
             torch.Size([10, 20, 30])
+
+        Raises:
+            RuntimeError: If the explainer is not initialized.
+            ValueError: If the sliding window shapes or strides are not a tuple of three integers.
+            HSIAttributesError: If an error occurs during the generation of the attributions.
         """
         if self._attribution_method is None:
-            raise ExplainerInitializationError("Occlusion explainer is not initialized")
+            raise RuntimeError("Occlusion explainer is not initialized, INITIALIZATION ERROR")
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
@@ -82,9 +87,9 @@ class Occlusion(Explainer):
             strides = (strides, strides, strides)
 
         if len(strides) != 3:
-            raise ExplanationError("Strides must be a tuple of three integers")
+            raise ValueError("Strides must be a tuple of three integers")
         if len(sliding_window_shapes) != 3:
-            raise ExplanationError("Sliding window shapes must be a tuple of three integers")
+            raise ValueError("Sliding window shapes must be a tuple of three integers")
 
         occlusion_attributions = self._attribution_method.attribute(
             hsi.get_image().unsqueeze(0),
@@ -100,7 +105,7 @@ class Occlusion(Explainer):
         try:
             attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
         except Exception as e:
-            raise ExplanationError(f"Error in generating Occlusion attributions: {e}")
+            raise HSIAttributesError(f"Error in generating Occlusion attributions: {e}") from e
 
         return attributes
 
@@ -143,9 +148,14 @@ class Occlusion(Explainer):
             >>> result = occlusion.get_spatial_attributes(hsi, sliding_window_shapes=(3, 3), baseline=0)
             >>> result.attributes.shape
             torch.Size([10, 20, 30])
+
+        Raises:
+            RuntimeError: If the explainer is not initialized.
+            ValueError: If the sliding window shapes or strides are not a tuple of two integers.
+            HSIAttributesError: If an error occurs during the generation of the attributions
         """
         if self._attribution_method is None:
-            raise ExplainerInitializationError("Occlusion explainer is not initialized")
+            raise RuntimeError("Occlusion explainer is not initialized, INITIALIZATION ERROR")
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
@@ -155,9 +165,9 @@ class Occlusion(Explainer):
             strides = (strides, strides)
 
         if len(strides) != 2:
-            raise ExplanationError("Strides must be a tuple of two integers")
+            raise ValueError("Strides must be a tuple of two integers")
         if len(sliding_window_shapes) != 2:
-            raise ExplanationError("Sliding window shapes must be a tuple of two integers")
+            raise ValueError("Sliding window shapes must be a tuple of two integers")
 
         list_sliding_window_shapes = list(sliding_window_shapes)
         list_sliding_window_shapes.insert(hsi.spectral_axis, hsi.image.shape[hsi.spectral_axis])
@@ -182,7 +192,7 @@ class Occlusion(Explainer):
         try:
             attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
         except Exception as e:
-            raise ExplanationError(f"Error in generating Occlusion attributions: {e}")
+            raise AttributeError(f"Error in generating Occlusion attributions: {e}") from e
 
         return attributes
 
@@ -224,19 +234,25 @@ class Occlusion(Explainer):
             >>> result = occlusion.get_spectral_attributes(hsi, sliding_window_shapes=3, baseline=0)
             >>> result.attributes.shape
             torch.Size([10, 20, 30])
+
+        Raises:
+            RuntimeError: If the explainer is not initialized.
+            ValueError: If the sliding window shapes or strides are not a tuple of a single integer.
+            TypeError: If the sliding window shapes or strides are not a single integer.
+            HSIAttributesError: If an error occurs during the generation of the attributions
         """
         if self._attribution_method is None:
-            raise ExplainerInitializationError("Occlusion explainer is not initialized")
+            raise RuntimeError("Occlusion explainer is not initialized, INITIALIZATION ERROR")
 
         baseline = validate_and_transform_baseline(baseline, hsi)
 
         if isinstance(sliding_window_shapes, tuple):
             if len(sliding_window_shapes) != 1:
-                raise ExplanationError("Sliding window shapes must be a single integer or a tuple of a single integer")
+                raise ValueError("Sliding window shapes must be a single integer or a tuple of a single integer")
             sliding_window_shapes = sliding_window_shapes[0]
         if isinstance(strides, tuple):
             if len(strides) != 1:
-                raise ExplanationError("Strides must be a single integer or a tuple of a single integer")
+                raise ValueError("Strides must be a single integer or a tuple of a single integer")
             strides = strides[0]
 
         if not isinstance(sliding_window_shapes, int):
@@ -266,6 +282,6 @@ class Occlusion(Explainer):
         try:
             attributes = HSIAttributes(hsi=hsi, attributes=occlusion_attributions, attribution_method=self.get_name())
         except Exception as e:
-            raise ExplanationError(f"Error in generating Occlusion attributions: {e}")
+            raise AttributeError(f"Error in generating Occlusion attributions: {e}") from e
 
         return attributes

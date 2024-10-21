@@ -8,8 +8,6 @@ from meteors.attr import HSIAttributes, Explainer
 
 from meteors.attr.explainer import validate_attribution_method_initialization
 
-from meteors.exceptions import ExplainerInitializationError, ExplanationError
-
 
 class NoiseTunnel(Explainer):
     """
@@ -37,10 +35,16 @@ class NoiseTunnel(Explainer):
         stdevs=1.0,
         draw_baseline_from_distrib=False,
     ) -> HSIAttributes:
+        """
+        Raises:
+            RuntimeError If the explainer is not initialized
+            ValueError: if the chained explainer is not properly initialized.
+            HSIAttributesError: If an error occurs during the generation of the attributions.
+        """
         if self._attribution_method is None:
-            raise ExplainerInitializationError("NoiseTunnel explainer is not initialized")
+            raise RuntimeError("NoiseTunnel explainer is not initialized, INITIALIZATION ERROR")
         if self.chained_explainer is None:
-            raise ExplainerInitializationError(
+            raise ValueError(
                 f"The attribution method {self.chained_explainer.__class__.__name__} is not properly initialized"
             )
 
@@ -59,6 +63,6 @@ class NoiseTunnel(Explainer):
                 hsi=hsi, attributes=noise_tunnel_attributes.squeeze(0), attribution_method=self.get_name()
             )
         except Exception as e:
-            raise ExplanationError(f"Error in generating NoiseTunnel attributions: {e}")
+            raise AttributeError(f"Error in generating NoiseTunnel attributions: {e}") from e
 
         return attributes

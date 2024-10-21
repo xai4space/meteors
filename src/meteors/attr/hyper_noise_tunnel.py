@@ -14,7 +14,7 @@ from meteors.attr import Explainer, HSIAttributes
 from meteors.attr.explainer import validate_and_transform_baseline, validate_attribution_method_initialization
 from meteors import HSI
 
-from meteors.exceptions import ExplanationError
+from meteors.exceptions import HSIAttributesError
 
 
 def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | str | None = None) -> torch.Tensor:
@@ -66,6 +66,12 @@ class BaseHyperNoiseTunnel(Attribution):
 
         Returns:
             torch.Tensor: A perturbed tensor, which contains `n_samples` perturbed inputs.
+
+        Raises:
+            ValueError: If the baseline shape does not match the input shape.
+            ValueError: If the number of perturbed samples is less than 1.
+            ValueError: If the perturbation probability is not in the range [0, 1].
+            ValueError: If the number of perturbed bands is not in the range [0, input.shape[0]].
         """
         # validate the baseline against the input
         if baseline.shape != input.shape:
@@ -153,16 +159,26 @@ class BaseHyperNoiseTunnel(Attribution):
             )
             for i in range(0, n_samples, steps_per_batch):
                 perturbed_batch = perturbed_input[i : i + steps_per_batch]
-                attributions[i : i + steps_per_batch, batch] = self.attribute_main(
-                    perturbed_batch, target=target, additional_forward_args=additional_forward_args
-                )
+                try:
+                    attributions[i : i + steps_per_batch, batch] = self.attribute_main(
+                        perturbed_batch, target=target, additional_forward_args=additional_forward_args
+                    )
+                except Exception as e:
+                    raise HSIAttributesError(
+                        f"Error while extracting attributions from the attribution method provided to the HyperNoiseTunnel: {e}"
+                    ) from e
             else:
                 steps_left = n_samples % steps_per_batch
                 if steps_left:
                     perturbed_batch = perturbed_input[-steps_left:]
-                    attributions[-steps_left:, batch] = self.attribute_main(
-                        perturbed_batch, target=target, additional_forward_args=additional_forward_args
-                    )
+                    try:
+                        attributions[-steps_left:, batch] = self.attribute_main(
+                            perturbed_batch, target=target, additional_forward_args=additional_forward_args
+                        )
+                    except Exception as e:
+                        raise HSIAttributesError(
+                            f"Error while extracting attributions from the attribution method provided to the HyperNoiseTunnel: {e}"
+                        ) from e
 
         if method == "smoothgrad":
             return attributions.mean(dim=0)
@@ -174,12 +190,18 @@ class BaseHyperNoiseTunnel(Attribution):
 
 class HyperNoiseTunnel(Explainer):
     """Hyper Noise Tunnel is our novel method, designed specifically to explain hyperspectral satellite images. It is
-    inspired by the behaviour of the classical Noise Tunnel (Smooth Grad) method, but instead of sampling noise into the
-    original image, it randomly removes some of the bands. In the process, the created _noised_ samples are close to the
-    distribution of the original image yet differ enough to smoothen the produced attribution map.
+    inspired by the behaviour of the classical Noise Tunnel (Smooth Grad) method, but instead of sampling noise into
+    the original image, it randomly removes some of the bands. In the process, the created _noised_ samples are close
+    to the distribution of the original image yet differ enough to smoothen the produced attribution map.
 
     Attributes:
         _attribution_method (BaseHyperNoiseTunnel): The Hyper Noise Base Tunnel method
+
+    Raises:
+        ValueError: If the attribution method is not properly initialized.
+        HSIAttributesError: if there is an error while extracting attributions from the attribution method provided to
+            the method.
+        HSIAttributesError: If an error occurs while creating HSIAttributes.
     """
 
     def __init__(self, attribution_method):
@@ -224,7 +246,7 @@ class HyperNoiseTunnel(Explainer):
         try:
             hsi_attributes = HSIAttributes(hsi=hsi, attributes=attributes, attribution_method=self.get_name())
         except Exception as e:
-            raise ExplanationError(f"Error while creating HSIAttributes object: {e}")
+            raise HSIAttributesError(f"Error while creating HSIAttributes: {e}") from e
 
         # change back the attributes orientation
         if change_orientation:

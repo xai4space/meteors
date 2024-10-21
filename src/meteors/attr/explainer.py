@@ -13,7 +13,7 @@ import torch
 from meteors.utils.models import ExplainableModel
 from meteors import HSI
 from meteors.attr import HSIAttributes
-from meteors.exceptions import ShapeMismatchError, ExplainerInitializationError
+from meteors.exceptions import ShapeMismatchError
 
 
 def validate_attribution_method_initialization(attribution_method: Explainer) -> None:
@@ -24,10 +24,12 @@ def validate_attribution_method_initialization(attribution_method: Explainer) ->
 
     Raises:
         ValueError: If the attribution method is not initialized.
+        TypeError: If the attribution method is not an instance of Explainer.
         AttributeError: If the attribution method is not initialized properly.
+        ValueError: If the attribution method is not properly initialized.
     """
     if attribution_method is None:
-        raise ValueError("Attribution method is not initialized")  # initialization ERROR
+        raise ValueError("Attribution method is not initialized, INITIALIZATION ERROR")
     if not isinstance(attribution_method, Explainer):
         raise TypeError(f"Expected an instance of Explainer, but got {type(attribution_method)}")
     if not isinstance(attribution_method.explainable_model, ExplainableModel):
@@ -44,14 +46,18 @@ def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None,
     """Function validates the baseline and transforms it to the same device as the hsi tensor.
 
     Args:
-        baseline (int | float | torch.Tensor): a baseline value that is used for the attribution method, usually a scalar value or a zero tensor. It should have the same shape as the hsi tensor.
+        baseline (int | float | torch.Tensor): a baseline value that is used for the attribution method with the shape
+            of the hsi image tensor. If scalar passed, it will be broadcasted to the shape of the hsi tensor. If tensor
+            passed, it should have the same shape as the hsi tensor. If None passed, the baseline will be set to 0 and
+            broadcasted to the shape of the hsi tensor. Defaults to None.
         hsi (HSI): a HSI object for which the baseline is being validated
 
     Raises:
         ShapeMismatchError: If the shape of the baseline tensor does not match the shape of the hsi tensor.
 
     Returns:
-        torch.Tensor: a baseline tensor with the same shape as the hsi tensor that is on the same device as the hsi tensor.
+        torch.Tensor: a baseline tensor with the same shape as the hsi tensor that is on the same device
+            as the hsi tensor.
     """
 
     if baseline is None:
@@ -63,6 +69,8 @@ def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None,
             raise ShapeMismatchError(
                 f"Passed baseline and HSI have incorrect shapes: {baseline.shape} and {hsi.image.shape}"
             )
+    if not isinstance(baseline, torch.Tensor):
+        raise TypeError(f"Expected torch.Tensor | int | float as baseline, but got {type(baseline)}")
 
     baseline = baseline.to(hsi.image.device)  # cast the baseline to the same device as the hsi tensor
     return baseline
@@ -99,9 +107,7 @@ class Explainer(ABC):
         if isinstance(callable, Explainer):
             self._is_final_explainer = False
             if isinstance(callable.explainable_model, Explainer) or not callable._is_final_explainer:
-                raise ExplainerInitializationError(
-                    "Cannot chain Explainer with another Explainer. The maximum depth of chaining is 1"
-                )
+                raise ValueError("Cannot chain Explainer with another Explainer. The maximum depth of chaining is 1")
             self.chained_explainer = callable
             self.explainable_model: ExplainableModel = callable.explainable_model
             logger.info(
