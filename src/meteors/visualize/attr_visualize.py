@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
+from loguru import logger
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from captum.attr import visualization as viz
@@ -26,20 +26,26 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
     """
 
     if image_attributes.hsi.orientation != ("C", "H", "W"):
-        raise ValueError(f"HSI orientation {image_attributes.hsi.orientation} is not supported yet")
+        logger.info(
+            f"The orientation of the image is not (C, H, W): {image_attributes.hsi.orientation}. "
+            f"Changing it to (H, W, C) for visualization."
+        )
+        changed_image_attributes = image_attributes.change_orientation("HWC", inplace=True)
+    else:
+        changed_image_attributes = image_attributes
 
-    rotated_attributes_dataclass = image_attributes.change_orientation("HWC", inplace=False)
+    rotated_attributes_dataclass = changed_image_attributes.change_orientation("HWC", inplace=False)
     rotated_attributes = rotated_attributes_dataclass.attributes.detach().cpu().numpy()
     if np.all(rotated_attributes == 0):
         warnings.warn("All the attributions are zero. There is nothing to visualize.")
         return None
 
-    fig, ax = plt.subplots(2, 3, figsize=(15, 5))
+    fig, ax = plt.subplots(2, 2, figsize=(9, 7))
     ax[0, 0].set_title("Attribution Heatmap")
     ax[0, 0].grid(False)
     ax[0, 0].axis("off")
 
-    fig.suptitle(f"HSI Attributes of: {image_attributes.attribution_method}")
+    fig.suptitle(f"HSI Attributes of: {changed_image_attributes.attribution_method}")
 
     _ = viz.visualize_image_attr(
         rotated_attributes,
@@ -64,35 +70,19 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
         use_pyplot=False,
     )
 
-    sign_attr = np.sign(rotated_attributes).sum(axis=-1) / rotated_attributes.shape[-1]
-    sns.heatmap(sign_attr, cmap="PiYG", vmin=-1, vmax=1, square=True, ax=ax[0, 2])
-    ax[0, 2].set(title="Attribution Sign Values")
-    ax[0, 2].grid(False)
-    ax[0, 2].set_xticks([])
-    ax[0, 2].set_yticks([])
-
     attr_all = rotated_attributes.sum(axis=(0, 1))
-    ax[1, 0].scatter(image_attributes.hsi.wavelengths, attr_all, c="r")
+    ax[1, 0].scatter(changed_image_attributes.hsi.wavelengths, attr_all, c="r")
     ax[1, 0].set_title("Spectral Attribution")
     ax[1, 0].set_xlabel("Wavelength")
     ax[1, 0].set_ylabel("Attribution")
     ax[1, 0].grid(True)
 
     attr_abs = np.abs(rotated_attributes).sum(axis=(0, 1))
-    ax[1, 1].scatter(image_attributes.hsi.wavelengths, attr_abs, c="b")
+    ax[1, 1].scatter(changed_image_attributes.hsi.wavelengths, attr_abs, c="b")
     ax[1, 1].set_title("Spectral Attribution Absolute Values")
     ax[1, 1].set_xlabel("Wavelength")
     ax[1, 1].set_ylabel("Attribution Absolute Value")
     ax[1, 1].grid(True)
-
-    # Sign values
-    sign_attr = np.sign(rotated_attributes).sum(axis=(0, 1)) / rotated_attributes.shape[0] / rotated_attributes.shape[1]
-    ax[1, 2].scatter(image_attributes.hsi.wavelengths, sign_attr, c="g")
-    ax[1, 2].set_title("Spectral Attribution Sign Values")
-    ax[1, 2].set_xlabel("Wavelength")
-    ax[1, 2].set_ylabel("Attribution Sign Proportion")
-    ax[1, 2].grid(True)
-    ax[1, 2].set_yticks([-1, 0, 1])
 
     plt.tight_layout()
 
