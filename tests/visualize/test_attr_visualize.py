@@ -112,7 +112,7 @@ def test_visualize_ig_attributes(ig_model):
     tensor_image[0:10, 0:10, 0:10] = -500
     tensor_image[50, 50:100, 40:60] = 500
 
-    image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main)
+    image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main, orientation="CHW")
 
     image_attributes = ig_model.attribute(image)
 

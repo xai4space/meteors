@@ -24,17 +24,16 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
             If use_pyplot is True, returns None .
             If all the attributions are zero, returns None.
     """
-
-    if image_attributes.hsi.orientation != ("H", "W", "C"):
+    if image_attributes.hsi.orientation != ("C", "H", "W"):
         logger.info(
             f"The orientation of the image is not (H, W, C): {image_attributes.hsi.orientation}. "
             f"Changing it to (H, W, C) for visualization."
         )
-        changed_image_attributes = image_attributes.change_orientation("HWC", inplace=False)
+        rotated_attributes_dataclass = image_attributes.change_orientation("CHW", inplace=False)
     else:
-        changed_image_attributes = image_attributes
+        rotated_attributes_dataclass = image_attributes
 
-    rotated_attributes = changed_image_attributes.attributes.detach().cpu().numpy()
+    rotated_attributes = rotated_attributes_dataclass.attributes.detach().cpu().numpy()
     if np.all(rotated_attributes == 0):
         warnings.warn("All the attributions are zero. There is nothing to visualize.")
         return None
@@ -44,7 +43,7 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
     ax[0, 0].grid(False)
     ax[0, 0].axis("off")
 
-    fig.suptitle(f"HSI Attributes of: {changed_image_attributes.attribution_method}")
+    fig.suptitle(f"HSI Attributes of: {rotated_attributes_dataclass.attribution_method}")
 
     _ = viz.visualize_image_attr(
         rotated_attributes,
@@ -69,15 +68,15 @@ def visualize_attributes(image_attributes: HSIAttributes, use_pyplot: bool = Fal
         use_pyplot=False,
     )
 
-    attr_all = rotated_attributes.sum(axis=(0, 1))
-    ax[1, 0].scatter(changed_image_attributes.hsi.wavelengths, attr_all, c="r")
+    attr_all = rotated_attributes.sum(axis=(1, 2))
+    ax[1, 0].scatter(rotated_attributes_dataclass.hsi.wavelengths, attr_all, c="r")
     ax[1, 0].set_title("Spectral Attribution")
     ax[1, 0].set_xlabel("Wavelength")
     ax[1, 0].set_ylabel("Attribution")
     ax[1, 0].grid(True)
 
-    attr_abs = np.abs(rotated_attributes).sum(axis=(0, 1))
-    ax[1, 1].scatter(changed_image_attributes.hsi.wavelengths, attr_abs, c="b")
+    attr_abs = np.abs(rotated_attributes).sum(axis=(1, 2))
+    ax[1, 1].scatter(rotated_attributes_dataclass.hsi.wavelengths, attr_abs, c="b")
     ax[1, 1].set_title("Spectral Attribution Absolute Values")
     ax[1, 1].set_xlabel("Wavelength")
     ax[1, 1].set_ylabel("Attribution Absolute Value")
