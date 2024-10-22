@@ -248,6 +248,8 @@ def visualize_spectral_attributes_by_waveband(
 
     Returns:
         Axes: The matplotlib axes object containing the visualization.
+    Raises:
+        TypeError: If the spectral attributes are not an HSISpectralAttributes object or a list of HSISpectralAttributes objects.
     """
     if isinstance(spectral_attributes, HSISpectralAttributes):
         spectral_attributes = [spectral_attributes]
@@ -255,8 +257,8 @@ def visualize_spectral_attributes_by_waveband(
         isinstance(spectral_attributes, list)
         and all(isinstance(attr, HSISpectralAttributes) for attr in spectral_attributes)
     ):
-        raise ValueError(
-            "spectral_attributes must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
+        raise TypeError(
+            "spectral_attributes parameter must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
         )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
@@ -358,6 +360,8 @@ def visualize_spectral_attributes_by_magnitude(
 
     Returns:
         Axes: The matplotlib Axes object containing the visualization.
+    Raises:
+        TypeError: If the spectral attributes are not an HSISpectralAttributes object or a list of HSISpectralAttributes objects.
     """
     if isinstance(spectral_attributes, HSISpectralAttributes):
         spectral_attributes = [spectral_attributes]
@@ -365,8 +369,8 @@ def visualize_spectral_attributes_by_magnitude(
         isinstance(spectral_attributes, list)
         and all(isinstance(attr, HSISpectralAttributes) for attr in spectral_attributes)
     ):
-        raise ValueError(
-            "spectral_attributes must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
+        raise TypeError(
+            "spectral_attributes parameter must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
         )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
@@ -430,7 +434,7 @@ def visualize_spatial_aggregated_attributes(
             We recommend using torch functions. Defaults to torch.mean.
 
     Raises:
-        ValueError: If the shape of the aggregated mask does not match the shape of the spatial attributes.
+        ShapeMismatchError: If the shape of the aggregated mask does not match the shape of the spatial attributes.
 
     Returns:
         tuple[Figure, Axes] | None: If use_pyplot is False, returns the figure and axes objects.
@@ -486,7 +490,7 @@ def visualize_spectral_aggregated_attributes(
             We recommend using torch functions. Defaults to torch.mean.
 
     Raises:
-        ValueError: If the shape of the band mask does not match the shape of the spectral attributes.
+        ShapeMismatchError: If the shape of the band mask does not match the shape of the spectral attributes.
 
     Returns:
         tuple[Figure, Axes] | None: If use_pyplot is False, returns the figure and axes objects.
