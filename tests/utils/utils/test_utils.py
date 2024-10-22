@@ -240,16 +240,14 @@ def test_aggregate_by_mask():
 
 
 @pytest.mark.parametrize(
-    "soft_labels, classes_numb, class_axis, use_mask, output, mask, expected_result",
+    "soft_labels, classes_numb, class_axis, output, expected_result",
     [
         # Test case 1: Hard labels with full mask
         (
             False,
             3,
             2,
-            True,
             torch.tensor([[[1, 0, 2], [0, 1, 1], [2, 2, 0]], [[2, 1, 0], [1, 2, 2], [0, 0, 1]]], dtype=torch.float32),
-            torch.ones((2, 3, 3)),
             torch.tensor([[3, 3, 3], [3, 3, 3]]),
         ),
         # Test case 2: Soft labels
@@ -257,14 +255,12 @@ def test_aggregate_by_mask():
             True,
             3,
             2,
-            True,
             torch.tensor(
                 [
                     [[0.1, 0.7, 0.2], [0.3, 0.6, 0.1], [0.8, 0.1, 0.1]],
                     [[0.2, 0.3, 0.5], [0.1, 0.1, 0.8], [0.5, 0.4, 0.1]],
                 ]
             ),
-            torch.ones((2, 3)),
             torch.tensor([[0.8, 1.3, 0], [0.5, 0, 1.3]]),
         ),
         # Test case 3: No mask
@@ -272,9 +268,7 @@ def test_aggregate_by_mask():
             False,
             3,
             2,
-            False,
             torch.tensor([[[1, 0, 2], [0, 1, 1], [2, 2, 0]], [[2, 1, 0], [1, 2, 2], [0, 0, 1]]], dtype=torch.float32),
-            None,
             torch.tensor([[3, 3, 3], [3, 3, 3]]),
         ),
         # Test case 4: Different shapes
@@ -282,22 +276,17 @@ def test_aggregate_by_mask():
             False,
             3,
             2,
-            True,
             torch.tensor([[[1, 0], [2, 1]], [[0, 2], [1, 0]]], dtype=torch.float32),
-            torch.tensor([[[1, 1], [1, 0]], [[1, 1], [1, 0]]]),
-            torch.tensor([[1, 1, 1], [1, 1, 1]]),
+            torch.tensor([[1, 2, 1], [2, 1, 1]]),
         ),
     ],
 )
-def test_agg_segmentation_postprocessing(
-    soft_labels, classes_numb, class_axis, use_mask, output, mask, expected_result
-):
+def test_agg_segmentation_postprocessing(soft_labels, classes_numb, class_axis, output, expected_result):
     postprocessing_func = agg_segmentation_postprocessing(
-        soft_labels=soft_labels, classes_numb=classes_numb, class_axis=class_axis, use_mask=use_mask
+        soft_labels=soft_labels, classes_numb=classes_numb, class_axis=class_axis
     )
 
-    result = postprocessing_func(output.requires_grad_(True), mask)
-    print(result, expected_result)
+    result = postprocessing_func(output.requires_grad_(True))
     if soft_labels:
         assert torch.allclose(result, expected_result, atol=1e-6)
     else:
