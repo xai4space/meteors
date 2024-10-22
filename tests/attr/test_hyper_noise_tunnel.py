@@ -133,6 +133,10 @@ def test_attribute(model):
     assert attributes is not None
     assert attributes.attributes.shape == (5, 5, 5)
 
+    # wrong baseline
+    with pytest.raises(TypeError):
+        hyper_noise_tunnel.attribute(image, n_samples=1, baselines="s")
+
 
 def test_base_hyper_noise_tunnel_class(model):
     tensor_image = torch.rand((5, 5, 5))
