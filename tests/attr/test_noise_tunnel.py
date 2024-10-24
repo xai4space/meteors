@@ -213,33 +213,20 @@ def test_noise_attribute(explainable_toy_model, explainable_segmentation_toy_mod
     assert attributes[1].attributes.shape == (5, 5, 5)
 
     # Test segmentation output
-    ig = IntegratedGradients(explainable_segmentation_toy_model)
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
+    ig = IntegratedGradients(
+        explainable_segmentation_toy_model, postprocessing_segmentation_output=postprocessing_segmentation_output
+    )
     hyper_noise_tunnel = HyperNoiseTunnel(ig)
-    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=False)
-    attributes = hyper_noise_tunnel.attribute(
-        image, n_samples=1, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
-    )
+    attributes = hyper_noise_tunnel.attribute(image, n_samples=1, target=0)
     assert attributes.attributes.shape == image.image.shape
 
-    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=True)
-    attributes = hyper_noise_tunnel.attribute(
-        image, n_samples=1, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
-    )
-    assert attributes.attributes.shape == image.image.shape
-
-    attributes = hyper_noise_tunnel.attribute(
-        [image, image], n_samples=1, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
-    )
+    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, target=0)
     assert len(attributes) == 2
     assert attributes[0].attributes.shape == image.image.shape
     assert attributes[1].attributes.shape == image.image.shape
 
-    attributes = hyper_noise_tunnel.attribute(
-        [image, image],
-        n_samples=1,
-        postprocessing_segmentation_output=postprocessing_segmentation_output,
-        target=[0, 0],
-    )
+    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, target=[0, 0])
     assert len(attributes) == 2
     assert attributes[0].attributes.shape == image.image.shape
     assert attributes[1].attributes.shape == image.image.shape
@@ -341,33 +328,20 @@ def test_hyper_attribute(explainable_toy_model, explainable_segmentation_toy_mod
         hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=torch.ones((1, 5, 5, 5)))
 
     # Test segmentation output
-    ig = IntegratedGradients(explainable_segmentation_toy_model)
+    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
+    ig = IntegratedGradients(
+        explainable_segmentation_toy_model, postprocessing_segmentation_output=postprocessing_segmentation_output
+    )
     hyper_noise_tunnel = HyperNoiseTunnel(ig)
-    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=False)
-    attributes = hyper_noise_tunnel.attribute(
-        image, n_samples=1, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
-    )
+    attributes = hyper_noise_tunnel.attribute(image, n_samples=1, target=0)
     assert attributes.attributes.shape == image.image.shape
 
-    postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3, use_mask=True)
-    attributes = hyper_noise_tunnel.attribute(
-        image, n_samples=1, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
-    )
-    assert attributes.attributes.shape == image.image.shape
-
-    attributes = hyper_noise_tunnel.attribute(
-        [image, image], n_samples=1, postprocessing_segmentation_output=postprocessing_segmentation_output, target=0
-    )
+    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, target=0)
     assert len(attributes) == 2
     assert attributes[0].attributes.shape == image.image.shape
     assert attributes[1].attributes.shape == image.image.shape
 
-    attributes = hyper_noise_tunnel.attribute(
-        [image, image],
-        n_samples=1,
-        postprocessing_segmentation_output=postprocessing_segmentation_output,
-        target=[0, 0],
-    )
+    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, target=[0, 0])
     assert len(attributes) == 2
     assert attributes[0].attributes.shape == image.image.shape
     assert attributes[1].attributes.shape == image.image.shape

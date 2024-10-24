@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Literal, Callable
+from typing import Any, Literal
 
 from functools import partial
 import warnings
@@ -11,7 +11,6 @@ from loguru import logger
 
 import torch
 from captum.attr._utils.attribution import GradientAttribution
-from captum.attr import Attribution
 
 from meteors.attr import Explainer, HSIAttributes
 from meteors.attr.explainer import validate_and_transform_baseline, validate_attribution_method_initialization
@@ -45,7 +44,7 @@ def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | s
     return result
 
 
-class BaseNoiseTunnel(Attribution):
+class BaseNoiseTunnel(Explainer):
     def __init__(self, model: GradientAttribution, perturbation_method: Literal["gaussian", "mask"] = "gaussian"):
         """
         Compute the attribution of the given inputs using the noise tunnel method.
@@ -316,12 +315,15 @@ class NoiseTunnel(Explainer):
 
     Attributes:
         _attribution_method (BaseNoiseTunnel): The Noise Tunnel Base method with the gaussian perturbation
+
+    Args:
+        attribution_method (GradientAttribution): The attribution method to be used in the Noise Tunnel.
     """
 
-    def __init__(self, attribution_method):
+    def __init__(self, attribution_method: Explainer):
         super().__init__(attribution_method)
         validate_attribution_method_initialization(attribution_method)
-        self._attribution_method: Attribution = BaseNoiseTunnel(attribution_method, perturbation_method="gaussian")
+        self._attribution_method = BaseNoiseTunnel(attribution_method, perturbation_method="gaussian")
 
     def attribute(
         self,
@@ -333,7 +335,6 @@ class NoiseTunnel(Explainer):
         perturbation_axis: None | tuple[int | slice] = None,
         stdevs: float | tuple[float, ...] = 1.0,
         method: Literal["smoothgrad", "smoothgrad_sq", "vargrad"] = "smoothgrad",
-        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
     ) -> HSIAttributes | list[HSIAttributes]:
         """
         Method for generating attributions using the Noise Tunnel method.
@@ -372,10 +373,6 @@ class NoiseTunnel(Explainer):
                 each value in the tuple is used for the corresponding input. Default: 1.0
             method (Literal["smoothgrad", "smoothgrad_sq", "vargrad"], optional): Smoothing type of the attributions.
                 smoothgrad, smoothgrad_sq or vargrad Default: smoothgrad if type is not provided.
-            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None, optional):
-                A segmentation postprocessing function for segmentation problem type. This is required for segmentation
-                problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-                attribution method is not used.
 
         Returns:
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
@@ -406,34 +403,16 @@ class NoiseTunnel(Explainer):
             else:
                 stdevs = tuple([stdevs])
 
-        if postprocessing_segmentation_output is not None:
-
-            def adjusted_forward_func(x: torch.Tensor) -> torch.Tensor:
-                return postprocessing_segmentation_output(self._attribution_method.forward_func(x), torch.tensor(1.0))
-
-            segmentation_attribution_method = BaseNoiseTunnel(adjusted_forward_func)
-
-            nt_attributes = segmentation_attribution_method.attribute(
-                hsi,
-                target=target,
-                additional_forward_args=additional_forward_args,
-                n_samples=n_samples,
-                steps_per_batch=steps_per_batch,
-                method=method,
-                perturbation_axis=perturbation_axis,
-                stdevs=stdevs,
-            )
-        else:
-            nt_attributes = self._attribution_method.attribute(
-                hsi,
-                target=target,
-                additional_forward_args=additional_forward_args,
-                n_samples=n_samples,
-                steps_per_batch=steps_per_batch,
-                method=method,
-                perturbation_axis=perturbation_axis,
-                stdevs=stdevs,
-            )
+        nt_attributes = self._attribution_method.attribute(
+            hsi,
+            target=target,
+            additional_forward_args=additional_forward_args,
+            n_samples=n_samples,
+            steps_per_batch=steps_per_batch,
+            method=method,
+            perturbation_axis=perturbation_axis,
+            stdevs=stdevs,
+        )
 
         attributes: HSIAttributes | list[HSIAttributes]
         if isinstance(hsi, list):
@@ -455,12 +434,15 @@ class HyperNoiseTunnel(Explainer):
 
     Attributes:
         _attribution_method (BaseNoiseTunnel): The Base Noise Tunnel class with mask perturbation method.
+
+    Args:
+        attribution_method (GradientAttribution): The attribution method to be used in the Hyper Noise Tunnel.
     """
 
-    def __init__(self, attribution_method):
+    def __init__(self, attribution_method: Explainer):
         super().__init__(attribution_method)
         validate_attribution_method_initialization(attribution_method)
-        self._attribution_method: Attribution = BaseNoiseTunnel(attribution_method, perturbation_method="mask")
+        self._attribution_method = BaseNoiseTunnel(attribution_method, perturbation_method="mask")
 
     def attribute(
         self,
@@ -473,7 +455,6 @@ class HyperNoiseTunnel(Explainer):
         perturbation_prob: float = 0.5,
         num_perturbed_bands: int | None = None,
         method: Literal["smoothgrad", "smoothgrad_sq", "vargrad"] = "smoothgrad",
-        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
     ) -> HSIAttributes | list[HSIAttributes]:
         """
         Method for generating attributions using the Hyper Noise Tunnel method.
@@ -512,10 +493,6 @@ class HyperNoiseTunnel(Explainer):
                 If set to None, the bands are perturbed with probability `perturbation_prob` each. Defaults to None.
             method (Literal["smoothgrad", "smoothgrad_sq", "vargrad"], optional): Smoothing type of the attributions.
                 smoothgrad, smoothgrad_sq or vargrad Default: smoothgrad if type is not provided.
-            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None, optional):
-                A segmentation postprocessing function for segmentation problem type. This is required for segmentation
-                problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-                attribution method is not used.
 
         Returns:
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
@@ -563,38 +540,17 @@ class HyperNoiseTunnel(Explainer):
         else:
             baselines = validate_and_transform_baseline(baselines, hsi).unsqueeze(0)
 
-        if postprocessing_segmentation_output is not None:
-            new_attributed_method = partial(
-                self._attribution_method.attribute_main,
-                postprocessing_segmentation_output=postprocessing_segmentation_output,
-            )
-            new_object = GradientAttribution(lambda x: x)
-            new_object.attribute = new_attributed_method
-            segmentation_attribution_method = BaseNoiseTunnel(new_object, perturbation_method="mask")
-
-            hnt_attributes = segmentation_attribution_method.attribute(
-                hsi,
-                baselines=baselines,
-                target=target,
-                additional_forward_args=additional_forward_args,
-                n_samples=n_samples,
-                steps_per_batch=steps_per_batch,
-                method=method,
-                perturbation_prob=perturbation_prob,
-                num_perturbed_bands=num_perturbed_bands,
-            )
-        else:
-            hnt_attributes = self._attribution_method.attribute(
-                hsi,
-                baselines=baselines,
-                target=target,
-                additional_forward_args=additional_forward_args,
-                n_samples=n_samples,
-                steps_per_batch=steps_per_batch,
-                method=method,
-                perturbation_prob=perturbation_prob,
-                num_perturbed_bands=num_perturbed_bands,
-            )
+        hnt_attributes = self._attribution_method.attribute(
+            hsi,
+            baselines=baselines,
+            target=target,
+            additional_forward_args=additional_forward_args,
+            n_samples=n_samples,
+            steps_per_batch=steps_per_batch,
+            method=method,
+            perturbation_prob=perturbation_prob,
+            num_perturbed_bands=num_perturbed_bands,
+        )
 
         attributes: HSIAttributes | list[HSIAttributes]
         if isinstance(hsi, list):

@@ -23,13 +23,21 @@ class Saliency(Explainer):
 
     Attributes:
         _attribution_method (CaptumSaliency): The Saliency method from the `captum` library.
+
+    Args:
+        explainable_model (ExplainableModel | Explainer): The explainable model to be explained.
+        postprocessing_segmentation_output (Callable[[torch.Tensor], torch.Tensor] | None):
+            A segmentation postprocessing function for segmentation problem type. This is required for segmentation
+            problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
+            attribution method is not used.
     """
 
     def __init__(
         self,
         explainable_model: ExplainableModel,
+        postprocessing_segmentation_output: Callable[[torch.Tensor], torch.Tensor] | None = None,
     ):
-        super().__init__(explainable_model)
+        super().__init__(explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output)
 
         self._attribution_method = CaptumSaliency(explainable_model.forward_func)
 
@@ -39,7 +47,6 @@ class Saliency(Explainer):
         target: list[int] | int | None = None,
         abs: bool = True,
         additional_forward_args: Any = None,
-        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
     ) -> HSIAttributes | list[HSIAttributes]:
         """
         Method for generating attributions using the Saliency method.
@@ -60,10 +67,6 @@ class Saliency(Explainer):
                 containing multiple additional arguments including tensors or any arbitrary python types.
                 These arguments are provided to forward_func in order following the arguments in inputs.
                 Note that attributions are not computed with respect to these arguments. Default: None
-            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None, optional):
-                A segmentation postprocessing function for segmentation problem type. This is required for segmentation
-                problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-                attribution method is not used.
 
         Returns:
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
@@ -86,20 +89,9 @@ class Saliency(Explainer):
         else:
             input_tensor = hsi.get_image().unsqueeze(0).requires_grad_(True)
 
-        if postprocessing_segmentation_output is not None:
-
-            def adjusted_forward_func(x: torch.Tensor) -> torch.Tensor:
-                return postprocessing_segmentation_output(self._attribution_method.forward_func(x), torch.tensor(1.0))
-
-            segmentation_attribution_method = CaptumSaliency(adjusted_forward_func)
-
-            saliency_attributions = segmentation_attribution_method.attribute(
-                input_tensor, target=target, abs=abs, additional_forward_args=additional_forward_args
-            )
-        else:
-            saliency_attributions = self._attribution_method.attribute(
-                input_tensor, target=target, abs=abs, additional_forward_args=additional_forward_args
-            )
+        saliency_attributions = self._attribution_method.attribute(
+            input_tensor, target=target, abs=abs, additional_forward_args=additional_forward_args
+        )
 
         attributes: HSIAttributes | list[HSIAttributes]
         if isinstance(hsi, list):
