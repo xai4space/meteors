@@ -7,6 +7,8 @@ import inspect
 from enum import Enum
 from copy import deepcopy
 
+from loguru import logger
+
 import torch
 from captum.attr._utils.attribution import GradientAttribution
 from captum.attr import Attribution
@@ -44,17 +46,36 @@ def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | s
 
 
 class BaseNoiseTunnel(Attribution):
-    """Compute the attribution of the given inputs using the noise tunnel method."""
+    """
+    Compute the attribution of the given inputs using the noise tunnel method.
+    This class performs the attribution on the tensor input and is inspired by the captum library.
 
-    def __init__(self, model: GradientAttribution):
+    Except for the standard perturbation using the random gaussian noise applied for the image, this class also supports the custom perturbation that masks specified bands in the input tensor.
+    """
+
+    def __init__(self, model: GradientAttribution, perturbation_method: Literal["gaussian", "mask"] = "gaussian"):
+        """_summary_
+
+        Args:
+            model (GradientAttribution): a gradient attribution method that will be used to compute the attributions.
+            perturbation_method (Literal[&quot;gaussian&quot;, &quot;mask&quot;], optional): a type of perturbation method to be used. If `gaussian` using the standard perturbation method, if `mask` using perturbation method designed for hyperspectral images that masks random bands.
+            Defaults to "gaussian".
+
+        Raises:
+            ValueError: _description_
+        """
         self.attribute_model = model
         self.attribute_main = model.attribute
         sig = inspect.signature(self.attribute_main)
         if "abs" in sig.parameters:
             self.attribute_main = partial(self.attribute_main, abs=False)
 
+        self.perturbation_method = perturbation_method
+        if self.perturbation_method not in ["gaussian", "mask"]:
+            raise ValueError(f"Noise tunnel with the {perturbation_method} perturbation method is not supported")
+
     @staticmethod
-    def perturb_input(
+    def gaussian_perturb_input(
         input, n_samples: int = 1, perturbation_axis: None | tuple[int | slice] = None, stdevs: float = 1
     ) -> torch.Tensor:
         """The perturbation function used in the noise tunnel. It randomly adds noise to the input tensor from a normal
@@ -100,83 +121,8 @@ class BaseNoiseTunnel(Attribution):
 
         return perturbed_input
 
-    def attribute(
-        self,
-        inputs: list[HSI] | HSI,
-        target: list[int] | int | None = None,
-        additional_forward_args: Any = None,
-        n_samples: int = 5,
-        steps_per_batch: int = 1,
-        perturbation_axis: None | tuple[int | slice] = None,
-        stdevs: tuple[float, ...] = (1.0,),
-        method: str = "smoothgrad",
-    ) -> torch.Tensor:
-        if method not in NoiseTunnelType.__members__:
-            msg = f"Method must be one of {NoiseTunnelType.__members__.keys()}"
-            raise ValueError(msg)
-
-        if not isinstance(inputs, list):
-            inputs = [inputs]
-
-        if not isinstance(target, list):
-            target = [target] * len(inputs)  # type: ignore
-
-        attributions = torch.empty((n_samples, len(inputs)) + inputs[0].image.shape, device=inputs[0].device)
-
-        for batch in range(0, len(inputs)):
-            input = inputs[batch]
-            stdev = stdevs[batch]
-            targeted = target[batch]
-            perturbed_input = BaseNoiseTunnel.perturb_input(input.image, n_samples, perturbation_axis, stdev)
-            for i in range(0, n_samples, steps_per_batch):
-                perturbed_batch = []
-                for i in range(n_samples):
-                    temp_input = deepcopy(input)
-                    temp_input.image = perturbed_input[i]
-                    perturbed_batch.append(temp_input)
-
-                temp_attr = self.attribute_main(
-                    perturbed_batch, target=targeted, additional_forward_args=additional_forward_args
-                )
-                attributions[i : i + steps_per_batch, batch] = torch.stack(
-                    [attr.attributes for attr in temp_attr], dim=0
-                )
-            else:
-                steps_left = n_samples % steps_per_batch
-                if steps_left:
-                    perturbed_batch = []
-                    for i in range(n_samples - steps_left, n_samples):
-                        temp_input = deepcopy(input)
-                        temp_input.image = perturbed_input[i]
-                        perturbed_batch.append(temp_input)
-
-                    temp_attr = self.attribute_main(
-                        perturbed_batch, target=targeted, additional_forward_args=additional_forward_args
-                    )
-                    attributions[-steps_left:, batch] = torch.stack([attr.attributes for attr in temp_attr], dim=0)
-
-        if NoiseTunnelType[method] == NoiseTunnelType.smoothgrad:
-            return attributions.mean(dim=0)
-        elif NoiseTunnelType[method] == NoiseTunnelType.smoothgrad_sq:
-            return (attributions**2).mean(dim=0)
-        elif NoiseTunnelType[method] == NoiseTunnelType.vargrad:
-            return (attributions**2 - attributions.mean(dim=0) ** 2).mean(dim=0)
-        else:
-            raise ValueError(f"Method {method} is not implemented")
-
-
-class BaseHyperNoiseTunnel(Attribution):
-    """Compute the attribution of the given inputs using the hyper noise tunnel method."""
-
-    def __init__(self, model: GradientAttribution):
-        self.attribute_model = model
-        self.attribute_main = model.attribute
-        sig = inspect.signature(self.attribute_main)
-        if "abs" in sig.parameters:
-            self.attribute_main = partial(self.attribute_main, abs=False)
-
     @staticmethod
-    def perturb_input(
+    def mask_perturb_input(
         input, baseline, n_samples: int = 1, perturbation_prob: float = 0.5, num_perturbed_bands: int | None = None
     ) -> torch.Tensor:
         """The perturbation function used in the hyper noise tunnel. It randomly selects a subset of the input bands
@@ -245,18 +191,28 @@ class BaseHyperNoiseTunnel(Attribution):
     def attribute(
         self,
         inputs: list[HSI] | HSI,
-        baselines: torch.Tensor,
+        baselines: torch.Tensor | None = None,
         target: list[int] | int | None = None,
         additional_forward_args: Any = None,
         n_samples: int = 5,
         steps_per_batch: int = 1,
         perturbation_prob: float = 0.5,
         num_perturbed_bands: int | None = None,
+        perturbation_axis: None | tuple[int | slice] = None,
+        stdevs: tuple[float, ...] = (1.0,),
         method: str = "smoothgrad",
     ) -> torch.Tensor:
         if method not in NoiseTunnelType.__members__:
             msg = f"Method must be one of {NoiseTunnelType.__members__.keys()}"
             raise ValueError(msg)
+
+        if self.perturbation_method == "mask":
+            logger.debug("Using the mask perturbation method for the Noise Tunnel")
+            if baselines is None:
+                raise ValueError("Baselines must be provided for the mask perturbation method")
+
+        elif self.perturbation_method == "gaussian":
+            logger.debug("Using the gaussian perturbation method for the Noise Tunnel")
 
         if not isinstance(inputs, list):
             inputs = [inputs]
@@ -268,11 +224,17 @@ class BaseHyperNoiseTunnel(Attribution):
 
         for batch in range(0, len(inputs)):
             input = inputs[batch]
-            baseline = baselines[batch]
             targeted = target[batch]
-            perturbed_input = BaseHyperNoiseTunnel.perturb_input(
-                input.image, baseline, n_samples, perturbation_prob, num_perturbed_bands
-            )
+            if self.perturbation_method == "gaussian":
+                stdev = stdevs[batch]
+                perturbed_input = BaseNoiseTunnel.gaussian_perturb_input(
+                    input.image, n_samples, perturbation_axis, stdev
+                )
+            elif self.perturbation_method == "mask":
+                baseline = baselines[batch]  # type: ignore
+                perturbed_input = BaseNoiseTunnel.mask_perturb_input(
+                    input.image, baseline, n_samples, perturbation_prob, num_perturbed_bands
+                )
             for i in range(0, n_samples, steps_per_batch):
                 perturbed_batch = []
                 for i in range(n_samples):
@@ -307,7 +269,7 @@ class BaseHyperNoiseTunnel(Attribution):
         elif NoiseTunnelType[method] == NoiseTunnelType.vargrad:
             return (attributions**2 - attributions.mean(dim=0) ** 2).mean(dim=0)
         else:
-            raise ValueError(f"Method {method} is not implemented")
+            raise ValueError(f"Aggregation method for NoiseTunnel {method} is not implemented")
 
 
 class NoiseTunnel(Explainer):
@@ -317,13 +279,13 @@ class NoiseTunnel(Explainer):
     For more information about the method, see captum documentation: https://captum.ai/api/noise_tunnel.html.
 
     Attributes:
-        _attribution_method (BaseNoiseTunnel): The Noise Tunnel Base method
+        _attribution_method (BaseNoiseTunnel): The Noise Tunnel Base method with the gaussian perturbation
     """
 
     def __init__(self, attribution_method):
         super().__init__(attribution_method)
         validate_attribution_method_initialization(attribution_method)
-        self._attribution_method: Attribution = BaseNoiseTunnel(attribution_method)
+        self._attribution_method: Attribution = BaseNoiseTunnel(attribution_method, perturbation_method="gaussian")
 
     def attribute(
         self,
@@ -452,13 +414,13 @@ class HyperNoiseTunnel(Explainer):
     distribution of the original image yet differ enough to smoothen the produced attribution map.
 
     Attributes:
-        _attribution_method (BaseHyperNoiseTunnel): The Hyper Noise Base Tunnel method
+        _attribution_method (BaseNoiseTunnel): The Base Noise Tunnel class with mask perturbation method.
     """
 
     def __init__(self, attribution_method):
         super().__init__(attribution_method)
         validate_attribution_method_initialization(attribution_method)
-        self._attribution_method: Attribution = BaseHyperNoiseTunnel(attribution_method)
+        self._attribution_method: Attribution = BaseNoiseTunnel(attribution_method, perturbation_method="mask")
 
     def attribute(
         self,
@@ -567,7 +529,7 @@ class HyperNoiseTunnel(Explainer):
             )
             new_object = GradientAttribution(lambda x: x)
             new_object.attribute = new_attributed_method
-            segmentation_attribution_method = BaseHyperNoiseTunnel(new_object)
+            segmentation_attribution_method = BaseNoiseTunnel(new_object, perturbation_method="mask")
 
             hnt_attributes = segmentation_attribution_method.attribute(
                 hsi,
