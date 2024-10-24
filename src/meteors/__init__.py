@@ -1,8 +1,8 @@
 from .hsi import HSI
 
-from . import utils
 from . import visualize
 from . import attr
+from . import models
 
 from loguru import logger
 import sys
@@ -15,4 +15,7 @@ __all__ = [
     "utils",
     "visualize",
     "attr",
+    "models",
+    "exceptions",
+    "utils"
 ]

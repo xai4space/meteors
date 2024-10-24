@@ -3,15 +3,16 @@ import pytest
 import torch
 
 
-from meteors.utils.models import (
+from meteors.models import (
     ExplainableModel,
     SkLearnLasso,
     SkLearnRidge,
     SkLearnLinearRegression,
     SkLearnLogisticRegression,
-    SkLearnSGDClassifier,
+    SkLearnSGDClassifier
 )
-from meteors.utils.models.models import SkLearnLinearModel, LinearModel
+
+from meteors.models.linear import SkLearnLinearModel, LinearModel
 
 
 def test_explainable_model():

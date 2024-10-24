@@ -1,11 +1,14 @@
-from .models import (
+from .abstract import (
     InterpretableModel,
-    ExplainableModel,
+    ExplainableModel
+)
+
+from .linear import (
     SkLearnLasso,
     SkLearnRidge,
     SkLearnLinearRegression,
     SkLearnLogisticRegression,
-    SkLearnSGDClassifier,
+    SkLearnSGDClassifier
 )
 
 
