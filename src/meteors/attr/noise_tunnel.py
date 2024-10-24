@@ -6,10 +6,9 @@ import inspect
 from enum import Enum
 from copy import deepcopy
 
-from loguru import logger
 
 import torch
-from captum.attr._utils.attribution import GradientAttribution
+from captum.attr import Attribution
 
 from meteors.attr import Explainer, HSIAttributes
 from meteors.attr.explainer import validate_and_transform_baseline, validate_attribution_method_initialization
@@ -44,8 +43,8 @@ def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | s
     return result
 
 
-class BaseNoiseTunnel(Explainer):
-    def __init__(self, model: GradientAttribution, perturbation_method: Literal["gaussian", "mask"] = "gaussian"):
+class BaseNoiseTunnel(Attribution):
+    def __init__(self, model: Attribution, perturbation_method: Literal["gaussian", "mask"] = "gaussian"):
         """
         Compute the attribution of the given inputs using the noise tunnel method.
         This class performs the attribution on the tensor input and is inspired by the captum library.
@@ -54,7 +53,7 @@ class BaseNoiseTunnel(Explainer):
         this class also supports the custom perturbation that masks specified bands in the input tensor.
 
         Args:
-            model (GradientAttribution): a gradient attribution method that will be used to compute the attributions.
+            model (Attribution): an attribution method that will be used to compute the attributions.
             perturbation_method (Literal["gaussian", "mask"], optional): a type of perturbation
                 method to be used. If `gaussian` using the standard perturbation method, if `mask` using perturbation
                 method designed for hyperspectral images that masks random bands. Defaults to "gaussian".
@@ -62,7 +61,6 @@ class BaseNoiseTunnel(Explainer):
         Raises:
             ValueError: Raised in case an unsupported perturbation method is passed.
         """
-        self.attribute_model = model
         self.attribute_main = model.attribute
         sig = inspect.signature(self.attribute_main)
         if "abs" in sig.parameters:
@@ -329,13 +327,13 @@ class NoiseTunnel(Explainer):
         _attribution_method (BaseNoiseTunnel): The Noise Tunnel Base method with the gaussian perturbation
 
     Args:
-        attribution_method (GradientAttribution): The attribution method to be used in the Noise Tunnel.
+        attribution_method (Attribution): The attribution method to be used in the Noise Tunnel.
     """
 
     def __init__(self, attribution_method: Explainer):
         super().__init__(attribution_method)
         validate_attribution_method_initialization(attribution_method)
-        self._attribution_method = BaseNoiseTunnel(attribution_method, perturbation_method="gaussian")
+        self._attribution_method: BaseNoiseTunnel = BaseNoiseTunnel(attribution_method, perturbation_method="gaussian")
 
     def attribute(
         self,
@@ -446,7 +444,7 @@ class HyperNoiseTunnel(Explainer):
     def __init__(self, attribution_method: Explainer):
         super().__init__(attribution_method)
         validate_attribution_method_initialization(attribution_method)
-        self._attribution_method = BaseNoiseTunnel(attribution_method, perturbation_method="mask")
+        self._attribution_method: BaseNoiseTunnel = BaseNoiseTunnel(attribution_method, perturbation_method="mask")
 
     def attribute(
         self,
