@@ -31,7 +31,7 @@ repos:
       - id: prettier
         name: 💄 Ensuring files are prettier
         args: [--write]
-        types_or: [yaml, json, markdown]
+        types_or: [yaml, markdown, json]
   - repo: local
     hooks:
       - id: codespell
