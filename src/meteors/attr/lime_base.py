@@ -250,7 +250,6 @@ class LimeBase(PerturbationAttribution):
         additional_forward_args: Any = None,
         n_samples: int = 50,
         perturbations_per_eval: int = 1,
-        model_postprocessing: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
         show_progress: bool = False,
         **kwargs,
     ) -> tuple[Tensor, Tensor]:
@@ -335,17 +334,6 @@ class LimeBase(PerturbationAttribution):
                         If the forward function returns a single scalar per batch,
                         perturbations_per_eval must be set to 1.
                         Default: 1
-            model_postprocessing (Callable[[Tensor, Tensor], Tensor], optional):
-                        Postprocessing to be applied to the model output
-                        and the masked region to aggregate the output for
-                        interpretable model. This should be used only with
-                        models that not provide a single scalar or 1d tensor
-                        for example a segmentation model. The callable takes
-                        two arguments - the model output and the masked region
-                        - and returns a single tensor that is used instead of
-                        model output for training interpretable model. If None,
-                        the model output is used as is.
-                        Default: None
             show_progress (bool, optional): Displays the progress of computation.
                         It will try to use tqdm if available for advanced features
                         (e.g. time estimation). Otherwise, it will fallback to
@@ -433,7 +421,6 @@ class LimeBase(PerturbationAttribution):
             inp_tensor = cast(Tensor, inputs) if isinstance(inputs, Tensor) else inputs[0]
             device = inp_tensor.device
 
-            mask_inps = []
             interpretable_inps = []
             similarities = []
             outputs = []
@@ -463,7 +450,6 @@ class LimeBase(PerturbationAttribution):
                 else:
                     curr_sample = self.perturb_func(inputs, **kwargs)
                 batch_count += 1
-                mask_inps.append(get_mask_from_interp_rep_transform(curr_sample, **kwargs))
                 if self.perturb_interpretable_space and self.from_interp_rep_transform is not None:
                     interpretable_inps.append(curr_sample)
                     curr_model_inputs.append(self.from_interp_rep_transform(curr_sample, inputs, **kwargs))
@@ -490,8 +476,6 @@ class LimeBase(PerturbationAttribution):
                         expanded_target,
                         expanded_additional_args,
                         device,
-                        model_postprocessing,
-                        mask_inps if len(mask_inps) > 0 else None,
                     )
 
                     if show_progress:
@@ -500,7 +484,6 @@ class LimeBase(PerturbationAttribution):
                     outputs.append(model_out)
 
                     curr_model_inputs = []
-                    mask_inps = []
 
             if len(curr_model_inputs) > 0:
                 expanded_additional_args = _expand_additional_forward_args(
@@ -512,8 +495,6 @@ class LimeBase(PerturbationAttribution):
                     expanded_target,
                     expanded_additional_args,
                     device,
-                    model_postprocessing,
-                    mask_inps,
                 )
                 if show_progress:
                     attr_progress.update()
@@ -547,8 +528,6 @@ class LimeBase(PerturbationAttribution):
         expanded_target: TargetType,
         expanded_additional_args: Any,
         device: torch.device,
-        model_postprocessing: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
-        mask_inps: Optional[List[TensorOrTupleOfTensorsGeneric]] = None,
     ) -> Tensor:
         """This method evaluates the model on a batch of perturbed inputs.
 
@@ -557,9 +536,6 @@ class LimeBase(PerturbationAttribution):
             expanded_target (TargetType): Target index or indices for which the model is evaluated.
             expanded_additional_args (Any): additional arguments to be passed to the forward function.
             device (torch.device): The device on which the model is evaluated.
-            model_postprocessing (Optional[Callable[[Tensor, Tensor], Tensor]]):
-                Postprocessing to be applied to the model output.
-            mask_inps (List[TensorOrTupleOfTensorsGeneric], optional): List of perturbed inputs in the interpretable space.
 
         Returns:
             Tensor: The output of the model evaluated on the batch of perturbed inputs.
@@ -569,8 +545,6 @@ class LimeBase(PerturbationAttribution):
             _reduce_list(curr_model_inputs),
             expanded_target,
             expanded_additional_args,
-            model_postprocessing,
-            _reduce_list(mask_inps) if mask_inps is not None else None,
         )
         if not isinstance(model_out, Tensor):
             model_out = torch.tensor([model_out], device=device)
@@ -747,8 +721,6 @@ def _run_forward(
     inputs: Any,  # Parameter annotation cannot be `Any`.
     target: TargetType = None,  # Parameter annotation cannot be `Any`.
     additional_forward_args: Any = None,
-    model_postprocessing: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
-    mask_inps: Any = None,
 ) -> Union[Tensor, Future[Tensor]]:
     forward_func_args = signature(forward_func).parameters
     if len(forward_func_args) == 0:
@@ -768,15 +740,8 @@ def _run_forward(
         )
     )
 
-    if model_postprocessing and mask_inps is None:
-        mask_inps = torch.ones_like(inputs)
-
     if isinstance(output, torch.futures.Future):
-        if model_postprocessing is not None:
-            output = output.then(lambda x: model_postprocessing(x.value(), mask_inps))
         return output.then(lambda x: _select_targets(x.value(), target))
-    if model_postprocessing is not None:
-        output = model_postprocessing(output, mask_inps)
     return _select_targets(output, target)
 
 
@@ -935,7 +900,6 @@ class Lime(LimeBase):
         feature_mask: Union[None, Tensor, Tuple[Tensor, ...]] = None,
         n_samples: int = 25,
         perturbations_per_eval: int = 1,
-        model_postprocessing: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
         return_input_shape: bool = True,
         show_progress: bool = False,
     ) -> tuple[TensorOrTupleOfTensorsGeneric, Tensor]:
@@ -1081,17 +1045,6 @@ class Lime(LimeBase):
                         If the forward function returns a single scalar per batch,
                         perturbations_per_eval must be set to 1.
                         Default: 1
-            model_postprocessing (Callable[[Tensor, Tensor], Tensor], optional):
-                        Postprocessing to be applied to the model output
-                        and the masked region to aggregate the output for
-                        interpretable model. This should be used only with
-                        models that not provide a single scalar or 1d tensor
-                        for example a segmentation model. The callable takes
-                        two arguments - the model output and the masked region
-                        - and returns a single tensor that is used instead of
-                        model output for training interpretable model. If None,
-                        the model output is used as is.
-                        Default: None
             return_input_shape (bool, optional): Determines whether the returned
                         tensor(s) only contain the coefficients for each interp-
                         retable feature from the trained surrogate model, or
@@ -1172,7 +1125,6 @@ class Lime(LimeBase):
             feature_mask=feature_mask,
             n_samples=n_samples,
             perturbations_per_eval=perturbations_per_eval,
-            model_postprocessing=model_postprocessing,
             return_input_shape=return_input_shape,
             show_progress=show_progress,
         )
@@ -1186,7 +1138,6 @@ class Lime(LimeBase):
         feature_mask: Union[None, Tensor, Tuple[Tensor, ...]] = None,
         n_samples: int = 25,
         perturbations_per_eval: int = 1,
-        model_postprocessing: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
         return_input_shape: bool = True,
         show_progress: bool = False,
         **kwargs,
@@ -1202,7 +1153,6 @@ class Lime(LimeBase):
             feature_mask: The mask tensor(s) indicating the features to be considered.
             n_samples: The number of samples to use for approximation.
             perturbations_per_eval: The number of perturbations to evaluate per sample.
-            model_postprocessing: The postprocessing function to apply to the model output.
             return_input_shape: Whether to return the output shape in the same format as the input.
             show_progress: Whether to show the progress of the computation.
             **kwargs: Additional keyword arguments.
@@ -1227,7 +1177,7 @@ class Lime(LimeBase):
         coefs: Tensor
         r2s: Tensor
         if bsz > 1:
-            test_output = _run_forward(self.forward_func, inputs, target, additional_forward_args, model_postprocessing)
+            test_output = _run_forward(self.forward_func, inputs, target, additional_forward_args)
             if isinstance(test_output, Tensor) and torch.numel(test_output) > 1:
                 if torch.numel(test_output) == bsz:
                     warnings.warn(
@@ -1262,7 +1212,6 @@ class Lime(LimeBase):
                             baselines=curr_baselines if is_inputs_tuple else curr_baselines[0],
                             feature_mask=curr_feature_mask if is_inputs_tuple else curr_feature_mask[0],
                             num_interp_features=num_interp_features,
-                            model_postprocessing=model_postprocessing,
                             show_progress=show_progress,
                             **kwargs,
                         )
@@ -1300,7 +1249,6 @@ class Lime(LimeBase):
             perturbations_per_eval=perturbations_per_eval,
             baselines=baselines if is_inputs_tuple else baselines[0],
             feature_mask=feature_mask if is_inputs_tuple else feature_mask[0],
-            model_postprocessing=model_postprocessing,
             num_interp_features=num_interp_features,
             show_progress=show_progress,
             **kwargs,

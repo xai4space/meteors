@@ -23,10 +23,22 @@ class Occlusion(Explainer):
 
     Attributes:
         _attribution_method (CaptumOcclusion): The Occlusion method from the `captum` library.
+
+    Args:
+        explainable_model (ExplainableModel | Explainer): The explainable model to be explained.
+        postprocessing_segmentation_output (Callable[[torch.Tensor], torch.Tensor] | None):
+            A segmentation postprocessing function for segmentation problem type. This is required for segmentation
+            problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
+            attribution method is not used.
     """
 
-    def __init__(self, explainable_model: ExplainableModel):
-        super().__init__(explainable_model)
+    def __init__(
+        self,
+        explainable_model: ExplainableModel,
+        postprocessing_segmentation_output: Callable[[torch.Tensor], torch.Tensor] | None = None,
+    ):
+        super().__init__(explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output)
+
         self._attribution_method = CaptumOcclusion(explainable_model.forward_func)
 
     def attribute(
@@ -39,7 +51,6 @@ class Occlusion(Explainer):
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
     ) -> HSIAttributes | list[HSIAttributes]:
         """
         Method for generating attributions using the Occlusion method.
@@ -77,10 +88,6 @@ class Occlusion(Explainer):
                 working with multiple examples, the number of perturbations per evaluation should be set to at least
                 the number of examples. Defaults to 1.
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
-            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None, optional):
-                A segmentation postprocessing function for segmentation problem type. This is required for segmentation
-                problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-                attribution method is not used.
 
         Returns:
             HSIAttributes: An object containing the computed attributions.
@@ -118,34 +125,16 @@ class Occlusion(Explainer):
         assert len(strides) == 3, "Strides must be a tuple of three integers"
         assert len(sliding_window_shapes) == 3, "Sliding window shapes must be a tuple of three integers"
 
-        if postprocessing_segmentation_output is not None:
-
-            def adjusted_forward_func(x: torch.Tensor) -> torch.Tensor:
-                return postprocessing_segmentation_output(self._attribution_method.forward_func(x), torch.tensor(1.0))
-
-            segmentation_attribution_method = CaptumOcclusion(adjusted_forward_func)
-
-            occlusion_attributions = segmentation_attribution_method.attribute(
-                input_tensor,
-                sliding_window_shapes=sliding_window_shapes,
-                strides=strides,
-                target=target,
-                baselines=baseline,
-                additional_forward_args=additional_forward_args,
-                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
-                show_progress=show_progress,
-            )
-        else:
-            occlusion_attributions = self._attribution_method.attribute(
-                input_tensor,
-                sliding_window_shapes=sliding_window_shapes,
-                strides=strides,
-                target=target,
-                baselines=baseline,
-                additional_forward_args=additional_forward_args,
-                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
-                show_progress=show_progress,
-            )
+        occlusion_attributions = self._attribution_method.attribute(
+            input_tensor,
+            sliding_window_shapes=sliding_window_shapes,
+            strides=strides,
+            target=target,
+            baselines=baseline,
+            additional_forward_args=additional_forward_args,
+            perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+            show_progress=show_progress,
+        )
 
         attributes: HSIAttributes | list[HSIAttributes]
         if isinstance(hsi, list):
@@ -170,7 +159,6 @@ class Occlusion(Explainer):
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
     ) -> HSIAttributes | list[HSIAttributes]:
         """Compute spatial attributions for the input HSI using the Occlusion method. In this case, the sliding window
         is applied to the spatial dimensions only.
@@ -208,10 +196,6 @@ class Occlusion(Explainer):
                 working with multiple examples, the number of perturbations per evaluation should be set to at least
                 the number of examples. Defaults to 1.
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
-            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None, optional):
-                A segmentation postprocessing function for segmentation problem type. This is required for segmentation
-                problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-                attribution method is not used.
 
         Returns:
             HSIAttributes: An object containing the computed spatial attributions.
@@ -262,34 +246,16 @@ class Occlusion(Explainer):
         sliding_window_shapes = tuple(list_sliding_window_shapes)  # type: ignore
         strides = tuple(list_strides)  # type: ignore
 
-        if postprocessing_segmentation_output is not None:
-
-            def adjusted_forward_func(x: torch.Tensor) -> torch.Tensor:
-                return postprocessing_segmentation_output(self._attribution_method.forward_func(x), torch.tensor(1.0))
-
-            segmentation_attribution_method = CaptumOcclusion(adjusted_forward_func)
-
-            occlusion_attributions = segmentation_attribution_method.attribute(
-                input_tensor,
-                sliding_window_shapes=sliding_window_shapes,
-                strides=strides,
-                target=target,
-                baselines=baseline,
-                additional_forward_args=additional_forward_args,
-                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
-                show_progress=show_progress,
-            )
-        else:
-            occlusion_attributions = self._attribution_method.attribute(
-                input_tensor,
-                sliding_window_shapes=sliding_window_shapes,
-                strides=strides,
-                target=target,
-                baselines=baseline,
-                additional_forward_args=additional_forward_args,
-                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
-                show_progress=show_progress,
-            )
+        occlusion_attributions = self._attribution_method.attribute(
+            input_tensor,
+            sliding_window_shapes=sliding_window_shapes,
+            strides=strides,
+            target=target,
+            baselines=baseline,
+            additional_forward_args=additional_forward_args,
+            perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+            show_progress=show_progress,
+        )
 
         spatial_attributes: HSIAttributes | list[HSIAttributes]
         if isinstance(hsi, list):
@@ -314,7 +280,6 @@ class Occlusion(Explainer):
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-        postprocessing_segmentation_output: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None = None,
     ) -> HSIAttributes | list[HSIAttributes]:
         """Compute spectral attributions for the input HSI using the Occlusion method. In this case, the sliding window
         is applied to the spectral dimension only.
@@ -352,10 +317,6 @@ class Occlusion(Explainer):
                 working with multiple examples, the number of perturbations per evaluation should be set to at least
                 the number of examples. Defaults to 1.
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
-            postprocessing_segmentation_output (Callable[[torch.Tensor, torch.Tensor], torch.Tensor] | None, optional):
-                A segmentation postprocessing function for segmentation problem type. This is required for segmentation
-                problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-                attribution method is not used.
 
         Returns:
             HSIAttributes: An object containing the computed spectral attributions.
@@ -411,34 +372,16 @@ class Occlusion(Explainer):
         sliding_window_shapes = tuple(full_sliding_window_shapes)
         strides = tuple(full_strides)
 
-        if postprocessing_segmentation_output is not None:
-
-            def adjusted_forward_func(x: torch.Tensor) -> torch.Tensor:
-                return postprocessing_segmentation_output(self._attribution_method.forward_func(x), torch.tensor(1.0))
-
-            segmentation_attribution_method = CaptumOcclusion(adjusted_forward_func)
-
-            occlusion_attributions = segmentation_attribution_method.attribute(
-                input_tensor,
-                sliding_window_shapes=sliding_window_shapes,
-                strides=strides,
-                target=target,
-                baselines=baseline,
-                additional_forward_args=additional_forward_args,
-                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
-                show_progress=show_progress,
-            )
-        else:
-            occlusion_attributions = self._attribution_method.attribute(
-                input_tensor,
-                sliding_window_shapes=sliding_window_shapes,
-                strides=strides,
-                target=target,
-                baselines=baseline,
-                additional_forward_args=additional_forward_args,
-                perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
-                show_progress=show_progress,
-            )
+        occlusion_attributions = self._attribution_method.attribute(
+            input_tensor,
+            sliding_window_shapes=sliding_window_shapes,
+            strides=strides,
+            target=target,
+            baselines=baseline,
+            additional_forward_args=additional_forward_args,
+            perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+            show_progress=show_progress,
+        )
 
         spectral_attributes: HSIAttributes | list[HSIAttributes]
         if isinstance(hsi, list):
