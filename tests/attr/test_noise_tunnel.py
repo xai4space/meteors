@@ -181,8 +181,14 @@ def test_noise_attribute(explainable_toy_model, explainable_segmentation_toy_mod
         NoiseTunnel(explainable_toy_model)
 
     # test incorrect stdevs
-    # This one will pass but will informt that first stdev will be used
-    noise_tunnel.attribute(image, n_samples=1, stdevs=[0.1, 0.2])
+    with pytest.raises(ValueError):
+        noise_tunnel.attribute(image, n_samples=1, stdevs=[0.1, 0.2])
+
+    with pytest.raises(ValueError):
+        noise_tunnel.attribute([image, image], n_samples=1, stdevs=[0.1])
+
+    with pytest.raises(ValueError):
+        noise_tunnel.attribute([image, image], n_samples=1, stdevs=[0.1, 0.1, 0.1])
 
     # different explanation method
     saliency = Saliency(explainable_toy_model)
@@ -313,11 +319,20 @@ def test_hyper_attribute(explainable_toy_model, explainable_segmentation_toy_mod
     assert len(attributes) == 2
     assert attributes[0].attributes.shape == (5, 5, 5)
 
-    baselines = torch.zeros((2, 5, 5, 5))
-    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=baselines)
+    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=[baselines, baselines])
     assert len(attributes) == 2
     assert attributes[0].attributes.shape == (5, 5, 5)
     assert attributes[1].attributes.shape == (5, 5, 5)
+
+    baselines = torch.zeros((2, 5, 5, 5))
+    with pytest.raises(ValueError):
+        hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=baselines)
+
+    with pytest.raises(ValueError):
+        hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=[0])
+
+    with pytest.raises(ValueError):
+        hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=[0, 0, 0])
 
     attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, target=[None, None])
     assert len(attributes) == 2
