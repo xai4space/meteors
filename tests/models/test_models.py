@@ -9,7 +9,7 @@ from meteors.models import (
     SkLearnRidge,
     SkLearnLinearRegression,
     SkLearnLogisticRegression,
-    SkLearnSGDClassifier
+    SkLearnSGDClassifier,
 )
 
 from meteors.models.linear import SkLearnLinearModel, LinearModel

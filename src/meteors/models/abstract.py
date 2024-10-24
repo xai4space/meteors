@@ -4,7 +4,7 @@ from typing import Callable
 from abc import ABC, abstractmethod
 import warnings
 
-import torch 
+import torch
 
 
 class ExplainableModel:
@@ -140,4 +140,3 @@ class InterpretableModel(ABC):
             torch.Tensor: The output tensor.
         """
         pass
-

@@ -1,15 +1,6 @@
-from .abstract import (
-    InterpretableModel,
-    ExplainableModel
-)
+from .abstract import InterpretableModel, ExplainableModel
 
-from .linear import (
-    SkLearnLasso,
-    SkLearnRidge,
-    SkLearnLinearRegression,
-    SkLearnLogisticRegression,
-    SkLearnSGDClassifier
-)
+from .linear import SkLearnLasso, SkLearnRidge, SkLearnLinearRegression, SkLearnLogisticRegression, SkLearnSGDClassifier
 
 
 __all__ = [

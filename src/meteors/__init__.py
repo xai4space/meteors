@@ -10,12 +10,4 @@ import sys
 logger.remove()
 logger.add(sys.stdout, level="WARNING")
 
-__all__ = [
-    "HSI",
-    "utils",
-    "visualize",
-    "attr",
-    "models",
-    "exceptions",
-    "utils"
-]
+__all__ = ["HSI", "utils", "visualize", "attr", "models", "exceptions", "utils"]
