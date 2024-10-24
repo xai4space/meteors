@@ -314,7 +314,7 @@ class Lime(Explainer):
         postprocessing_segmentation_output (Callable[[torch.Tensor], torch.Tensor] | None):
             A segmentation postprocessing function for segmentation problem type. This is required for segmentation
             problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-            attribution method is not used.
+            no postprocessing function is used. attribution method is not used. Defaults to None.
     """
 
     def __init__(
@@ -988,8 +988,27 @@ class Lime(Explainer):
                 The computed attributions Spectral or Spatial for the input hyperspectral image(s).
                 if a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
 
-        Returns:
-            HSISpectralAttributes | HSISpatialAttributes: An object containing the image, the attributions and additional information. In case the `attribution_type` is `spatial`, the object is of type `HSISpatialAttributes`, otherwise it is of type `HSISpectralAttributes`.
+        Raises:
+            RuntimeError: If the Lime object is not initialized or is not an instance of LimeBase.
+            ValueError: If number of HSI images is not equal to the number of masks provided.
+
+        Examples:
+            >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
+            >>> hsi = mt.HSI(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
+            >>> segmentation_mask = torch.randint(1, 4, (1, 240, 240))
+            >>> lime = meteors.attr.Lime(
+                    explainable_model=ExplainableModel(simple_model, "regression"), interpretable_model=SkLearnLasso(alpha=0.1)
+                )
+            >>> spatial_attribution = lime.attribute(hsi, segmentation_mask=segmentation_mask, target=0, attribution_type="spatial")
+            >>> spatial_attribution.hsi
+            HSI(shape=(4, 240, 240), dtype=torch.float32)
+            >>> band_mask = torch.randint(1, 4, (4, 1, 1)).repeat(1, 240, 240)
+            >>> band_names = ["R", "G", "B"]
+            >>> spectral_attribution = lime.attribute(
+            ...     hsi, band_mask=band_mask, band_names=band_names, target=0, attribution_type="spectral"
+            ... )
+            >>> spectral_attribution.hsi
+            HSI(shape=(4, 240, 240), dtype=torch.float32)
         """
         if attribution_type == "spatial":
             return self.get_spatial_attributes(
@@ -1004,7 +1023,7 @@ class Lime(Explainer):
     def get_spatial_attributes(
         self,
         hsi: list[HSI] | HSI,
-        segmentation_mask: np.ndarray | torch.Tensor | None = None,
+        segmentation_mask: np.ndarray | torch.Tensor | list[np.ndarray | torch.Tensor] | None = None,
         target: list[int] | int | None = None,
         n_samples: int = 10,
         perturbations_per_eval: int = 4,
@@ -1027,13 +1046,15 @@ class Lime(Explainer):
             hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
                 If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
                 The output will be a list of HSISpatialAttributes objects.
-            segmentation_mask (np.ndarray | torch.Tensor | None, optional):
+            segmentation_mask (np.ndarray | torch.Tensor | list[np.ndarray | torch.Tensor] | None, optional):
                 A segmentation mask according to which the attribution should be performed.
-                The segmentation mask should have a 3D shape, which can be broadcastable to the shape of the input
-                image. The only dimension on which the image and the mask shapes can differ is the spectral dimension,
-                marked with letter `C` in the `image.orientation` parameter. If None, a new segmentation mask is
-                created using the `segmentation_method`. Additional parameters for the segmentation method may be
-                passed as kwargs. Defaults to None.
+                The segmentation mask should have a 2D or 3D shape, which can be broadcastable to the shape of the
+                input image. The only dimension on which the image and the mask shapes can differ is the spectral
+                dimension, marked with letter `C` in the `image.orientation` parameter. If None, a new segmentation mask
+                is created using the `segmentation_method`. Additional parameters for the segmentation method may be
+                passed as kwargs. If multiple HSI images are provided, a list of segmentation masks can be provided,
+                one for each image. If list is not provided method will assume that the same segmentation mask is used
+                    for all images. Defaults to None.
             target (list[int] | int | None, optional): target class index for computing the attributions. If None,
                 methods assume that the output has only one class. If the output has multiple classes, the target index
                 must be provided. For multiple input images, a list of target indices can be provided, one for each
@@ -1059,6 +1080,7 @@ class Lime(Explainer):
 
         Raises:
             RuntimeError: If the Lime object is not initialized or is not an instance of LimeBase.
+            ValueError: If the number of segmentation masks is not equal to the number of HSI images provided.
 
         Examples:
             >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
@@ -1081,39 +1103,40 @@ class Lime(Explainer):
             raise RuntimeError("Lime object not initialized")  # pragma: no cover
 
         if isinstance(hsi, HSI):
-            example_hsi = hsi
-        else:
-            example_hsi = hsi[0]
+            hsi = [hsi]
 
         if segmentation_mask is None:
-            segmentation_mask = self.get_segmentation_mask(
-                example_hsi, segmentation_method, **segmentation_method_params
+            segmentation_mask = self.get_segmentation_mask(hsi[0], segmentation_method, **segmentation_method_params)
+            warnings.warn(
+                "Segmentation mask is created based on the first HSI image provided, this approach may not be optimal as "
+                "the same segmentation mask may not be the best suitable for all images",
+                UserWarning,
             )
 
-        segmentation_mask = ensure_torch_tensor(
-            segmentation_mask, "Segmentation mask should be None, numpy array, or torch tensor"
-        )
-        if isinstance(hsi, HSI):
-            if segmentation_mask.ndim == 4:
-                segmentation_mask = segmentation_mask[0]
-                warnings.warn("Detected 4D segmentation mask, using the first element as input is a single HSI image")
+        if isinstance(segmentation_mask, tuple):
+            segmentation_mask = tuple(segmentation_mask)
+        elif not isinstance(segmentation_mask, list):
+            segmentation_mask = [segmentation_mask] * len(hsi)
 
-            segmentation_mask = validate_mask_shape("segmentation", example_hsi, segmentation_mask)
-            segmentation_mask = segmentation_mask.unsqueeze(0)
-            hsi_input = hsi.get_image().unsqueeze(0)
-        else:
-            if segmentation_mask.ndim == 3:
-                segmentation_mask = torch.stack([segmentation_mask for _ in hsi], dim=0)
-
-            assert len(hsi) == segmentation_mask.shape[0], "Number of HSI images and segmentation masks should be equal"
-            segmentation_mask = torch.stack(
-                [
-                    validate_mask_shape("segmentation", hsi_img, segmentation_mask[idx])
-                    for idx, hsi_img in enumerate(hsi)
-                ],
-                dim=0,
+        if len(hsi) != len(segmentation_mask):
+            raise ValueError(
+                f"Number of segmentation masks should be equal to the number of HSI images provided, provided {len(segmentation_mask)}"
             )
-            hsi_input = torch.stack([hsi_img.get_image() for hsi_img in hsi], dim=0)
+
+        segmentation_mask = [
+            ensure_torch_tensor(mask, f"Segmentation mask number {idx+1} should be None, numpy array, or torch tensor")
+            for idx, mask in enumerate(segmentation_mask)
+        ]
+        segmentation_mask = [
+            mask.unsqueeze(0).moveaxis(0, hsi_img.spectral_axis) if mask.ndim != hsi_img.image.ndim else mask
+            for hsi_img, mask in zip(hsi, segmentation_mask)
+        ]
+        segmentation_mask = [
+            validate_mask_shape("segmentation", hsi_img, mask) for hsi_img, mask in zip(hsi, segmentation_mask)
+        ]
+
+        hsi_input = torch.stack([hsi_img.get_image() for hsi_img in hsi], dim=0)
+        segmentation_mask = torch.stack(segmentation_mask, dim=0)
 
         assert segmentation_mask.shape == hsi_input.shape
 
@@ -1131,33 +1154,23 @@ class Lime(Explainer):
             return_input_shape=True,
         )
 
-        spatial_attribution: list[HSISpatialAttributes] | HSISpatialAttributes
-        if isinstance(hsi, HSI):
-            spatial_attribution = HSISpatialAttributes(
-                hsi=hsi,
-                attributes=lime_attributes.squeeze(0),
-                mask=segmentation_mask.squeeze(0).expand_as(hsi.image),
+        spatial_attribution = [
+            HSISpatialAttributes(
+                hsi=hsi_img,
+                attributes=lime_attr,
+                mask=segmentation_mask[idx].expand_as(hsi_img.image),
                 score=score.item(),
                 attribution_method="Lime",
             )
-        else:
-            spatial_attribution = [
-                HSISpatialAttributes(
-                    hsi=hsi_img,
-                    attributes=lime_attr,
-                    mask=segmentation_mask[idx].expand_as(hsi_img.image),
-                    score=score.item(),
-                    attribution_method="Lime",
-                )
-                for idx, (hsi_img, lime_attr) in enumerate(zip(hsi, lime_attributes))
-            ]
+            for idx, (hsi_img, lime_attr) in enumerate(zip(hsi, lime_attributes))
+        ]
 
-        return spatial_attribution
+        return spatial_attribution[0] if len(spatial_attribution) == 1 else spatial_attribution
 
     def get_spectral_attributes(
         self,
         hsi: list[HSI] | HSI,
-        band_mask: np.ndarray | torch.Tensor | None = None,
+        band_mask: np.ndarray | torch.Tensor | list[np.ndarray | torch.Tensor] | None = None,
         target: list[int] | int | None = None,
         n_samples: int = 10,
         perturbations_per_eval: int = 4,
@@ -1178,11 +1191,13 @@ class Lime(Explainer):
             hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
                 If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
                 The output will be a list of HSISpatialAttributes objects.
-            band_mask (np.ndarray | torch.Tensor | None, optional): Band mask that is used for the spectral attribution.
-                The band mask should have a 3D shape, which can be broadcastable to the shape of the input image.
-                The only dimensions on which the image and the mask shapes can differ is the height and width dimensions,
-                marked with letters `H` and `W` in the `image.orientation` parameter. If equals to None, the band mask
-                is created within the function. Defaults to None.
+            band_mask (np.ndarray | torch.Tensor | list[np.ndarray | torch.Tensor] | None, optional): Band mask that
+                is used for the spectral attribution. The band mask should have a 1D or 3D shape, which can be
+                broadcastable to the shape of the input image. The only dimensions on which the image and the mask shapes
+                can differ is the height and width dimensions, marked with letters `H` and `W` in the `image.orientation`
+                parameter. If equals to None, the band mask is created within the function. If multiple HSI images are
+                provided, a list of band masks can be provided, one for each image. If list is not provided method will
+                assume that the same band mask is used for all images. Defaults to None.
             target (list[int] | int | None, optional): target class index for computing the attributions. If None,
                 methods assume that the output has only one class. If the output has multiple classes, the target index
                 must be provided. For multiple input images, a list of target indices can be provided, one for each
@@ -1207,7 +1222,8 @@ class Lime(Explainer):
                 the band mask, the band names, and the score of the interpretable model used for the explanation.
 
         Raises:
-            ValueError: If the Lime object is not initialized or is not an instance of LimeBase.
+            RuntimeError: If the Lime object is not initialized or is not an instance of LimeBase.
+            ValueError: If the number of band masks is not equal to the number of HSI images provided.
 
         Examples:
             >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
@@ -1234,53 +1250,51 @@ class Lime(Explainer):
             raise RuntimeError("Lime object not initialized")  # pragma: no cover
 
         if isinstance(hsi, HSI):
-            example_hsi = hsi
-        else:
-            example_hsi = hsi[0]
+            hsi = [hsi]
 
         if band_mask is None:
-            band_mask, band_names = self.get_band_mask(example_hsi, band_names)
+            # import pdb; pdb.set_trace()
+            created_bands = [self.get_band_mask(hsi_img, band_names) for hsi_img in hsi]
+            band_mask, band_name_list = zip(*created_bands)
+            band_names = band_name_list[0]
 
-        band_mask = ensure_torch_tensor(band_mask, "Band mask should be None, numpy array, or torch tensor")
-        if isinstance(hsi, HSI):
-            if band_mask.ndim == 4:
-                band_mask = band_mask[0]
-                warnings.warn("Detected 4D band mask, using the first element as input is a single HSI image")
+        if isinstance(band_mask, tuple):
+            band_mask = list(band_mask)
+        elif not isinstance(band_mask, list):
+            band_mask = [band_mask]
 
-            if band_mask.shape != example_hsi.image.shape:
-                band_mask = expand_spectral_mask(example_hsi, band_mask, repeat_dimensions=True)
+        if len(hsi) != len(band_mask):
+            if len(band_mask) == 1:
+                band_mask = band_mask * len(hsi)
+                logger.info("Reusing the same band mask for all images")
+            else:
+                raise ValueError(
+                    f"Number of band masks should be equal to the number of HSI images provided, provided {len(band_mask)}"
+                )
 
-            band_mask = validate_mask_shape("band", example_hsi, band_mask)
-            band_mask = band_mask.unsqueeze(0)
-            hsi_input = hsi.get_image().unsqueeze(0)
-        else:
-            if band_mask.ndim == 3:
-                band_mask = torch.stack([band_mask for _ in hsi], dim=0)
+        band_mask = [
+            ensure_torch_tensor(mask, f"Band mask number {idx+1} should be None, numpy array, or torch tensor")
+            for idx, mask in enumerate(band_mask)
+        ]
+        band_mask = [
+            mask.unsqueeze(-1).unsqueeze(-1).moveaxis(0, hsi_img.spectral_axis)
+            if mask.ndim != hsi_img.image.ndim
+            else mask
+            for hsi_img, mask in zip(hsi, band_mask)
+        ]
+        band_mask = [validate_mask_shape("band", hsi_img, mask) for hsi_img, mask in zip(hsi, band_mask)]
 
-            assert len(hsi) == band_mask.shape[0], "Number of HSI images and band masks should be equal"
-            band_mask = torch.stack(
-                [validate_mask_shape("band", hsi_img, band_mask[idx]) for idx, hsi_img in enumerate(hsi)],
-                dim=0,  # type: ignore
-            )
-            hsi_input = torch.stack([hsi_img.get_image() for hsi_img in hsi], dim=0)
+        hsi_input = torch.stack([hsi_img.get_image() for hsi_img in hsi], dim=0)
+        band_mask = torch.stack(band_mask, dim=0)
 
         if band_names is None:
-            band_names_list = [
-                {str(segment): idx for idx, segment in enumerate(torch.unique(band_mask[idx]))}
-                for idx in range(len(band_mask))
-            ]
+            band_names = {str(segment): idx for idx, segment in enumerate(torch.unique(band_mask))}
         else:
-            # checking consistency of names
-            # unique_segments = torch.unique(band_mask)
-            # if isinstance(band_names, dict):
-            #     assert set(unique_segments).issubset(set(band_names.values())), "Incorrect band names"
-            band_names_list = [band_names] * len(hsi) if isinstance(hsi, list) else [band_names]  # type: ignore
             logger.debug(
                 "Band names are provided and will be used. In the future, there should be an option to validate them."
             )
 
         assert hsi_input.shape == band_mask.shape
-        assert len(band_names_list) == band_mask.shape[0]
 
         hsi_input = hsi_input.to(self.device)
         band_mask = band_mask.to(self.device)
@@ -1296,30 +1310,19 @@ class Lime(Explainer):
             return_input_shape=True,
         )
 
-        spectral_attribution: list[HSISpectralAttributes] | HSISpectralAttributes
-        if isinstance(hsi, HSI):
-            spectral_attribution = HSISpectralAttributes(
-                hsi=hsi,
-                attributes=lime_attributes.squeeze(0),
-                mask=band_mask.squeeze(0).expand_as(hsi.image),
-                band_names=band_names_list[0],
+        spectral_attribution = [
+            HSISpectralAttributes(
+                hsi=hsi_img,
+                attributes=lime_attr,
+                mask=band_mask[idx].expand_as(hsi_img.image),
+                band_names=band_names,
                 score=score.item(),
                 attribution_method="Lime",
             )
-        else:
-            spectral_attribution = [
-                HSISpectralAttributes(
-                    hsi=hsi_img,
-                    attributes=lime_attr,
-                    mask=band_mask[idx].expand_as(hsi_img.image),
-                    band_names=band_names_list[idx],
-                    score=score.item(),
-                    attribution_method="Lime",
-                )
-                for idx, (hsi_img, lime_attr) in enumerate(zip(hsi, lime_attributes))
-            ]
+            for idx, (hsi_img, lime_attr) in enumerate(zip(hsi, lime_attributes))
+        ]
 
-        return spectral_attribution
+        return spectral_attribution[0] if len(spectral_attribution) == 1 else spectral_attribution
 
     @staticmethod
     def _get_slick_segmentation_mask(

@@ -1321,6 +1321,16 @@ def test_get_spatial_attributes_regression():
     assert spatial_attributes[0].attributes.shape == hsi.image.shape
     assert spatial_attributes[1].attributes.shape == hsi.image.shape
 
+    # Test case 2: Multiple images and multiple segmentation
+    spatial_attributes = lime.get_spatial_attributes([hsi, hsi], [segmentation_mask, segmentation_mask], target=0)
+    assert len(spatial_attributes) == 2
+    assert torch.equal(spatial_attributes[0].segmentation_mask, segmentation_mask[0, :, :])
+    assert torch.equal(spatial_attributes[1].segmentation_mask, segmentation_mask[0, :, :])
+    assert spatial_attributes[0].score <= 1.0
+    assert spatial_attributes[1].score <= 1.0
+    assert spatial_attributes[0].attributes.shape == hsi.image.shape
+    assert spatial_attributes[1].attributes.shape == hsi.image.shape
+
     # Test case 3: Multiple images with multiple targets
     spatial_attributes = lime.get_spatial_attributes([hsi, hsi], segmentation_mask, target=[0, 1])
     assert len(spatial_attributes) == 2
@@ -1330,6 +1340,10 @@ def test_get_spatial_attributes_regression():
     assert spatial_attributes[1].score <= 1.0
     assert spatial_attributes[0].attributes.shape == hsi.image.shape
     assert spatial_attributes[1].attributes.shape == hsi.image.shape
+
+    # Wrong number of masks
+    with pytest.raises(ValueError):
+        lime.get_spatial_attributes(hsi, [segmentation_mask, segmentation_mask], target=0)
 
     # Test case 2: Use slic for segmentation
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_method="slic", target=0)
@@ -1341,6 +1355,18 @@ def test_get_spatial_attributes_regression():
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
+    # Use slic with multiple images
+    spatial_attributes = lime.get_spatial_attributes([hsi, hsi], segmentation_method="slic", target=0)
+    assert len(spatial_attributes) == 2
+    assert spatial_attributes[0].hsi == hsi
+    assert spatial_attributes[0].segmentation_mask is not None
+    assert spatial_attributes[0].score <= 1.0
+    assert spatial_attributes[0].attributes.shape == hsi.image.shape
+    assert spatial_attributes[1].hsi == hsi
+    assert spatial_attributes[1].segmentation_mask is not None
+    assert spatial_attributes[1].score <= 1.0
+    assert spatial_attributes[1].attributes.shape == hsi.image.shape
+
     # Test case 3: Use patch for segmentation
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_method="patch", target=0, patch_size=5)
 
@@ -1350,6 +1376,18 @@ def test_get_spatial_attributes_regression():
     assert spatial_attributes.segmentation_mask is not None
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
+
+    # Use patch with multiple images
+    spatial_attributes = lime.get_spatial_attributes([hsi, hsi], segmentation_method="patch", target=0, patch_size=5)
+    assert len(spatial_attributes) == 2
+    assert spatial_attributes[0].hsi == hsi
+    assert spatial_attributes[0].segmentation_mask is not None
+    assert spatial_attributes[0].score <= 1.0
+    assert spatial_attributes[0].attributes.shape == hsi.image.shape
+    assert spatial_attributes[1].hsi == hsi
+    assert spatial_attributes[1].segmentation_mask is not None
+    assert spatial_attributes[1].score <= 1.0
+    assert spatial_attributes[1].attributes.shape == hsi.image.shape
 
     # Test case 4: different lime parameters
     similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
@@ -1417,6 +1455,16 @@ def test_get_spatial_attributes_classification():
     assert spatial_attributes[0].attributes.shape == hsi.image.shape
     assert spatial_attributes[1].attributes.shape == hsi.image.shape
 
+    # Test case 2: Multiple images and multiple segmentation
+    spatial_attributes = lime.get_spatial_attributes([hsi, hsi], [segmentation_mask, segmentation_mask], target=0)
+    assert len(spatial_attributes) == 2
+    assert torch.equal(spatial_attributes[0].segmentation_mask, segmentation_mask[0, :, :])
+    assert torch.equal(spatial_attributes[1].segmentation_mask, segmentation_mask[0, :, :])
+    assert spatial_attributes[0].score <= 1.0
+    assert spatial_attributes[1].score <= 1.0
+    assert spatial_attributes[0].attributes.shape == hsi.image.shape
+    assert spatial_attributes[1].attributes.shape == hsi.image.shape
+
     # Test case 3: Multiple images with multiple targets
     spatial_attributes = lime.get_spatial_attributes([hsi, hsi], segmentation_mask, target=[0, 1])
     assert len(spatial_attributes) == 2
@@ -1426,6 +1474,10 @@ def test_get_spatial_attributes_classification():
     assert spatial_attributes[1].score <= 1.0
     assert spatial_attributes[0].attributes.shape == hsi.image.shape
     assert spatial_attributes[1].attributes.shape == hsi.image.shape
+
+    # Wrong number of masks
+    with pytest.raises(ValueError):
+        lime.get_spatial_attributes(hsi, [segmentation_mask, segmentation_mask], target=0)
 
     # Test case 2: Use slic for segmentation
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_method="slic", target=0)
@@ -1437,6 +1489,18 @@ def test_get_spatial_attributes_classification():
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
+    # Use slic with multiple images
+    spatial_attributes = lime.get_spatial_attributes([hsi, hsi], segmentation_method="slic", target=0)
+    assert len(spatial_attributes) == 2
+    assert spatial_attributes[0].hsi == hsi
+    assert spatial_attributes[0].segmentation_mask is not None
+    assert spatial_attributes[0].score <= 1.0
+    assert spatial_attributes[0].attributes.shape == hsi.image.shape
+    assert spatial_attributes[1].hsi == hsi
+    assert spatial_attributes[1].segmentation_mask is not None
+    assert spatial_attributes[1].score <= 1.0
+    assert spatial_attributes[1].attributes.shape == hsi.image.shape
+
     # Test case 3: Use patch for segmentation
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_method="patch", target=0, patch_size=5)
 
@@ -1446,6 +1510,18 @@ def test_get_spatial_attributes_classification():
     assert spatial_attributes.segmentation_mask is not None
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
+
+    # Use patch with multiple images
+    spatial_attributes = lime.get_spatial_attributes([hsi, hsi], segmentation_method="patch", target=0, patch_size=5)
+    assert len(spatial_attributes) == 2
+    assert spatial_attributes[0].hsi == hsi
+    assert spatial_attributes[0].segmentation_mask is not None
+    assert spatial_attributes[0].score <= 1.0
+    assert spatial_attributes[0].attributes.shape == hsi.image.shape
+    assert spatial_attributes[1].hsi == hsi
+    assert spatial_attributes[1].segmentation_mask is not None
+    assert spatial_attributes[1].score <= 1.0
+    assert spatial_attributes[1].attributes.shape == hsi.image.shape
 
     # Test case 4: different lime parameters
     similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
@@ -1523,6 +1599,16 @@ def test_get_spatial_attributes_segmentation():
     assert spatial_attributes[0].attributes.shape == hsi.image.shape
     assert spatial_attributes[1].attributes.shape == hsi.image.shape
 
+    # Test case 2: Multiple images and multiple segmentation
+    spatial_attributes = lime.get_spatial_attributes([hsi, hsi], [segmentation_mask, segmentation_mask], target=0)
+    assert len(spatial_attributes) == 2
+    assert torch.equal(spatial_attributes[0].segmentation_mask, segmentation_mask[0, :, :])
+    assert torch.equal(spatial_attributes[1].segmentation_mask, segmentation_mask[0, :, :])
+    assert spatial_attributes[0].score <= 1.0
+    assert spatial_attributes[1].score <= 1.0
+    assert spatial_attributes[0].attributes.shape == hsi.image.shape
+    assert spatial_attributes[1].attributes.shape == hsi.image.shape
+
     # Test case 3: Multiple images with multiple targets
     spatial_attributes = lime.get_spatial_attributes([hsi, hsi], segmentation_mask, target=[0, 1])
     assert len(spatial_attributes) == 2
@@ -1532,6 +1618,10 @@ def test_get_spatial_attributes_segmentation():
     assert spatial_attributes[1].score <= 1.0
     assert spatial_attributes[0].attributes.shape == hsi.image.shape
     assert spatial_attributes[1].attributes.shape == hsi.image.shape
+
+    # Wrong number of masks
+    with pytest.raises(ValueError):
+        lime.get_spatial_attributes(hsi, [segmentation_mask, segmentation_mask], target=0)
 
     # Test case 2: Use slic for segmentation
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_method="slic", target=0)
@@ -1543,6 +1633,18 @@ def test_get_spatial_attributes_segmentation():
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
+    # Use slic with multiple images
+    spatial_attributes = lime.get_spatial_attributes([hsi, hsi], segmentation_method="slic", target=0)
+    assert len(spatial_attributes) == 2
+    assert spatial_attributes[0].hsi == hsi
+    assert spatial_attributes[0].segmentation_mask is not None
+    assert spatial_attributes[0].score <= 1.0
+    assert spatial_attributes[0].attributes.shape == hsi.image.shape
+    assert spatial_attributes[1].hsi == hsi
+    assert spatial_attributes[1].segmentation_mask is not None
+    assert spatial_attributes[1].score <= 1.0
+    assert spatial_attributes[1].attributes.shape == hsi.image.shape
+
     # Test case 3: Use patch for segmentation
     spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_method="patch", target=0, patch_size=5)
 
@@ -1552,6 +1654,18 @@ def test_get_spatial_attributes_segmentation():
     assert spatial_attributes.segmentation_mask is not None
     assert spatial_attributes.score <= 1.0
     assert spatial_attributes.attributes.shape == hsi.image.shape
+
+    # Use patch with multiple images
+    spatial_attributes = lime.get_spatial_attributes([hsi, hsi], segmentation_method="patch", target=0, patch_size=5)
+    assert len(spatial_attributes) == 2
+    assert spatial_attributes[0].hsi == hsi
+    assert spatial_attributes[0].segmentation_mask is not None
+    assert spatial_attributes[0].score <= 1.0
+    assert spatial_attributes[0].attributes.shape == hsi.image.shape
+    assert spatial_attributes[1].hsi == hsi
+    assert spatial_attributes[1].segmentation_mask is not None
+    assert spatial_attributes[1].score <= 1.0
+    assert spatial_attributes[1].attributes.shape == hsi.image.shape
 
     # Test case 4: different lime parameters
     similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
@@ -1654,6 +1768,22 @@ def test_get_spectral_attributes_regression():
     assert spectral_attributes[0].attributes.shape == hsi.image.shape
     assert spectral_attributes[1].attributes.shape == hsi.image.shape
 
+    # Test case 2: Multiple images and multiple band masks
+    spectral_attributes = lime.get_spectral_attributes(
+        [hsi, hsi], [band_mask, band_mask], band_names=band_names, target=0
+    )
+    assert len(spectral_attributes) == 2
+    assert torch.equal(spectral_attributes[0].band_mask, band_mask[:, 0, 0])
+    assert torch.equal(spectral_attributes[1].band_mask, band_mask[:, 0, 0])
+    assert spectral_attributes[0].score <= 1.0
+    assert spectral_attributes[1].score <= 1.0
+    assert spectral_attributes[0].attributes.shape == hsi.image.shape
+    assert spectral_attributes[1].attributes.shape == hsi.image.shape
+
+    # Incorrect number of band masks
+    with pytest.raises(ValueError):
+        spectral_attributes = lime.get_spectral_attributes(hsi, [band_mask, band_mask], band_names=band_names, target=0)
+
     # Test case 3: Multiple images with multiple targets
     spectral_attributes = lime.get_spectral_attributes([hsi, hsi], band_mask, band_names=band_names, target=[0, 1])
     assert len(spectral_attributes) == 2
@@ -1676,6 +1806,18 @@ def test_get_spectral_attributes_regression():
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == hsi.image.shape
 
+    # Use Band names with multiple images
+    spectral_attributes = lime.get_spectral_attributes([hsi, hsi], band_names=band_names, target=0)
+    assert len(spectral_attributes) == 2
+    assert spectral_attributes[0].hsi == hsi
+    assert spectral_attributes[0].band_mask is not None
+    assert spectral_attributes[0].score <= 1.0
+    assert spectral_attributes[0].attributes.shape == hsi.image.shape
+    assert spectral_attributes[1].hsi == hsi
+    assert spectral_attributes[1].band_mask is not None
+    assert spectral_attributes[1].score <= 1.0
+    assert spectral_attributes[1].attributes.shape == hsi.image.shape
+
     # Use Band mask no Band names
     spectral_attributes = lime.get_spectral_attributes(hsi, band_mask, target=0)
 
@@ -1687,6 +1829,16 @@ def test_get_spectral_attributes_regression():
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Use Band mask with multiple images
+    spectral_attributes = lime.get_spectral_attributes([hsi, hsi], band_mask, target=0)
+    assert len(spectral_attributes) == 2
+    assert torch.equal(spectral_attributes[0].band_mask, band_mask[:, 0, 0])
+    assert torch.equal(spectral_attributes[1].band_mask, band_mask[:, 0, 0])
+    assert spectral_attributes[0].score <= 1.0
+    assert spectral_attributes[1].score <= 1.0
+    assert spectral_attributes[0].attributes.shape == hsi.image.shape
+    assert spectral_attributes[1].attributes.shape == hsi.image.shape
 
     # Test case different lime parameters
     similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
@@ -1768,6 +1920,22 @@ def test_get_spectral_attributes_classification():
     assert spectral_attributes[0].attributes.shape == hsi.image.shape
     assert spectral_attributes[1].attributes.shape == hsi.image.shape
 
+    # Test case 2: Multiple images and multiple band masks
+    spectral_attributes = lime.get_spectral_attributes(
+        [hsi, hsi], [band_mask, band_mask], band_names=band_names, target=0
+    )
+    assert len(spectral_attributes) == 2
+    assert torch.equal(spectral_attributes[0].band_mask, band_mask[:, 0, 0])
+    assert torch.equal(spectral_attributes[1].band_mask, band_mask[:, 0, 0])
+    assert spectral_attributes[0].score <= 1.0
+    assert spectral_attributes[1].score <= 1.0
+    assert spectral_attributes[0].attributes.shape == hsi.image.shape
+    assert spectral_attributes[1].attributes.shape == hsi.image.shape
+
+    # Incorrect number of band masks
+    with pytest.raises(ValueError):
+        spectral_attributes = lime.get_spectral_attributes(hsi, [band_mask, band_mask], band_names=band_names, target=0)
+
     # Test case 3: Multiple images with multiple targets
     spectral_attributes = lime.get_spectral_attributes([hsi, hsi], band_mask, band_names=band_names, target=[0, 1])
     assert len(spectral_attributes) == 2
@@ -1790,6 +1958,18 @@ def test_get_spectral_attributes_classification():
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == hsi.image.shape
 
+    # Use Band names with multiple images
+    spectral_attributes = lime.get_spectral_attributes([hsi, hsi], band_names=band_names, target=0)
+    assert len(spectral_attributes) == 2
+    assert spectral_attributes[0].hsi == hsi
+    assert spectral_attributes[0].band_mask is not None
+    assert spectral_attributes[0].score <= 1.0
+    assert spectral_attributes[0].attributes.shape == hsi.image.shape
+    assert spectral_attributes[1].hsi == hsi
+    assert spectral_attributes[1].band_mask is not None
+    assert spectral_attributes[1].score <= 1.0
+    assert spectral_attributes[1].attributes.shape == hsi.image.shape
+
     # Use Band mask no Band names
     spectral_attributes = lime.get_spectral_attributes(hsi, band_mask, target=0)
 
@@ -1801,6 +1981,16 @@ def test_get_spectral_attributes_classification():
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Use Band mask with multiple images
+    spectral_attributes = lime.get_spectral_attributes([hsi, hsi], band_mask, target=0)
+    assert len(spectral_attributes) == 2
+    assert torch.equal(spectral_attributes[0].band_mask, band_mask[:, 0, 0])
+    assert torch.equal(spectral_attributes[1].band_mask, band_mask[:, 0, 0])
+    assert spectral_attributes[0].score <= 1.0
+    assert spectral_attributes[1].score <= 1.0
+    assert spectral_attributes[0].attributes.shape == hsi.image.shape
+    assert spectral_attributes[1].attributes.shape == hsi.image.shape
 
     # Test case different lime parameters
     similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
@@ -1892,6 +2082,22 @@ def test_get_spectral_attributes_segmentation():
     assert spectral_attributes[0].attributes.shape == hsi.image.shape
     assert spectral_attributes[1].attributes.shape == hsi.image.shape
 
+    # Test case 2: Multiple images and multiple band masks
+    spectral_attributes = lime.get_spectral_attributes(
+        [hsi, hsi], [band_mask, band_mask], band_names=band_names, target=0
+    )
+    assert len(spectral_attributes) == 2
+    assert torch.equal(spectral_attributes[0].band_mask, band_mask[:, 0, 0])
+    assert torch.equal(spectral_attributes[1].band_mask, band_mask[:, 0, 0])
+    assert spectral_attributes[0].score <= 1.0
+    assert spectral_attributes[1].score <= 1.0
+    assert spectral_attributes[0].attributes.shape == hsi.image.shape
+    assert spectral_attributes[1].attributes.shape == hsi.image.shape
+
+    # Incorrect number of band masks
+    with pytest.raises(ValueError):
+        spectral_attributes = lime.get_spectral_attributes(hsi, [band_mask, band_mask], band_names=band_names, target=0)
+
     # Test case 3: Multiple images with multiple targets
     spectral_attributes = lime.get_spectral_attributes([hsi, hsi], band_mask, band_names=band_names, target=[0, 1])
     assert len(spectral_attributes) == 2
@@ -1903,11 +2109,7 @@ def test_get_spectral_attributes_segmentation():
     assert spectral_attributes[1].attributes.shape == hsi.image.shape
 
     # Use Band names no Band mask
-    spectral_attributes = lime.get_spectral_attributes(
-        hsi,
-        band_names=band_names,
-        target=0,
-    )
+    spectral_attributes = lime.get_spectral_attributes(hsi, band_names=band_names, target=0)
 
     # Assert the output type and properties
     assert isinstance(spectral_attributes, mt.attr.HSISpectralAttributes)
@@ -1917,6 +2119,18 @@ def test_get_spectral_attributes_segmentation():
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Use Band names with multiple images
+    spectral_attributes = lime.get_spectral_attributes([hsi, hsi], band_names=band_names, target=0)
+    assert len(spectral_attributes) == 2
+    assert spectral_attributes[0].hsi == hsi
+    assert spectral_attributes[0].band_mask is not None
+    assert spectral_attributes[0].score <= 1.0
+    assert spectral_attributes[0].attributes.shape == hsi.image.shape
+    assert spectral_attributes[1].hsi == hsi
+    assert spectral_attributes[1].band_mask is not None
+    assert spectral_attributes[1].score <= 1.0
+    assert spectral_attributes[1].attributes.shape == hsi.image.shape
 
     # Use Band mask no Band names
     spectral_attributes = lime.get_spectral_attributes(hsi, band_mask, target=0)
@@ -1929,6 +2143,16 @@ def test_get_spectral_attributes_segmentation():
     assert spectral_attributes.score <= 1.0
     assert isinstance(spectral_attributes.score, float)
     assert spectral_attributes.attributes.shape == hsi.image.shape
+
+    # Use Band mask with multiple images
+    spectral_attributes = lime.get_spectral_attributes([hsi, hsi], band_mask, target=0)
+    assert len(spectral_attributes) == 2
+    assert torch.equal(spectral_attributes[0].band_mask, band_mask[:, 0, 0])
+    assert torch.equal(spectral_attributes[1].band_mask, band_mask[:, 0, 0])
+    assert spectral_attributes[0].score <= 1.0
+    assert spectral_attributes[1].score <= 1.0
+    assert spectral_attributes[0].attributes.shape == hsi.image.shape
+    assert spectral_attributes[1].attributes.shape == hsi.image.shape
 
     # Test case different lime parameters
     similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)

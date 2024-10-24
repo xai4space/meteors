@@ -122,8 +122,7 @@ def agg_segmentation_postprocessing(
 ) -> Callable[[torch.Tensor], torch.Tensor]:  # pragma: no cover
     """Generator for postprocessing function for aggregating segmentation outputs.
 
-    This generator creates a postprocessing function that takes the model output and input mask
-    (these parameters are mandatory for the function), and then creates a 2d tensor
+    This generator creates a postprocessing function that takes the model output and then creates a 2d tensor
     with aggregated output <batch_size, classes_numb>. This is an example of a post-processing function
     for segmentation model output that aggregates pixel results. We encouraged to write more tailored functions.
 
@@ -136,8 +135,8 @@ def agg_segmentation_postprocessing(
             if the model output is soft labels. Defaults to 1.
 
     Returns:
-        Callable[[torch.Tensor], torch.Tensor]: The postprocessing function that accepts model outputs with
-            lime mask of masked region and returns aggregated outputs.
+        Callable[[torch.Tensor], torch.Tensor]: The postprocessing function that accepts model outputs and
+            returns aggregated outputs.
     """
 
     def postprocessing_function(output: torch.Tensor) -> torch.Tensor:
