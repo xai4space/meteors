@@ -3,7 +3,7 @@ import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 from meteors.attr import IntegratedGradients, Saliency, InputXGradient, NoiseTunnel, Occlusion
 from meteors import HSI
 

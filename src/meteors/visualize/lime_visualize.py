@@ -13,7 +13,7 @@ from captum.attr import visualization as viz
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from meteors.attr import HSISpatialAttributes, HSISpectralAttributes, HSIAttributes
-from meteors.utils.utils import expand_spectral_mask, aggregate_by_mask
+from meteors.utils import expand_spectral_mask, aggregate_by_mask
 
 from meteors.attr.attributes import align_band_names_with_mask
 

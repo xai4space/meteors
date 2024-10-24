@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from meteors.attr import HyperNoiseTunnel, IntegratedGradients, Saliency
-from meteors.utils.models.models import ExplainableModel
+from meteors.models import ExplainableModel
 
 from meteors.attr.hyper_noise_tunnel import BaseHyperNoiseTunnel
 

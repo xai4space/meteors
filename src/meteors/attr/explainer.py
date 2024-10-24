@@ -10,7 +10,7 @@ from captum.attr import Attribution
 
 import torch
 
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 from meteors import HSI
 from meteors.attr import HSIAttributes
 from meteors.exceptions import ShapeMismatchError

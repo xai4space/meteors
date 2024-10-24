@@ -4,7 +4,7 @@ from typing import Any
 
 from captum.attr import Saliency as CaptumSaliency
 
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 from meteors import HSI
 from meteors.attr import HSIAttributes
 

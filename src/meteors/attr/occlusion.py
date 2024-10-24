@@ -5,7 +5,7 @@ from typing import Any
 import torch
 from captum.attr import Occlusion as CaptumOcclusion
 
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 from meteors import HSI
 from meteors.attr import HSIAttributes
 from meteors.attr import Explainer
