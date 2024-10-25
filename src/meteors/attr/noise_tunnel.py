@@ -14,6 +14,8 @@ from meteors.attr import Explainer, HSIAttributes
 from meteors.attr.explainer import validate_and_transform_baseline, validate_attribution_method_initialization
 from meteors import HSI
 
+from meteors.exceptions import HSIAttributesError
+
 
 class NoiseTunnelType(Enum):
     smoothgrad = "smoothgrad"
@@ -441,7 +443,7 @@ class NoiseTunnel(Explainer):
                 for hsi_image, attribution in zip(hsi, nt_attributes)
             ]
         except Exception as e:
-            raise AttributeError(f"Error in generating NoiseTunnel attributions: {e}") from e
+            raise HSIAttributesError(f"Error in generating NoiseTunnel attributions: {e}") from e
 
         return attributes[0] if len(attributes) == 1 else attributes
 
@@ -574,7 +576,7 @@ class HyperNoiseTunnel(Explainer):
                 for hsi_image, attribution in zip(hsi, hnt_attributes)
             ]
         except Exception as e:
-            raise AttributeError(f"Error in generating HyperNoiseTunnel attributions: {e}") from e
+            raise HSIAttributesError(f"Error in generating HyperNoiseTunnel attributions: {e}") from e
 
         for i in range(len(change_orientation)):
             if change_orientation[i]:

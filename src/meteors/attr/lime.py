@@ -26,6 +26,7 @@ from meteors.exceptions import (
     ShapeMismatchError,
     BandSelectionError,
     MaskCreationError,
+    HSIAttributesError,
 )
 
 try:
@@ -1095,7 +1096,7 @@ class Lime(Explainer):
             RuntimeError: If the Lime object is not initialized or is not an instance of LimeBase.
             MaskCreationError: If there is an error creating the segmentation mask.
             ValueError: If the number of segmentation masks is not equal to the number of HSI images provided.
-            AttributeError: If there is an error during creating spatial attribution.
+            HSIAttributesError: If there is an error during creating spatial attribution.
 
         Examples:
             >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
@@ -1187,7 +1188,7 @@ class Lime(Explainer):
                 for idx, (hsi_img, lime_attr) in enumerate(zip(hsi, lime_attributes))
             ]
         except Exception as e:
-            raise AttributeError(f"Error during creating spatial attribution {e}") from e
+            raise HSIAttributesError(f"Error during creating spatial attribution {e}") from e
 
         return spatial_attribution[0] if len(spatial_attribution) == 1 else spatial_attribution
 
@@ -1249,7 +1250,7 @@ class Lime(Explainer):
             RuntimeError: If the Lime object is not initialized or is not an instance of LimeBase.
             MaskCreationError: If there is an error creating the band mask.
             ValueError: If the number of band masks is not equal to the number of HSI images provided.
-            AttributeError: If there is an error during creating spectral attribution.
+            HSIAttributesError: If there is an error during creating spectral attribution.
 
         Examples:
             >>> simple_model = lambda x: torch.rand((x.shape[0], 2))
@@ -1351,7 +1352,7 @@ class Lime(Explainer):
                 for idx, (hsi_img, lime_attr) in enumerate(zip(hsi, lime_attributes))
             ]
         except Exception as e:
-            raise AttributeError(f"Error during creating spectral attribution {e}") from e
+            raise HSIAttributesError(f"Error during creating spectral attribution {e}") from e
 
         return spectral_attribution[0] if len(spectral_attribution) == 1 else spectral_attribution
 

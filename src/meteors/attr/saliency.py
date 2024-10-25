@@ -7,9 +7,9 @@ from captum.attr import Saliency as CaptumSaliency
 
 from meteors.utils.models import ExplainableModel
 from meteors import HSI
-from meteors.attr import HSIAttributes
+from meteors.attr import HSIAttributes, Explainer
 
-from meteors.attr import Explainer
+from meteors.exceptions import HSIAttributesError
 
 ## VALIDATORS
 
@@ -104,6 +104,6 @@ class Saliency(Explainer):
                 for hsi_image, attribution in zip(hsi, saliency_attributions)
             ]
         except Exception as e:
-            raise AttributeError(f"Error in generating Saliency attributions: {e}") from e
+            raise HSIAttributesError(f"Error in generating Saliency attributions: {e}") from e
 
         return attributes[0] if len(attributes) == 1 else attributes
