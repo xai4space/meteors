@@ -6,6 +6,7 @@ from loguru import logger
 import torch
 
 from meteors import HSI
+from meteors.exceptions import ShapeMismatchError
 
 T = TypeVar("T")
 
@@ -92,6 +93,9 @@ def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> tuple[torch.Tens
 
     Returns:
         tuple(torch.Tensor, torch.Tensor): The source tensor and the target tensor with the shape adjusted to match the target tensor.
+
+    Raises:
+        RuntimeError: If the source tensor could not be broadcasted to match the target tensor shape.
     """
     if source.shape == target.shape:
         return target, source
@@ -197,13 +201,15 @@ def aggregate_by_mask(
         agg_func (Callable[[torch.Tensor], torch.Tensor]): The aggregation function to be applied to the data tensor.
 
     Raises:
-        ValueError: If the data and mask tensors have different shapes.
+        ShapeMismatchError: If the data and mask tensors have different shapes.
 
     Returns:
         torch.Tensor: The aggregated data tensor.
     """
     if data.shape != mask.shape:
-        raise ValueError("The data and mask tensors must have the same shapes")
+        raise ShapeMismatchError(
+            "Can't perform aggregation by mask. The shapes of the data and mask tensors must match. Data shape: {data.shape}, Mask shape: {mask.shape}"
+        )
 
     # Get unique values in the mask
     unique_ids = torch.unique(mask)

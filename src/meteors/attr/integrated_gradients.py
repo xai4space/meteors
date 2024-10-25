@@ -11,6 +11,8 @@ from meteors.attr import HSIAttributes, Explainer
 
 from meteors.attr.explainer import validate_and_transform_baseline
 
+from meteors.exceptions import HSIAttributesError
+
 
 class IntegratedGradients(Explainer):
     """
@@ -46,7 +48,7 @@ class IntegratedGradients(Explainer):
     def attribute(
         self,
         hsi: list[HSI] | HSI,
-        baseline: int | float | torch.Tensor = None,
+        baseline: int | float | torch.Tensor | list[int | float | torch.Tensor] = None,
         target: list[int] | int | None = None,
         additional_forward_args: Any = None,
         method: Literal[
@@ -61,12 +63,15 @@ class IntegratedGradients(Explainer):
             hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
                 If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
                 The output will be a list of HSIAttributes objects.
-            baseline (int | float | torch.Tensor, optional): Baselines define the starting point from which integral
-                is computed and can be provided as:
+            baseline (int | float | torch.Tensor | list[int | float | torch.Tensor, optional): Baselines define the
+                starting point from which integral is computed and can be provided as:
                     - integer or float representing a constant value used as the baseline for all input pixels.
                     - tensor with the same shape as the input tensor, providing a baseline for each input pixel.
                         if the input is a list of HSI objects, the baseline can be a tensor with the same shape as
                         the input tensor for each HSI object.
+                    - list of integers, floats or tensors with the same shape as the input tensor, providing a baseline
+                        for each input pixel. If the input is a list of HSI objects, the baseline can be a list of
+                        tensors with the same shape as the input tensor for each HSI object. Defaults to None.
             target (list[int] | int | None, optional): target class index for computing the attributions. If None,
                 methods assume that the output has only one class. If the output has multiple classes, the target index
                 must be provided. For multiple input images, a list of target indices can be provided, one for each
@@ -88,6 +93,11 @@ class IntegratedGradients(Explainer):
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
                 if a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
 
+        Raises:
+            RuntimeError: If the explainer is not initialized.
+            HSIAttributesError: If an error occurs during the generation of the attributions.
+
+
         Examples:
             >>> integrated_gradients = IntegratedGradients(explainable_model)
             >>> hsi = HSI(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
@@ -100,21 +110,24 @@ class IntegratedGradients(Explainer):
             2
         """
         if self._attribution_method is None:
-            raise ValueError("IntegratedGradients explainer is not initialized")
+            raise RuntimeError("IntegratedGradients explainer is not initialized, INITIALIZATION ERROR")
 
-        if isinstance(hsi, list):
-            if isinstance(baseline, torch.Tensor) and baseline.ndim == 4:
-                baseline = torch.stack(
-                    [validate_and_transform_baseline(baseline[i], hsi[i]) for i in range(len(hsi))], dim=0
-                )
-            else:
-                baseline = torch.stack(
-                    [validate_and_transform_baseline(baseline, hsi[i]) for i in range(len(hsi))], dim=0
-                )
-            input_tensor = torch.stack([hsi_image.get_image().requires_grad_(True) for hsi_image in hsi], dim=0)
-        else:
-            baseline = validate_and_transform_baseline(baseline, hsi).unsqueeze(0)
-            input_tensor = hsi.get_image().unsqueeze(0).requires_grad_(True)
+        if not isinstance(hsi, list):
+            hsi = [hsi]
+
+        if not isinstance(baseline, list):
+            baseline = [baseline] * len(hsi)
+
+        baseline = torch.stack(
+            [
+                validate_and_transform_baseline(base, hsi_image).to(hsi_image.device)
+                for hsi_image, base in zip(hsi, baseline)
+            ],
+            dim=0,
+        )
+        input_tensor = torch.stack(
+            [hsi_image.get_image().requires_grad_(True).to(hsi_image.device) for hsi_image in hsi], dim=0
+        )
 
         ig_attributions = self._attribution_method.attribute(
             input_tensor,
@@ -126,31 +139,16 @@ class IntegratedGradients(Explainer):
         )
 
         if return_convergence_delta:
-            attributions, approximation_error_tensor = ig_attributions
-
-            if isinstance(hsi, list):
-                approximation_error = approximation_error_tensor.reshape(-1).tolist()
-                assert len(approximation_error) == len(hsi), "Approximation error should be returned for each HSI"
-            else:
-                approximation_error = approximation_error_tensor.item()
+            attributions, approximation_error = ig_attributions
         else:
-            if isinstance(hsi, list):
-                attributions, approximation_error = ig_attributions, [None] * len(hsi)
-            else:
-                attributions, approximation_error = ig_attributions, None
+            attributions, approximation_error = ig_attributions, [None] * len(hsi)
 
-        attributes: HSIAttributes | list[HSIAttributes]
-        if isinstance(hsi, list):
+        try:
             attributes = [
                 HSIAttributes(hsi=hsi_image, attributes=attribution, score=error, attribution_method=self.get_name())
                 for hsi_image, attribution, error in zip(hsi, attributions, approximation_error)
             ]
-        else:
-            attributes = HSIAttributes(
-                hsi=hsi,
-                attributes=attributions.squeeze(0),
-                score=approximation_error,
-                attribution_method=self.get_name(),
-            )
+        except Exception as e:
+            raise HSIAttributesError(f"Error while creating HSIAttributes: {e}") from e
 
-        return attributes
+        return attributes[0] if len(attributes) == 1 else attributes

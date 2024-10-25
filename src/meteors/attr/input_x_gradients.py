@@ -9,6 +9,7 @@ from captum.attr import InputXGradient as CaptumInputXGradient
 from meteors.utils.models import ExplainableModel
 from meteors import HSI
 from meteors.attr import HSIAttributes, Explainer
+from meteors.exceptions import HSIAttributesError
 
 
 class InputXGradient(Explainer):
@@ -65,6 +66,10 @@ class InputXGradient(Explainer):
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
                 if a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
 
+        Raises:
+            RuntimeError: If the explainer is not initialized.
+            HSIAttributesError: If an error occurs during the generation of the attributions.
+
         Examples:
             >>> input_x_gradient = InputXGradient(explainable_model)
             >>> hsi = HSI(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
@@ -74,27 +79,25 @@ class InputXGradient(Explainer):
             2
         """
         if self._attribution_method is None:
-            raise ValueError("InputXGradient explainer is not initialized")
+            raise RuntimeError("InputXGradient explainer is not initialized, INITIALIZATION ERROR")
 
-        # Ensure that the input tensor requires gradients
-        if isinstance(hsi, list):
-            input_tensor = torch.stack([hsi_image.get_image().requires_grad_(True) for hsi_image in hsi], dim=0)
-        else:
-            input_tensor = hsi.get_image().unsqueeze(0).requires_grad_(True)
+        if not isinstance(hsi, list):
+            hsi = [hsi]
+
+        input_tensor = torch.stack(
+            [hsi_image.get_image().requires_grad_(True).to(hsi_image.device) for hsi_image in hsi], dim=0
+        )
 
         gradient_attribution = self._attribution_method.attribute(
             input_tensor, target=target, additional_forward_args=additional_forward_args
         )
 
-        attributes: HSIAttributes | list[HSIAttributes]
-        if isinstance(hsi, list):
+        try:
             attributes = [
                 HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
                 for hsi_image, attribution in zip(hsi, gradient_attribution)
             ]
-        else:
-            attributes = HSIAttributes(
-                hsi=hsi, attributes=gradient_attribution.squeeze(0), attribution_method=self.get_name()
-            )
+        except Exception as e:
+            raise HSIAttributesError(f"Error in generating InputXGradient attributions: {e}") from e
 
-        return attributes
+        return attributes[0] if len(attributes) == 1 else attributes

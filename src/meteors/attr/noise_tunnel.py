@@ -290,9 +290,13 @@ class BaseNoiseTunnel(Attribution):
                 temp_attr = self.attribute_main(
                     perturbed_batch, target=targeted, additional_forward_args=additional_forward_args
                 )
-                attributions[i : i + steps_per_batch, batch] = torch.stack(
-                    [attr.attributes for attr in temp_attr], dim=0
-                )
+                if isinstance(temp_attr, list):
+                    attributions[i : i + steps_per_batch, batch] = torch.stack(
+                        [attr.attributes for attr in temp_attr], dim=0
+                    )
+                else:
+                    attributions[i : i + steps_per_batch, batch] = temp_attr.attributes
+
             else:
                 steps_left = n_samples % steps_per_batch
                 if steps_left:
@@ -305,7 +309,10 @@ class BaseNoiseTunnel(Attribution):
                     temp_attr = self.attribute_main(
                         perturbed_batch, target=targeted, additional_forward_args=additional_forward_args
                     )
-                    attributions[-steps_left:, batch] = torch.stack([attr.attributes for attr in temp_attr], dim=0)
+                    if isinstance(temp_attr, list):
+                        attributions[-steps_left:, batch] = torch.stack([attr.attributes for attr in temp_attr], dim=0)
+                    else:
+                        attributions[-steps_left:, batch] = temp_attr.attributes
 
         if NoiseTunnelType[method] == NoiseTunnelType.smoothgrad:
             return attributions.mean(dim=0)
@@ -388,6 +395,10 @@ class NoiseTunnel(Explainer):
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
                 if a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
 
+        Raises:
+            RuntimeError If the explainer is not initialized
+            HSIAttributesError: If an error occurs during the generation of the attributions.
+
         Examples:
             >>> noise_tunnel = NoiseTunnel(explainable_model)
             >>> hsi = HSI(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
@@ -396,6 +407,9 @@ class NoiseTunnel(Explainer):
             >>> len(attributions)
             2
         """
+        if self._attribution_method is None:
+            raise RuntimeError("Noise Tunnel explainer is not initialized, INITIALIZATION ERROR")
+
         if isinstance(stdevs, list):
             stdevs = tuple(stdevs)
 
@@ -421,10 +435,14 @@ class NoiseTunnel(Explainer):
             stdevs=stdevs,
         )
 
-        attributes = [
-            HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
-            for hsi_image, attribution in zip(hsi, nt_attributes)
-        ]
+        try:
+            attributes = [
+                HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
+                for hsi_image, attribution in zip(hsi, nt_attributes)
+            ]
+        except Exception as e:
+            raise AttributeError(f"Error in generating NoiseTunnel attributions: {e}") from e
+
         return attributes[0] if len(attributes) == 1 else attributes
 
 
@@ -500,6 +518,10 @@ class HyperNoiseTunnel(Explainer):
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
                 if a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
 
+        Raises:
+            RuntimeError If the explainer is not initialized
+            HSIAttributesError: If an error occurs during the generation of the attributions.
+
         Examples:
             >>> hyper_noise_tunnel = HyperNoiseTunnel(explainable_model)
             >>> hsi = HSI(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
@@ -508,6 +530,8 @@ class HyperNoiseTunnel(Explainer):
             >>> len(attributions)
             2
         """
+        if self._attribution_method is None:
+            raise RuntimeError("Hyper Noise Tunnel explainer is not initialized, INITIALIZATION ERROR")
 
         change_orientation = []
         original_orientation = []
@@ -544,10 +568,13 @@ class HyperNoiseTunnel(Explainer):
             num_perturbed_bands=num_perturbed_bands,
         )
 
-        attributes = [
-            HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
-            for hsi_image, attribution in zip(hsi, hnt_attributes)
-        ]
+        try:
+            attributes = [
+                HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
+                for hsi_image, attribution in zip(hsi, hnt_attributes)
+            ]
+        except Exception as e:
+            raise AttributeError(f"Error in generating HyperNoiseTunnel attributions: {e}") from e
 
         for i in range(len(change_orientation)):
             if change_orientation[i]:

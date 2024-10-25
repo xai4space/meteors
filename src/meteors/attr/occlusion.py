@@ -12,6 +12,9 @@ from meteors.attr import Explainer
 from meteors.attr.explainer import validate_and_transform_baseline
 
 
+from meteors.exceptions import HSIAttributesError
+
+
 class Occlusion(Explainer):
     """
     Occlusion explainer class for generating attributions using the Occlusion method.
@@ -47,7 +50,7 @@ class Occlusion(Explainer):
         target: list[int] | int | None = None,
         sliding_window_shapes: int | tuple[int, int, int] = (1, 1, 1),
         strides: int | tuple[int, int, int] = (1, 1, 1),
-        baseline: int | float | torch.Tensor = None,
+        baseline: int | float | torch.Tensor | list[int | float | torch.Tensor] = None,
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
@@ -68,12 +71,15 @@ class Occlusion(Explainer):
                 Defaults to (1, 1, 1).
             strides (int | tuple[int, int, int], optional): The stride of the sliding window. Defaults to (1, 1, 1).
                 Simply put, the stride is the number of pixels by which the sliding window is moved in each dimension.
-            baseline (int | float | torch.Tensor, optional): Baselines define reference value which replaces each
-                feature when occluded is computed and can be provided as:
+            baseline (int | float | torch.Tensor | list[int | float | torch.Tensor], optional): Baselines define
+                reference value which replaces each feature when occluded is computed and can be provided as:
                     - integer or float representing a constant value used as the baseline for all input pixels.
                     - tensor with the same shape as the input tensor, providing a baseline for each input pixel.
                         if the input is a list of HSI objects, the baseline can be a tensor with the same shape as
                         the input tensor for each HSI object.
+                    - list of integers, floats or tensors with the same shape as the input tensor, providing a baseline
+                        for each input pixel. If the input is a list of HSI objects, the baseline can be a list of
+                        tensors with the same shape as the input tensor for each HSI object. Defaults to None.
             additional_forward_args (Any, optional): If the forward function requires additional arguments other than
                 the inputs for which attributions should not be computed, this argument can be provided.
                 It must be either a single additional argument of a Tensor or arbitrary (non-tuple) type or a tuple
@@ -92,6 +98,11 @@ class Occlusion(Explainer):
         Returns:
             HSIAttributes: An object containing the computed attributions.
 
+        Raises:
+            RuntimeError: If the explainer is not initialized.
+            ValueError: If the sliding window shapes or strides are not a tuple of three integers.
+            HSIAttributesError: If an error occurs during the generation of the attributions.
+
         Example:
             >>> occlusion = Occlusion(explainable_model)
             >>> hsi = HSI(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
@@ -101,29 +112,34 @@ class Occlusion(Explainer):
             2
         """
         if self._attribution_method is None:
-            raise ValueError("Occlusion explainer is not initialized")
+            raise RuntimeError("Occlusion explainer is not initialized, INITIALIZATION ERROR")
 
-        if isinstance(hsi, list):
-            if isinstance(baseline, torch.Tensor) and baseline.ndim == 4:
-                baseline = torch.stack(
-                    [validate_and_transform_baseline(baseline[i], hsi[i]) for i in range(len(hsi))], dim=0
-                )
-            else:
-                baseline = torch.stack(
-                    [validate_and_transform_baseline(baseline, hsi[i]) for i in range(len(hsi))], dim=0
-                )
-            input_tensor = torch.stack([hsi_image.get_image().requires_grad_(True) for hsi_image in hsi], dim=0)
-        else:
-            baseline = validate_and_transform_baseline(baseline, hsi).unsqueeze(0)
-            input_tensor = hsi.get_image().unsqueeze(0).requires_grad_(True)
+        if not isinstance(hsi, list):
+            hsi = [hsi]
+
+        if not isinstance(baseline, list):
+            baseline = [baseline] * len(hsi)
+
+        baseline = torch.stack(
+            [
+                validate_and_transform_baseline(base, hsi_image).to(hsi_image.device)
+                for hsi_image, base in zip(hsi, baseline)
+            ],
+            dim=0,
+        )
+        input_tensor = torch.stack(
+            [hsi_image.get_image().requires_grad_(True).to(hsi_image.device) for hsi_image in hsi], dim=0
+        )
 
         if isinstance(sliding_window_shapes, int):
             sliding_window_shapes = (sliding_window_shapes, sliding_window_shapes, sliding_window_shapes)
         if isinstance(strides, int):
             strides = (strides, strides, strides)
 
-        assert len(strides) == 3, "Strides must be a tuple of three integers"
-        assert len(sliding_window_shapes) == 3, "Sliding window shapes must be a tuple of three integers"
+        if len(strides) != 3:
+            raise ValueError("Strides must be a tuple of three integers")
+        if len(sliding_window_shapes) != 3:
+            raise ValueError("Sliding window shapes must be a tuple of three integers")
 
         occlusion_attributions = self._attribution_method.attribute(
             input_tensor,
@@ -132,22 +148,19 @@ class Occlusion(Explainer):
             target=target,
             baselines=baseline,
             additional_forward_args=additional_forward_args,
-            perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+            perturbations_per_eval=min(perturbations_per_eval, len(hsi)),
             show_progress=show_progress,
         )
 
-        attributes: HSIAttributes | list[HSIAttributes]
-        if isinstance(hsi, list):
+        try:
             attributes = [
                 HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
                 for hsi_image, attribution in zip(hsi, occlusion_attributions)
             ]
-        else:
-            attributes = HSIAttributes(
-                hsi=hsi, attributes=occlusion_attributions.squeeze(0), attribution_method=self.get_name()
-            )
+        except Exception as e:
+            raise HSIAttributesError(f"Error in generating Occlusion attributions: {e}") from e
 
-        return attributes
+        return attributes[0] if len(attributes) == 1 else attributes
 
     def get_spatial_attributes(
         self,
@@ -155,7 +168,7 @@ class Occlusion(Explainer):
         target: list[int] | int | None = None,
         sliding_window_shapes: int | tuple[int, int] = (1, 1),
         strides: int | tuple[int, int] = 1,
-        baseline: int | float | torch.Tensor = None,
+        baseline: int | float | torch.Tensor | list[int | float | torch.Tensor] = None,
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
@@ -176,12 +189,15 @@ class Occlusion(Explainer):
             strides (int | tuple[int, int], optional): The stride of the sliding window for spatial dimensions.
                 Defaults to 1. Simply put, the stride is the number of pixels by which the sliding window is moved
                 in each spatial dimension.
-            baseline (int | float | torch.Tensor, optional): Baselines define reference value which replaces each
-                feature when occluded is computed and can be provided as:
+            baseline (int | float | torch.Tensor | list[int | float | torch.Tensor], optional): Baselines define
+                reference value which replaces each feature when occluded is computed and can be provided as:
                     - integer or float representing a constant value used as the baseline for all input pixels.
                     - tensor with the same shape as the input tensor, providing a baseline for each input pixel.
                         if the input is a list of HSI objects, the baseline can be a tensor with the same shape as
                         the input tensor for each HSI object.
+                    - list of integers, floats or tensors with the same shape as the input tensor, providing a baseline
+                      for each input pixel. If the input is a list of HSI objects, the baseline can be a list of
+                      tensors with the same shape as the input tensor for each HSI object. Defaults to None.
             additional_forward_args (Any, optional): If the forward function requires additional arguments other than
                 the inputs for which attributions should not be computed, this argument can be provided.
                 It must be either a single additional argument of a Tensor or arbitrary (non-tuple) type or a tuple
@@ -200,6 +216,11 @@ class Occlusion(Explainer):
         Returns:
             HSIAttributes: An object containing the computed spatial attributions.
 
+        Raises:
+            RuntimeError: If the explainer is not initialized.
+            ValueError: If the sliding window shapes or strides are not a tuple of two integers.
+            HSIAttributesError: If an error occurs during the generation of the attributions
+
         Example:
             >>> occlusion = Occlusion(explainable_model)
             >>> hsi = HSI(image=torch.ones((4, 240, 240)), wavelengths=[462.08, 465.27, 468.47, 471.68])
@@ -209,31 +230,34 @@ class Occlusion(Explainer):
             2
         """
         if self._attribution_method is None:
-            raise ValueError("Occlusion explainer is not initialized")
+            raise RuntimeError("Occlusion explainer is not initialized, INITIALIZATION ERROR")
 
-        if isinstance(hsi, list):
-            if isinstance(baseline, torch.Tensor) and baseline.ndim == 4:
-                baseline = torch.stack(
-                    [validate_and_transform_baseline(baseline[i], hsi[i]) for i in range(len(hsi))], dim=0
-                )
-            else:
-                baseline = torch.stack(
-                    [validate_and_transform_baseline(baseline, hsi[i]) for i in range(len(hsi))], dim=0
-                )
-            input_tensor = torch.stack([hsi_image.get_image().requires_grad_(True) for hsi_image in hsi], dim=0)
-        else:
-            baseline = validate_and_transform_baseline(baseline, hsi).unsqueeze(0)
-            input_tensor = hsi.get_image().unsqueeze(0).requires_grad_(True)
+        if not isinstance(hsi, list):
+            hsi = [hsi]
+
+        if not isinstance(baseline, list):
+            baseline = [baseline] * len(hsi)
+
+        baseline = torch.stack(
+            [
+                validate_and_transform_baseline(base, hsi_image).to(hsi_image.device)
+                for hsi_image, base in zip(hsi, baseline)
+            ],
+            dim=0,
+        )
+        input_tensor = torch.stack(
+            [hsi_image.get_image().requires_grad_(True).to(hsi_image.device) for hsi_image in hsi], dim=0
+        )
 
         if isinstance(sliding_window_shapes, int):
             sliding_window_shapes = (sliding_window_shapes, sliding_window_shapes)
         if isinstance(strides, int):
             strides = (strides, strides)
 
-        assert len(strides) == 2, "Strides must be a tuple of two integers or a single integer"
-        assert (
-            len(sliding_window_shapes) == 2
-        ), "Sliding window shapes must be a tuple of two integers or a single integer"
+        if len(strides) != 2:
+            raise ValueError("Strides must be a tuple of two integers")
+        if len(sliding_window_shapes) != 2:
+            raise ValueError("Sliding window shapes must be a tuple of two integers")
 
         list_sliding_window_shapes = list(sliding_window_shapes)
         list_strides = list(strides)
@@ -253,22 +277,19 @@ class Occlusion(Explainer):
             target=target,
             baselines=baseline,
             additional_forward_args=additional_forward_args,
-            perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+            perturbations_per_eval=min(perturbations_per_eval, len(hsi)),
             show_progress=show_progress,
         )
 
-        spatial_attributes: HSIAttributes | list[HSIAttributes]
-        if isinstance(hsi, list):
+        try:
             spatial_attributes = [
                 HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
                 for hsi_image, attribution in zip(hsi, occlusion_attributions)
             ]
-        else:
-            spatial_attributes = HSIAttributes(
-                hsi=hsi, attributes=occlusion_attributions.squeeze(0), attribution_method=self.get_name()
-            )
+        except Exception as e:
+            raise HSIAttributesError(f"Error in generating Occlusion attributions: {e}") from e
 
-        return spatial_attributes
+        return spatial_attributes[0] if len(spatial_attributes) == 1 else spatial_attributes
 
     def get_spectral_attributes(
         self,
@@ -276,7 +297,7 @@ class Occlusion(Explainer):
         target: list[int] | int | None = None,
         sliding_window_shapes: int | tuple[int] = 1,
         strides: int | tuple[int] = 1,
-        baseline: int | float | torch.Tensor = None,
+        baseline: int | float | torch.Tensor | list[int | float | torch.Tensor] = None,
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
@@ -297,12 +318,15 @@ class Occlusion(Explainer):
             strides (int | tuple[int], optional): The stride of the sliding window for the spectral dimension.
                 Defaults to 1. Simply put, the stride is the number of pixels by which the sliding window is moved
                 in spectral dimension.
-            baseline (int | float | torch.Tensor, optional): Baselines define reference value which replaces each
-                feature when occluded is computed and can be provided as:
+            baseline (int | float | torch.Tensor | list[int | float | torch.Tensor], optional): Baselines define
+                reference value which replaces each feature when occluded is computed and can be provided as:
                     - integer or float representing a constant value used as the baseline for all input pixels.
                     - tensor with the same shape as the input tensor, providing a baseline for each input pixel.
                         if the input is a list of HSI objects, the baseline can be a tensor with the same shape as
                         the input tensor for each HSI object.
+                    - list of integers, floats or tensors with the same shape as the input tensor, providing a baseline
+                      for each input pixel. If the input is a list of HSI objects, the baseline can be a list of
+                      tensors with the same shape as the input tensor for each HSI object. Defaults to None.
             additional_forward_args (Any, optional): If the forward function requires additional arguments other than
                 the inputs for which attributions should not be computed, this argument can be provided.
                 It must be either a single additional argument of a Tensor or arbitrary (non-tuple) type or a tuple
@@ -321,6 +345,12 @@ class Occlusion(Explainer):
         Returns:
             HSIAttributes: An object containing the computed spectral attributions.
 
+        Raises:
+            RuntimeError: If the explainer is not initialized.
+            ValueError: If the sliding window shapes or strides are not a tuple of a single integer.
+            TypeError: If the sliding window shapes or strides are not a single integer.
+            HSIAttributesError: If an error occurs during the generation of the attributions
+
         Example:
             >>> occlusion = Occlusion(explainable_model)
             >>> hsi = HSI(image=torch.ones((10, 240, 240)), wavelengths=torch.arange(10))
@@ -330,33 +360,38 @@ class Occlusion(Explainer):
             2
         """
         if self._attribution_method is None:
-            raise ValueError("Occlusion explainer is not initialized")
+            raise RuntimeError("Occlusion explainer is not initialized, INITIALIZATION ERROR")
 
-        if isinstance(hsi, list):
-            if isinstance(baseline, torch.Tensor) and baseline.ndim == 4:
-                baseline = torch.stack(
-                    [validate_and_transform_baseline(baseline[i], hsi[i]) for i in range(len(hsi))], dim=0
-                )
-            else:
-                baseline = torch.stack(
-                    [validate_and_transform_baseline(baseline, hsi[i]) for i in range(len(hsi))], dim=0
-                )
-            input_tensor = torch.stack([hsi_image.get_image().requires_grad_(True) for hsi_image in hsi], dim=0)
-        else:
-            baseline = validate_and_transform_baseline(baseline, hsi).unsqueeze(0)
-            input_tensor = hsi.get_image().unsqueeze(0).requires_grad_(True)
+        if not isinstance(hsi, list):
+            hsi = [hsi]
+
+        if not isinstance(baseline, list):
+            baseline = [baseline] * len(hsi)
+
+        baseline = torch.stack(
+            [
+                validate_and_transform_baseline(base, hsi_image).to(hsi_image.device)
+                for hsi_image, base in zip(hsi, baseline)
+            ],
+            dim=0,
+        )
+        input_tensor = torch.stack(
+            [hsi_image.get_image().requires_grad_(True).to(hsi_image.device) for hsi_image in hsi], dim=0
+        )
 
         if isinstance(sliding_window_shapes, tuple):
-            assert (
-                len(sliding_window_shapes) == 1
-            ), "Sliding window shapes must be a single integer or a tuple of a single integer"
+            if len(sliding_window_shapes) != 1:
+                raise ValueError("Sliding window shapes must be a single integer or a tuple of a single integer")
             sliding_window_shapes = sliding_window_shapes[0]
         if isinstance(strides, tuple):
-            assert len(strides) == 1, "Strides must be a single integer or a tuple of a single integer"
+            if len(strides) != 1:
+                raise ValueError("Strides must be a single integer or a tuple of a single integer")
             strides = strides[0]
 
-        assert isinstance(sliding_window_shapes, int), "Sliding window shapes must be a single integer"
-        assert isinstance(strides, int), "Strides must be a single integer"
+        if not isinstance(sliding_window_shapes, int):
+            raise TypeError("Sliding window shapes must be a single integer")
+        if not isinstance(strides, int):
+            raise TypeError("Strides must be a single integer")
 
         if isinstance(hsi, list):
             full_sliding_window_shapes = list(hsi[0].image.shape)
@@ -379,19 +414,16 @@ class Occlusion(Explainer):
             target=target,
             baselines=baseline,
             additional_forward_args=additional_forward_args,
-            perturbations_per_eval=min(perturbations_per_eval, len(hsi) if isinstance(hsi, list) else 1),
+            perturbations_per_eval=min(perturbations_per_eval, len(hsi)),
             show_progress=show_progress,
         )
 
-        spectral_attributes: HSIAttributes | list[HSIAttributes]
-        if isinstance(hsi, list):
+        try:
             spectral_attributes = [
                 HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
                 for hsi_image, attribution in zip(hsi, occlusion_attributions)
             ]
-        else:
-            spectral_attributes = HSIAttributes(
-                hsi=hsi, attributes=occlusion_attributions.squeeze(0), attribution_method=self.get_name()
-            )
+        except Exception as e:
+            raise HSIAttributesError(f"Error in generating Occlusion attributions: {e}") from e
 
-        return spectral_attributes
+        return spectral_attributes[0] if len(spectral_attributes) == 1 else spectral_attributes
