@@ -482,7 +482,7 @@ class HyperNoiseTunnel(Explainer):
     def attribute(
         self,
         hsi: list[HSI] | HSI,
-        baselines: int | float | torch.Tensor | list[torch.Tensor] | None = None,
+        baselines: int | float | torch.Tensor | list[int | float | torch.Tensor] | None = None,
         target: list[int] | int | None = None,
         additional_forward_args: Any = None,
         n_samples: int = 5,
@@ -498,7 +498,7 @@ class HyperNoiseTunnel(Explainer):
             hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
                 If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
                 The output will be a list of HSIAttributes objects.
-            baseline (int | float | torch.Tensor | list[torch.Tensor]optional): Baselines define reference value which
+            baseline (int | float | torch.Tensor | list[int | float | torch.Tensor], optional): Baselines define reference value which
                 replaces each feature when occluded is computed and can be provided as:
                     - integer or float representing a constant value used as the baseline for all input pixels.
                     - tensor with the same shape as the input tensor, providing a baseline for each input pixel.
