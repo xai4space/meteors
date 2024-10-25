@@ -8,13 +8,12 @@ from copy import deepcopy
 
 
 import torch
-from captum.attr import Attribution
 
 from meteors.attr import Explainer, HSIAttributes
 from meteors.attr.explainer import validate_and_transform_baseline, validate_attribution_method_initialization
 from meteors import HSI
 
-from meteors.exceptions import HSIAttributesError
+from meteors.exceptions import HSIAttributesError, ShapeMismatchError
 
 
 class NoiseTunnelType(Enum):
@@ -45,8 +44,8 @@ def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | s
     return result
 
 
-class BaseNoiseTunnel(Attribution):
-    def __init__(self, model: Attribution, perturbation_method: Literal["gaussian", "mask"] = "gaussian"):
+class BaseNoiseTunnel(Explainer):
+    def __init__(self, model: Explainer, perturbation_method: Literal["gaussian", "mask"] = "gaussian"):
         """
         Compute the attribution of the given inputs using the noise tunnel method.
         This class performs the attribution on the tensor input and is inspired by the captum library.
@@ -55,7 +54,8 @@ class BaseNoiseTunnel(Attribution):
         this class also supports the custom perturbation that masks specified bands in the input tensor.
 
         Args:
-            model (Attribution): an attribution method that will be used to compute the attributions.
+            model (Explainer): an attribution method that will be used to compute the attributions.
+            It should be an instance of the Explainer class and take the HSI object or list of them as an input.
             perturbation_method (Literal["gaussian", "mask"], optional): a type of perturbation
                 method to be used. If `gaussian` using the standard perturbation method, if `mask` using perturbation
                 method designed for hyperspectral images that masks random bands. Defaults to "gaussian".
@@ -66,7 +66,7 @@ class BaseNoiseTunnel(Attribution):
         self.attribute_main = model.attribute
         sig = inspect.signature(self.attribute_main)
         if "abs" in sig.parameters:
-            self.attribute_main = partial(self.attribute_main, abs=False)
+            self.attribute_main = partial(self.attribute_main, abs=False)  # type: ignore
 
         self.perturbation_method = perturbation_method
         if self.perturbation_method not in ["gaussian", "mask"]:
@@ -144,7 +144,7 @@ class BaseNoiseTunnel(Attribution):
         """
         # validate the baseline against the input
         if baseline.shape != input.shape:
-            raise ValueError(f"Baseline shape {baseline.shape} does not match input shape {input.shape}")
+            raise ShapeMismatchError(f"Baseline shape {baseline.shape} does not match input shape {input.shape}")
 
         if n_samples < 1:
             raise ValueError("Number of perturbated samples to be generated must be greater than 0")
@@ -192,7 +192,7 @@ class BaseNoiseTunnel(Attribution):
     def attribute(
         self,
         inputs: list[HSI] | HSI,
-        baselines: list[torch.Tensor] | None = None,
+        baselines: list[torch.Tensor] | torch.Tensor | None = None,
         target: list[int] | int | None = None,
         additional_forward_args: Any = None,
         n_samples: int = 5,
@@ -202,7 +202,7 @@ class BaseNoiseTunnel(Attribution):
         perturbation_axis: None | tuple[int | slice] = None,
         stdevs: tuple[float, ...] = (1.0,),
         method: str = "smoothgrad",
-    ) -> torch.Tensor:
+    ) -> HSIAttributes | list[HSIAttributes]:
         """a general method for computing the attributions using the noise tunnel method.
         The method supports both perturbation methods: the standard gaussian noise and the custom mask
         perturbation method.
@@ -210,7 +210,7 @@ class BaseNoiseTunnel(Attribution):
         Args:
             inputs (list[HSI] | HSI): an input hyperspectral image or a list of hyperspectral images
                 for which the attributions are to be computed.
-            baselines (list[torch.Tensor], optional): Baselines that mask out the randomly selected bands.
+            baselines (list[torch.Tensor] | torch.Tensor, optional): Baselines that mask out the randomly selected bands.
                 Used only in case of `mask` perturbation method - HyperNoiseTunnel. Defaults to None.
             target (list[int] | int | None, optional): Target index of the model output to be selected for
                 the attribution. Has to be passed if explained model outputs more than one class.
@@ -239,10 +239,13 @@ class BaseNoiseTunnel(Attribution):
             method (str, optional): method used for aggregation of the explanations. Defaults to "smoothgrad".
 
         Raises:
+            TypeError: Raised in case the inputs or baselines (in case of `mask` perturbation method) are not torch.Tensor objects.
             ValueError: Raised in case an unsupported perturbation method is passed.
             ValueError: Raised in case the method is `mask` and baselines are not provided.
             ValueError: Raised in case the number of baselines does not match the number of input images.
             ValueError: Raised in case the number of stdevs does not match the number of input images.
+            ShapeMismatchError: Raised in case the shape of the baselines does not match the shape of the input tensors.
+
 
         Returns:
             torch.Tensor: A tensor containing the computed attributions.
@@ -254,11 +257,18 @@ class BaseNoiseTunnel(Attribution):
         if not isinstance(inputs, list):
             inputs = [inputs]
 
+        if not all([isinstance(input, HSI) for input in inputs]):
+            raise TypeError("All inputs must be HSI objects")
+
         if self.perturbation_method == "mask":
             if baselines is None:
                 raise ValueError("Baselines must be provided for the mask perturbation method")
             if len(baselines) != len(inputs):
-                raise ValueError("The number of baselines must match the number of input images")  # TODO check
+                raise ValueError("The number of baselines must match the number of input images")
+            if not all([isinstance(baseline, torch.Tensor) for baseline in baselines]):
+                raise TypeError("All baselines must be torch.Tensor objects")
+            if not all([baseline.shape == input.image.shape for baseline, input in zip(baselines, inputs)]):
+                raise ShapeMismatchError("All baselines must have the same shape as the input tensors")
 
         elif self.perturbation_method == "gaussian":
             if len(stdevs) != len(inputs):
@@ -289,7 +299,7 @@ class BaseNoiseTunnel(Attribution):
                     temp_input.image = perturbed_input[i]
                     perturbed_batch.append(temp_input)
 
-                temp_attr = self.attribute_main(
+                temp_attr = self.attribute_main(  # type: ignore
                     perturbed_batch, target=targeted, additional_forward_args=additional_forward_args
                 )
                 if isinstance(temp_attr, list):
@@ -308,7 +318,7 @@ class BaseNoiseTunnel(Attribution):
                         temp_input.image = perturbed_input[i]
                         perturbed_batch.append(temp_input)
 
-                    temp_attr = self.attribute_main(
+                    temp_attr = self.attribute_main(  # type: ignore
                         perturbed_batch, target=targeted, additional_forward_args=additional_forward_args
                     )
                     if isinstance(temp_attr, list):
@@ -417,6 +427,9 @@ class NoiseTunnel(Explainer):
 
         if not isinstance(hsi, list):
             hsi = [hsi]
+
+        if not all([isinstance(input, HSI) for input in hsi]):
+            raise TypeError("All inputs must be HSI objects")
 
         if isinstance(stdevs, tuple):
             if len(stdevs) != len(hsi):
@@ -540,6 +553,9 @@ class HyperNoiseTunnel(Explainer):
 
         if not isinstance(hsi, list):
             hsi = [hsi]
+
+        if not all([isinstance(input, HSI) for input in hsi]):
+            raise TypeError("All inputs must be HSI objects")
 
         for i in range(len(hsi)):
             if hsi[i].orientation != ("C", "H", "W"):

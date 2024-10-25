@@ -94,7 +94,10 @@ class Explainer(ABC):
             attribution method is not used.
     """
 
-    attribute: Callable[[list[HSI] | HSI, list[int] | int | None], HSIAttributes | list[HSIAttributes]]
+    attribute: Callable[
+        [list[HSI] | HSI, list[int] | int | None],
+        HSIAttributes | list[HSIAttributes],
+    ]
 
     def __init__(
         self,

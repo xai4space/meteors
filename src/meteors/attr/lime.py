@@ -1121,6 +1121,9 @@ class Lime(Explainer):
         if isinstance(hsi, HSI):
             hsi = [hsi]
 
+        if not all(isinstance(hsi_image, HSI) for hsi_image in hsi):
+            raise TypeError("All of the input hyperspectral images must be of type HSI")
+
         if segmentation_mask is None:
             try:
                 segmentation_mask = self.get_segmentation_mask(
@@ -1278,6 +1281,9 @@ class Lime(Explainer):
 
         if isinstance(hsi, HSI):
             hsi = [hsi]
+
+        if not all(isinstance(hsi_image, HSI) for hsi_image in hsi):
+            raise TypeError("All of the input hyperspectral images must be of type HSI")
 
         if band_mask is None:
             try:

@@ -117,6 +117,9 @@ class Occlusion(Explainer):
         if not isinstance(hsi, list):
             hsi = [hsi]
 
+        if not all(isinstance(hsi_image, HSI) for hsi_image in hsi):
+            raise TypeError("All of the input hyperspectral images must be of type HSI")
+
         if not isinstance(baseline, list):
             baseline = [baseline] * len(hsi)
 
@@ -234,6 +237,9 @@ class Occlusion(Explainer):
 
         if not isinstance(hsi, list):
             hsi = [hsi]
+
+        if not all(isinstance(hsi_image, HSI) for hsi_image in hsi):
+            raise TypeError("All of the input hyperspectral images must be of type HSI")
 
         if not isinstance(baseline, list):
             baseline = [baseline] * len(hsi)
@@ -364,6 +370,9 @@ class Occlusion(Explainer):
 
         if not isinstance(hsi, list):
             hsi = [hsi]
+
+        if not all(isinstance(hsi_image, HSI) for hsi_image in hsi):
+            raise TypeError("All of the input hyperspectral images must be of type HSI")
 
         if not isinstance(baseline, list):
             baseline = [baseline] * len(hsi)

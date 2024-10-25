@@ -5,6 +5,7 @@ from meteors.attr import HyperNoiseTunnel, IntegratedGradients, Saliency, NoiseT
 from meteors.utils.models.models import ExplainableModel
 from meteors.utils.utils import agg_segmentation_postprocessing
 
+from meteors.exceptions import ShapeMismatchError
 from meteors.attr.noise_tunnel import BaseNoiseTunnel
 
 import pytest
@@ -122,11 +123,11 @@ def test_hyper_noise_perturb_input():
         BaseNoiseTunnel.mask_perturb_input(input, baselines, n_samples=0)
 
     # try to perturb with incorrect input
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         BaseNoiseTunnel.mask_perturb_input(torch.ones((5, 5)), baselines, n_samples=5)
 
     # try to perturb with incorrect baselines
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         BaseNoiseTunnel.mask_perturb_input(input, torch.ones((5, 5)), n_samples=5)
 
 
@@ -189,6 +190,9 @@ def test_noise_attribute(explainable_toy_model, explainable_segmentation_toy_mod
 
     with pytest.raises(ValueError):
         noise_tunnel.attribute([image, image], n_samples=1, stdevs=[0.1, 0.1, 0.1])
+
+    with pytest.raises(TypeError):
+        noise_tunnel.attribute([image, 0], n_samples=1, stdevs=[0.1, 0.1])
 
     # different explanation method
     saliency = Saliency(explainable_toy_model)
@@ -276,10 +280,10 @@ def test_hyper_attribute(explainable_toy_model, explainable_segmentation_toy_mod
     attributes = hyper_noise_tunnel.attribute(image, n_samples=1, baselines=baselines)
     assert attributes.attributes.shape == (5, 5, 5)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         hyper_noise_tunnel.attribute(image, n_samples=1, baselines=torch.ones((5, 5)))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ShapeMismatchError):
         hyper_noise_tunnel.attribute(image, n_samples=1, baselines=torch.ones((1, 5, 5, 5)))
 
     # test validation
@@ -333,6 +337,12 @@ def test_hyper_attribute(explainable_toy_model, explainable_segmentation_toy_mod
 
     with pytest.raises(ValueError):
         hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=[0, 0, 0])
+
+    with pytest.raises(TypeError):
+        hyper_noise_tunnel.attribute([image, 0], n_samples=1, baselines=[0, 0])
+
+    with pytest.raises(TypeError):
+        hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=[0, "string"])
 
     attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, target=[None, None])
     assert len(attributes) == 2

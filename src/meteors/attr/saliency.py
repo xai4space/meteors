@@ -90,6 +90,9 @@ class Saliency(Explainer):
         if not isinstance(hsi, list):
             hsi = [hsi]
 
+        if not all(isinstance(hsi_image, HSI) for hsi_image in hsi):
+            raise TypeError("All of the input hyperspectral images must be of type HSI")
+
         input_tensor = torch.stack(
             [hsi_image.get_image().requires_grad_(True).to(hsi_image.device) for hsi_image in hsi], dim=0
         )
