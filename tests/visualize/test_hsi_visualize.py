@@ -1,3 +1,5 @@
+import pytest
+
 import torch
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -84,6 +86,15 @@ wavelengths_main = [
     695.43,
     698.62,
 ]
+
+
+def test_visualize_hsi_with_incorrect_image():
+    # Create incorrect image
+    hsi = 5
+
+    # Call the visualize_image function
+    with pytest.raises(TypeError):
+        visualize.visualize_hsi(hsi, None)
 
 
 def test_visualize_hsi_with_hsi_object():
