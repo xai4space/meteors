@@ -5,34 +5,50 @@ import numpy as np
 import pandas as pd
 import torch
 
+from .explanation import SHAPExplanation, AVAILABLE_SHAP_EXPLAINERS
+
 from meteors.utils.models import ExplainableModel
-from .explanation import SHAPExplanation
 
 from typing import Literal
 
 
 class HyperSHAP:
     def __init__(
-        self, callable: ExplainableModel, masker, explainer_type: Literal["Exact", "Tree", "Kernel"] | None = None
+        self,
+        callable: ExplainableModel,
+        masker,
+        explainer_type: Literal["exact", "tree", "kernel", "linear"] | None = None,
+        **kwargs,
     ) -> None:
         if not isinstance(callable, ExplainableModel):
             raise TypeError(f"Expected ExplainableModel as callable, but got {type(callable)}")
 
         self.explainable_model = callable
 
+        explainer_type = explainer_type.lower() if explainer_type is not None else None  # type: ignore
+
+        if explainer_type not in AVAILABLE_SHAP_EXPLAINERS:
+            raise ValueError(
+                f"Invalid explainer type: {explainer_type}. Available options: {AVAILABLE_SHAP_EXPLAINERS}"
+            )
+
         try:
-            if explainer_type is None or explainer_type == "Exact":
-                self._explainer = shap.Explainer(self.explainable_model.forward_func, masker)
-            elif explainer_type == "Tree":
-                self._explainer = shap.TreeExplainer(self.explainable_model.forward_func, masker)
-            elif explainer_type == "Kernel":
-                self._explainer = shap.KernelExplainer(self.explainable_model.forward_func, masker)
+            if explainer_type is None or explainer_type == "exact":
+                self._explainer = shap.Explainer(self.explainable_model.forward_func, masker, **kwargs)
+            elif explainer_type == "tree":
+                self._explainer = shap.TreeExplainer(self.explainable_model.forward_func, masker, **kwargs)
+            elif explainer_type == "kernel":
+                self._explainer = shap.KernelExplainer(self.explainable_model.forward_func, masker, **kwargs)
+            elif explainer_type == "linear":
+                self._explainer = shap.LinearExplainer(self.explainable_model.forward_func, masker, **kwargs)
         except ValueError as e:
             raise ValueError(f"Could not initialize the explainer: {e}")
 
     def explain(self, data: np.ndarray | pd.DataFrame | torch.tensor) -> SHAPExplanation:
         if isinstance(data, pd.DataFrame):
             data = data.to_numpy()
+        elif isinstance(data, pd.Series):
+            data = data.to_numpy().reshape(1, -1)
         elif isinstance(data, torch.Tensor):
             data = data.numpy()
 

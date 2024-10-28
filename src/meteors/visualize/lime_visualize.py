@@ -393,7 +393,7 @@ def visualize_spectral_attributes_by_magnitude(
 
     band_mask = spectral_attributes[0].band_mask.cpu()
     attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
-    avg_magnitudes = calculate_average_magnitudes(band_names, band_mask, attribution_map)
+    avg_magnitudes = calculate_average_magnitudes(band_names, band_mask, attribution_map)  # type: ignore
 
     if aggregate_results:
         boxplot = ax.boxplot(avg_magnitudes, labels=labels, patch_artist=True)

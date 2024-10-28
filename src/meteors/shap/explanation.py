@@ -14,7 +14,8 @@ from meteors.exceptions import ShapeMismatchError
 
 import shap
 
-AVAILABLE_SHAP_EXPLAINERS = ["exact", "tree", "kernel", "linear", None]
+AVAILABLE_SHAP_EXPLAINERS = ["exact", "tree", "kernel", "linear"]
+
 
 ###################################################################
 ########################### VALIDATIONS ###########################
@@ -22,8 +23,9 @@ AVAILABLE_SHAP_EXPLAINERS = ["exact", "tree", "kernel", "linear", None]
 
 
 def ensure_explainer_type(explainer_type: str | None) -> str | None:
+    explainer_type = explainer_type.lower() if explainer_type is not None else None
     if explainer_type not in AVAILABLE_SHAP_EXPLAINERS:
-        logger.warning(f"Invalid explainer type: {explainer_type}. Defaulting to None.")
+        logger.warning(f"Invalid explainer type: {explainer_type}. ")
         return explainer_type
     return explainer_type
 
@@ -156,3 +158,25 @@ class SHAPExplanation(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     _get_feature_names = model_validator(mode="before")(get_feature_names)
+
+    @property
+    def target_dims(self) -> int:
+        """number of target dimensions in the explanations. It is equal to the number of outputs of the model.
+        Returns:
+            int: number of target dimensions in the explanations.
+        """
+        if self.explanations.shape == self.data.shape:
+            return 1
+        return self.explanations.values.shape[-1]
+
+    @property
+    def explanation_for_single_observation(self) -> bool:
+        """check if the explanation is for a single observation.
+        Returns:
+            bool: True if the explanation is for a single observation, False otherwise.
+        """
+        if len(self.data.shape) == 1:
+            return True
+        if len(self.data.shape) == 2 and self.data.shape[0] == 1:
+            return True
+        return False
