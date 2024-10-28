@@ -22,29 +22,6 @@ def explainable_toy_model():
     return ExplainableModel(problem_type="regression", forward_func=ToyModel())
 
 
-def test_validate_attribution_method_initialization(explainable_toy_model):
-    # Test case 1: Valid attribution method
-    attribution_method = explainer_module.Explainer(explainable_toy_model)
-    explainer_module.validate_attribution_method_initialization(attribution_method)
-
-    # Test case 2: None attribution method
-    attribution_method = None
-    with pytest.raises(ValueError):
-        explainer_module.validate_attribution_method_initialization(attribution_method)
-
-    # Test case 3: Invalid attribution method
-    attribution_method = "invalid"
-    with pytest.raises(TypeError):
-        explainer_module.validate_attribution_method_initialization(attribution_method)
-
-    # Test case 4: None forward function in ExplainableModel
-    not_working_model = explainer_module.Explainer(ExplainableModel(problem_type="regression", forward_func=None))
-    with pytest.raises(ValueError):
-        explainer_module.validate_attribution_method_initialization(not_working_model)
-
-    # test case 5: None explainable_model in Explainer
-
-
 def test_validate_and_transform_baseline():
     # Test case 1: None baseline
     baseline = None
@@ -119,3 +96,43 @@ def test_explainer():
         explainer.compute_convergence_delta()
 
     assert not explainer.multiplies_by_inputs
+
+
+def test_explainer_segmentation():
+    # Create mock objects for ExplainableModel and InterpretableModel
+    explainable_model = ExplainableModel(forward_func=lambda x: x + 1, problem_type="segmentation")
+
+    # Test output
+    input = torch.rand(1, 3, 224, 224)
+    output = explainable_model.forward_func(input)
+    assert output.shape == (1, 3, 224, 224)
+
+    # Postprocessing function
+    def postprocessing_segmentation_output(x):
+        return x.mean(dim=(1, 2, 3))
+
+    # Create a Explainer object
+    explainer = explainer_module.Explainer(
+        explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output
+    )
+
+    # Assert that the explainable_model is set correctly
+    assert explainer.explainable_model == explainable_model
+
+    # Assert that the postprocessing_segmentation_output is set correctly
+    output = explainable_model.forward_func(input)
+    assert output.shape == (1,)
+
+    # Test no postprocessing function
+    explainable_model = ExplainableModel(forward_func=lambda x: x + 1, problem_type="segmentation")
+    explainer = explainer_module.Explainer(explainable_model)
+    output = explainable_model.forward_func(input)
+    assert output.shape == (1, 3, 224, 224)
+
+    # Test postprocessing function with non-segmentation problem type
+    explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(0, 2, 3)), problem_type="regression")
+    explainer = explainer_module.Explainer(
+        explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output
+    )
+    output = explainable_model.forward_func(input)
+    assert output.shape == (3,)

@@ -5,6 +5,7 @@ import torch
 from meteors.exceptions import ShapeMismatchError
 from meteors import utils
 from meteors import HSI
+from meteors.utils import agg_segmentation_postprocessing
 
 
 def test_torch_dtype_to_python_dtype():
@@ -237,3 +238,58 @@ def test_aggregate_by_mask():
     result = utils.aggregate_by_mask(data, mask, torch.mean)
     expected_result = torch.tensor([])
     assert torch.allclose(result, expected_result)
+
+
+@pytest.mark.parametrize(
+    "soft_labels, classes_numb, class_axis, output, expected_result",
+    [
+        # Test case 1: Hard labels with full mask
+        (
+            False,
+            3,
+            2,
+            torch.tensor([[[1, 0, 2], [0, 1, 1], [2, 2, 0]], [[2, 1, 0], [1, 2, 2], [0, 0, 1]]], dtype=torch.float32),
+            torch.tensor([[3, 3, 3], [3, 3, 3]]),
+        ),
+        # Test case 2: Soft labels
+        (
+            True,
+            3,
+            2,
+            torch.tensor(
+                [
+                    [[0.1, 0.7, 0.2], [0.3, 0.6, 0.1], [0.8, 0.1, 0.1]],
+                    [[0.2, 0.3, 0.5], [0.1, 0.1, 0.8], [0.5, 0.4, 0.1]],
+                ]
+            ),
+            torch.tensor([[0.8, 1.3, 0], [0.5, 0, 1.3]]),
+        ),
+        # Test case 3: No mask
+        (
+            False,
+            3,
+            2,
+            torch.tensor([[[1, 0, 2], [0, 1, 1], [2, 2, 0]], [[2, 1, 0], [1, 2, 2], [0, 0, 1]]], dtype=torch.float32),
+            torch.tensor([[3, 3, 3], [3, 3, 3]]),
+        ),
+        # Test case 4: Different shapes
+        (
+            False,
+            3,
+            2,
+            torch.tensor([[[1, 0], [2, 1]], [[0, 2], [1, 0]]], dtype=torch.float32),
+            torch.tensor([[1, 2, 1], [2, 1, 1]]),
+        ),
+    ],
+)
+def test_agg_segmentation_postprocessing(soft_labels, classes_numb, class_axis, output, expected_result):
+    postprocessing_func = agg_segmentation_postprocessing(
+        soft_labels=soft_labels, classes_numb=classes_numb, class_axis=class_axis
+    )
+
+    result = postprocessing_func(output.requires_grad_(True))
+    if soft_labels:
+        assert torch.allclose(result, expected_result, atol=1e-6)
+    else:
+        assert torch.all(result == expected_result)
+    assert result.requires_grad
