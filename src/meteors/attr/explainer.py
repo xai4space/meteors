@@ -16,32 +16,6 @@ from meteors.attr import HSIAttributes
 from meteors.exceptions import ShapeMismatchError
 
 
-def validate_attribution_method_initialization(attribution_method: Explainer) -> None:
-    """Validates the initialization of an attribution method.
-
-    Args:
-        attribution_method (Explainer): The attribution method to be validated.
-
-    Raises:
-        ValueError: If the attribution method is not initialized.
-        TypeError: If the attribution method is not an instance of Explainer.
-        AttributeError: If the attribution method is not initialized properly.
-        ValueError: If the attribution method is not properly initialized.
-    """
-    if attribution_method is None:
-        raise ValueError("Attribution method is not initialized, INITIALIZATION ERROR")
-    if not isinstance(attribution_method, Explainer):
-        raise TypeError(f"Expected an instance of Explainer, but got {type(attribution_method)}")
-    if not isinstance(attribution_method.explainable_model, ExplainableModel):
-        raise AttributeError(
-            f"The attribution method {attribution_method.__class__.__name__} is not initialized properly"
-        )
-    if attribution_method.explainable_model is None or attribution_method.explainable_model.forward_func is None:
-        raise ValueError(
-            f"The attribution method {attribution_method.__class__.__name__} is not properly initialized"
-        )  # initialization ERROR
-
-
 def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None, hsi: HSI) -> torch.Tensor:
     """Function validates the baseline and transforms it to the same device as the hsi tensor.
 

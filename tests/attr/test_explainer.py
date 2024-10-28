@@ -22,29 +22,6 @@ def explainable_toy_model():
     return ExplainableModel(problem_type="regression", forward_func=ToyModel())
 
 
-def test_validate_attribution_method_initialization(explainable_toy_model):
-    # Test case 1: Valid attribution method
-    attribution_method = explainer_module.Explainer(explainable_toy_model)
-    explainer_module.validate_attribution_method_initialization(attribution_method)
-
-    # Test case 2: None attribution method
-    attribution_method = None
-    with pytest.raises(ValueError):
-        explainer_module.validate_attribution_method_initialization(attribution_method)
-
-    # Test case 3: Invalid attribution method
-    attribution_method = "invalid"
-    with pytest.raises(TypeError):
-        explainer_module.validate_attribution_method_initialization(attribution_method)
-
-    # Test case 4: None forward function in ExplainableModel
-    not_working_model = explainer_module.Explainer(ExplainableModel(problem_type="regression", forward_func=None))
-    with pytest.raises(ValueError):
-        explainer_module.validate_attribution_method_initialization(not_working_model)
-
-    # test case 5: None explainable_model in Explainer
-
-
 def test_validate_and_transform_baseline():
     # Test case 1: None baseline
     baseline = None

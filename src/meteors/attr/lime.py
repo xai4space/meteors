@@ -1125,12 +1125,7 @@ class Lime(Explainer):
             raise TypeError("All of the input hyperspectral images must be of type HSI")
 
         if segmentation_mask is None:
-            try:
-                segmentation_mask = self.get_segmentation_mask(
-                    hsi[0], segmentation_method, **segmentation_method_params
-                )
-            except Exception as e:
-                raise MaskCreationError(f"Error creating segmentation mask: {e}") from e
+            segmentation_mask = self.get_segmentation_mask(hsi[0], segmentation_method, **segmentation_method_params)
 
             warnings.warn(
                 "Segmentation mask is created based on the first HSI image provided, this approach may not be optimal as "
@@ -1286,10 +1281,7 @@ class Lime(Explainer):
             raise TypeError("All of the input hyperspectral images must be of type HSI")
 
         if band_mask is None:
-            try:
-                created_bands = [self.get_band_mask(hsi_img, band_names) for hsi_img in hsi]
-            except Exception as e:
-                raise MaskCreationError(f"Error creating band mask: {e}") from e  # TODO: test
+            created_bands = [self.get_band_mask(hsi_img, band_names) for hsi_img in hsi]
             band_mask, band_name_list = zip(*created_bands)
             band_names = band_name_list[0]
 
