@@ -32,3 +32,23 @@ def beeswarm(explainer: HyperSHAP, explanation: SHAPExplanation, target: int | N
 
     fig = shap.plots.beeswarm(explanation.explanations[..., target], show=False)
     return fig
+
+
+def dependence_plot(explainer: HyperSHAP, explanation: SHAPExplanation, target: int | None = None):
+    pass
+
+
+def waterfall(explainer: HyperSHAP, explanation: SHAPExplanation, target: int | None = None):
+    pass
+
+
+def bar(explainer: HyperSHAP, explanation: SHAPExplanation, target: int | None = None):
+    pass
+
+
+def heatmap(explainer: HyperSHAP, explanation: SHAPExplanation, target: int | None = None):
+    pass
+
+
+def partial_dependence_plot(explainer: HyperSHAP, explanation: SHAPExplanation, target: int | None = None):
+    pass
