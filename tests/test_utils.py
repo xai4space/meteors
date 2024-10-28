@@ -3,7 +3,7 @@ import pytest
 import torch
 
 from meteors.exceptions import ShapeMismatchError
-from meteors.utils import utils
+from meteors import utils
 from meteors import HSI
 
 

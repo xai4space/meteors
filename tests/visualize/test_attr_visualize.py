@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
 import meteors as mt
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 
 
 # Temporary solution for wavelengths
