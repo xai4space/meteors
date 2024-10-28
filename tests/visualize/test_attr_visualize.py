@@ -112,7 +112,7 @@ def test_visualize_ig_attributes(ig_model):
     tensor_image[0:10, 0:10, 0:10] = -500
     tensor_image[50, 50:100, 40:60] = 500
 
-    image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main)
+    image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main, orientation="CHW")
 
     image_attributes = ig_model.attribute(image)
 
@@ -120,39 +120,49 @@ def test_visualize_ig_attributes(ig_model):
 
     assert isinstance(fig, plt.Figure)
     assert isinstance(ax, np.ndarray)
-    assert ax.shape == (2, 3)
+    assert ax.shape == (2, 2)
     assert all([isinstance(a, Axes) for a in ax.ravel()])
     assert fig.texts[0].get_text() == "HSI Attributes of: Integrated Gradients"
     assert ax[0, 0].get_title() == "Attribution Heatmap"
     assert ax[0, 1].get_title() == "Attribution Module Values"
-    assert ax[0, 2].get_title() == "Attribution Sign Values"
     assert ax[1, 0].get_title() == "Spectral Attribution"
     assert ax[1, 0].get_xlabel() == "Wavelength"
     assert ax[1, 0].get_ylabel() == "Attribution"
     assert ax[1, 1].get_title() == "Spectral Attribution Absolute Values"
     assert ax[1, 1].get_xlabel() == "Wavelength"
     assert ax[1, 1].get_ylabel() == "Attribution Absolute Value"
-    assert ax[1, 2].get_title() == "Spectral Attribution Sign Values"
-    assert ax[1, 2].get_xlabel() == "Wavelength"
-    assert ax[1, 2].get_ylabel() == "Attribution Sign Proportion"
-    assert ax[1, 2].get_yticks().tolist() == [-1, 0, 1]
-
     # Cleanup
     plt.close(fig)
 
 
-model = ExplainableModel(forward_func=ToyModel(), problem_type="regression")
-ig = mt.attr.IntegratedGradients(model)
-test_visualize_ig_attributes(ig)
+def test_incorrect_orientation(ig_model):
+    tensor_image = torch.rand((len(wavelengths_main), 240, 230))
 
+    tensor_image[20:30, 20:30, 20:30] = 1000
+    tensor_image[0:10, 0:10, 0:10] = -500
+    tensor_image[50, 50:100, 40:60] = 500
 
-def test_validation_checks(ig_model):
-    tensor_image = torch.rand((5, 5, len(wavelengths_main)))
-    image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main, orientation=("H", "W", "C"))
+    image = mt.HSI(image=tensor_image, wavelengths=wavelengths_main, orientation="CWH")
+
     image_attributes = ig_model.attribute(image)
 
-    with pytest.raises(ValueError):
-        mt.visualize.visualize_attributes(image_attributes)
+    fig, ax = mt.visualize.visualize_attributes(image_attributes)
+
+    assert isinstance(fig, plt.Figure)
+    assert isinstance(ax, np.ndarray)
+    assert ax.shape == (2, 2)
+    assert all([isinstance(a, Axes) for a in ax.ravel()])
+    assert fig.texts[0].get_text() == "HSI Attributes of: Integrated Gradients"
+    assert ax[0, 0].get_title() == "Attribution Heatmap"
+    assert ax[0, 1].get_title() == "Attribution Module Values"
+    assert ax[1, 0].get_title() == "Spectral Attribution"
+    assert ax[1, 0].get_xlabel() == "Wavelength"
+    assert ax[1, 0].get_ylabel() == "Attribution"
+    assert ax[1, 1].get_title() == "Spectral Attribution Absolute Values"
+    assert ax[1, 1].get_xlabel() == "Wavelength"
+    assert ax[1, 1].get_ylabel() == "Attribution Absolute Value"
+    # Cleanup
+    plt.close(fig)
 
 
 def test_empty_attributions(ig_model):

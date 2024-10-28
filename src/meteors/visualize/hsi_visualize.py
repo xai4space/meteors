@@ -22,11 +22,16 @@ def visualize_hsi(hsi_or_attributes: HSI | HSIAttributes, ax: Axes | None = None
         matplotlib.figure.Figure | None:
             If use_pyplot is False, returns the figure and axes objects.
             If use_pyplot is True, returns None.
+    Raises:
+        TypeError: If hsi_or_attributes is not an instance of HSI or HSIAttributes.
     """
     if isinstance(hsi_or_attributes, HSIAttributes):
         hsi = hsi_or_attributes.hsi
     else:
         hsi = hsi_or_attributes
+
+    if not isinstance(hsi, HSI):
+        raise TypeError("hsi_or_attributes must be an instance of HSI or HSIAttributes.")
 
     hsi = hsi.change_orientation("HWC", inplace=False)
 
