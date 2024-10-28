@@ -14,7 +14,7 @@ def test_shap():
     knn = sklearn.neighbors.KNeighborsClassifier()
     knn.fit(X_train, Y_train)
 
-    explainable_model = mt.utils.models.ExplainableModel(knn.predict_proba, "classification")
+    explainable_model = mt.models.ExplainableModel(knn.predict_proba, "classification")
 
     hyper_shap = mt.shap.HyperSHAP(explainable_model, X_train, explainer_type="Kernel")
 

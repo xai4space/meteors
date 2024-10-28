@@ -7,7 +7,7 @@ import torch
 
 from .explanation import SHAPExplanation, AVAILABLE_SHAP_EXPLAINERS
 
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 
 from typing import Literal
 

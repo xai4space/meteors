@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from meteors.shap import HyperSHAP
 import meteors.visualize.shap as shap_visualize
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 
 
 from meteors.visualize.shap.plots import (
@@ -41,7 +41,7 @@ def model_data_explainer():
     knn = sklearn.neighbors.KNeighborsClassifier()
     knn.fit(X_train, Y_train)
 
-    explainable_model = mt.utils.models.ExplainableModel(knn.predict_proba, "classification")
+    explainable_model = mt.models.ExplainableModel(knn.predict_proba, "classification")
 
     explainer = HyperSHAP(explainable_model, X_train, explainer_type="Kernel")
     explanation = explainer.explain(X_test)
@@ -154,7 +154,7 @@ def test_beeswarm():
     knn = sklearn.neighbors.KNeighborsClassifier()
     knn.fit(X_train, Y_train)
 
-    explainable_model = mt.utils.models.ExplainableModel(knn.predict_proba, "classification")
+    explainable_model = mt.models.ExplainableModel(knn.predict_proba, "classification")
 
     explainer = HyperSHAP(explainable_model, X_train, explainer_type="Kernel")
 
