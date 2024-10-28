@@ -3,17 +3,62 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 from typing_extensions import Annotated
-
-from pydantic import ConfigDict, Field
+from pydantic.functional_validators import PlainValidator
+from pydantic import ConfigDict, Field, ValidationInfo
 
 import numpy as np
 import pandas as pd
 import torch
 
+from loguru import logger
+
 
 import shap
 
-AVAILABLE_SHAP_EXPLAINERS = ["Exact", "Tree", "Kernel"]
+AVAILABLE_SHAP_EXPLAINERS = ["Exact", "Tree", "Kernel", None]
+
+###################################################################
+########################### VALIDATIONS ###########################
+###################################################################
+
+
+def ensure_explainer_type(explainer_type: str | None) -> str | None:
+    if explainer_type is not None and explainer_type not in AVAILABLE_SHAP_EXPLAINERS:
+        logger.warning(f"Invalid explainer type: {explainer_type}. Defaulting to None.")
+        return None
+    return explainer_type
+
+
+def ensure_data_type(data: np.ndarray | torch.Tensor | pd.DataFrame, info: ValidationInfo) -> np.ndarray:
+    if isinstance(data, pd.DataFrame):
+        # TODO here we could somehow obtain the feature names
+        return data.to_numpy()
+    elif isinstance(data, torch.Tensor):
+        return data.numpy()
+    elif not isinstance(data, np.ndarray):
+        raise TypeError(f"Expected np.ndarray, pd.DataFrame, or torch.Tensor as data, but got {type(data)}")
+    return data
+
+
+def process_and_validate_explanations(explanations: shap.Explanation, info: ValidationInfo) -> shap.Explanation:
+    if not isinstance(explanations, shap.Explanation):
+        raise TypeError(f"Expected shap.Explanation as explanations, but got {type(explanations)}")
+
+    if "data" not in info.data:
+        raise RuntimeError("ValidationInfo object is broken - pydantic internal error")
+
+    data_shape = info.data["data"].shape
+    # check if the shape of the explanations is correct
+    if explanations.shape != data_shape:
+        # only the last dimension differs
+        if explanations.shape[:-1] == data_shape:
+            logger.debug("Detected explanation for multiple targets based on the explanation shape validation.")
+        else:
+            raise ValueError(
+                f"Shape of the explanations does not match the shape of the input data. Expected {data_shape}, but got {explanations.shape}"
+            )
+
+    return explanations
 
 
 ###################################################################
@@ -36,22 +81,25 @@ class SHAPExplanation(BaseModel):
 
     data: Annotated[
         np.ndarray | torch.Tensor | pd.DataFrame,
+        PlainValidator(ensure_data_type),
         Field(
             description="A numpy array containing the input data.",
         ),
     ]
     explanations: Annotated[
         shap.Explanation,
+        PlainValidator(process_and_validate_explanations),
         Field(
             description="A numpy array containing the SHAP explanations.",
         ),
     ]
     explanation_method: Annotated[
-        str,
+        str | None,
+        PlainValidator(ensure_explainer_type),
         Field(
             description="The method used to generate the explanation.",
         ),
-    ]
+    ] = None
     feature_names: Annotated[
         list[str] | None,
         Field(

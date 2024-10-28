@@ -8,6 +8,8 @@ import numpy as np
 
 import meteors as mt
 
+import pytest
+
 
 def test_shap_explanation():
     X_train, X_test, Y_train, Y_test = train_test_split(*shap.datasets.iris(), test_size=0.2, random_state=0)
@@ -40,3 +42,12 @@ def test_shap_explanation():
     assert explanation.data.shape == X_test.shape
     assert explanation.explanations.shape == raw_explanation.shape
     assert explanation.explanation_method == "linear"
+
+    # incorrect shape
+
+    X_train_smaller = X_train[:10]
+
+    with pytest.raises(ValueError):
+        explanation = mt.shap.SHAPExplanation(
+            data=X_train_smaller, explanations=raw_explanation, explanation_method="linear"
+        )
