@@ -8,8 +8,8 @@ import torch
 import meteors as mt
 import meteors.attr.lime as mt_lime
 import meteors.attr.lime_base as mt_lime_base
-from meteors.utils.models import ExplainableModel, SkLearnLasso
-from meteors.utils.utils import agg_segmentation_postprocessing
+from meteors.models import ExplainableModel, SkLearnLasso
+from meteors.utils import agg_segmentation_postprocessing
 
 from meteors import HSI
 from meteors.attr import HSISpatialAttributes, HSISpectralAttributes

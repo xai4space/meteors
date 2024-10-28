@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 import meteors.attr.explainer as explainer_module
 from meteors import HSI
 from meteors.exceptions import ShapeMismatchError

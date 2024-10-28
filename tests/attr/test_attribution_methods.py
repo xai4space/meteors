@@ -5,8 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from copy import deepcopy
 
-from meteors.utils.models import ExplainableModel
-from meteors.utils.utils import agg_segmentation_postprocessing
+from meteors.models import ExplainableModel
+from meteors.utils import agg_segmentation_postprocessing
 from meteors.attr import IntegratedGradients, Saliency, InputXGradient, Occlusion
 from meteors import HSI
 

@@ -3,9 +3,9 @@ import pytest
 import torch
 
 from meteors.exceptions import ShapeMismatchError
-from meteors.utils import utils
+from meteors import utils
 from meteors import HSI
-from meteors.utils.utils import agg_segmentation_postprocessing
+from meteors.utils import agg_segmentation_postprocessing
 
 
 def test_torch_dtype_to_python_dtype():

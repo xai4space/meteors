@@ -5,7 +5,7 @@ from typing import Literal, Callable, Any
 import torch
 from captum.attr import IntegratedGradients as CaptumIntegratedGradients
 
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 from meteors import HSI
 from meteors.attr import HSIAttributes, Explainer
 

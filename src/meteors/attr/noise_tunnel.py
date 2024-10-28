@@ -13,7 +13,7 @@ import torch
 from meteors.attr import Explainer, HSIAttributes
 from meteors.attr.explainer import validate_and_transform_baseline
 from meteors import HSI
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 
 from meteors.exceptions import HSIAttributesError, ShapeMismatchError
 

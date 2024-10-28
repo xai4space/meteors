@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from meteors.attr import HyperNoiseTunnel, IntegratedGradients, Saliency, NoiseTunnel
-from meteors.utils.models.models import ExplainableModel
-from meteors.utils.utils import agg_segmentation_postprocessing
+from meteors.models import ExplainableModel
+from meteors.utils import agg_segmentation_postprocessing
 
 from meteors.exceptions import ShapeMismatchError
 

@@ -47,7 +47,7 @@ from torch.nn import CosineSimilarity
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import r2_score
 
-from meteors.utils.models import InterpretableModel, SkLearnLasso
+from meteors.models import InterpretableModel, SkLearnLasso
 
 
 class LimeBase(PerturbationAttribution):
@@ -108,7 +108,7 @@ class LimeBase(PerturbationAttribution):
                     access the appropriate coefficients or representation of the
                     interpretable model after fitting.
                     Some predefined interpretable linear models are provided in
-                    captum._utils.models.linear_model including wrappers around
+                    captum._models.linear_model including wrappers around
                     SkLearn linear models as well as SGD-based PyTorch linear
                     models.
 
@@ -371,7 +371,7 @@ class LimeBase(PerturbationAttribution):
             >>> # Any arguments provided to the sklearn constructor can also
             >>> # be provided to the wrapper, e.g.:
             >>> # SkLearnLinearModel("linear_model.Ridge", alpha=2.0)
-            >>> from captum._utils.models.linear_model import SkLearnLinearModel
+            >>> from captum._models.linear_model import SkLearnLinearModel
             >>>
             >>>
             >>> # Define similarity kernel (exponential kernel based on L2 norm)
@@ -799,7 +799,7 @@ class Lime(LimeBase):
                     This requires having sklearn version >= 0.23 available.
 
                     Other predefined interpretable linear models are provided in
-                    captum._utils.models.linear_model.
+                    captum._models.linear_model.
 
                     Alternatively, a custom model object must provide a `fit` method to
                     train the model, given a dataloader, with batches containing

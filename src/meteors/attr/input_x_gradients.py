@@ -5,8 +5,7 @@ from typing import Any, Callable
 
 import torch
 from captum.attr import InputXGradient as CaptumInputXGradient
-
-from meteors.utils.models import ExplainableModel
+from meteors.models import ExplainableModel
 from meteors import HSI
 from meteors.attr import HSIAttributes, Explainer
 from meteors.exceptions import HSIAttributesError
