@@ -30,6 +30,7 @@ Meteors is designed for:
 - Python >= 3.9
 - PyTorch >= 1.10
 - Captum >= 0.7.0
+- shap >=0.46.0
 
 Install with `pip`:
 
