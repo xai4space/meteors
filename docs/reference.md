@@ -109,6 +109,8 @@ The Lime Base class was adapted from the Captum Lime implementation. This adapta
       show_bases: true
       show_root_heading: true
       show_root_full_path: false
+      members:
+        - attribute
 
 ::: src.meteors.attr.input_x_gradients.InputXGradient
     options:
@@ -116,6 +118,8 @@ The Lime Base class was adapted from the Captum Lime implementation. This adapta
       show_bases: true
       show_root_heading: true
       show_root_full_path: false
+      members:
+        - attribute
 
 ::: src.meteors.attr.occlusion.Occlusion
     options:
@@ -123,6 +127,10 @@ The Lime Base class was adapted from the Captum Lime implementation. This adapta
       show_bases: true
       show_root_heading: true
       show_root_full_path: false
+      members:
+        - attribute
+        - get_spatial_attributes
+        - get_spectral_attributes
 
 ::: src.meteors.attr.saliency.Saliency
     options:
@@ -130,30 +138,30 @@ The Lime Base class was adapted from the Captum Lime implementation. This adapta
       show_bases: true
       show_root_heading: true
       show_root_full_path: false
-
-::: src.meteors.attr.noise_tunnel.NoiseTunnel
-    options:
-      heading_level: 3
-      show_bases: true
-      show_root_heading: true
-      show_root_full_path: false
+      members:
+        - attribute
 
 ### Hyper Noise Tunnel
 
-::: src.meteors.attr.hyper_noise_tunnel.HyperNoiseTunnel
+::: src.meteors.attr.noise_tunnel.NoiseTunnel
     options:
       heading_level: 4
       show_bases: true
       show_root_heading: true
       show_root_full_path: false
+      members:
+        - attribute
+        - perturb_input
 
-::: src.meteors.attr.hyper_noise_tunnel.BaseHyperNoiseTunnel
+::: src.meteors.attr.noise_tunnel.HyperNoiseTunnel
     options:
       heading_level: 4
       show_bases: true
       show_root_heading: true
       show_root_full_path: false
-
+      members:
+        - attribute
+        - perturb_input
 
 ## SHAP
 
@@ -171,3 +179,4 @@ The Lime Base class was adapted from the Captum Lime implementation. This adapta
       show_bases: true
       show_root_heading: true
       show_root_full_path: false
+ 

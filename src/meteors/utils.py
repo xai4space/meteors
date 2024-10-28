@@ -122,15 +122,11 @@ def adjust_shape(target: torch.Tensor, source: torch.Tensor) -> tuple[torch.Tens
 
 
 def agg_segmentation_postprocessing(
-    soft_labels: bool = False,
-    classes_numb: int = 0,
-    class_axis: int = 1,
-    use_mask: bool = True,
-) -> Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:  # pragma: no cover
+    soft_labels: bool = False, classes_numb: int = 0, class_axis: int = 1
+) -> Callable[[torch.Tensor], torch.Tensor]:  # pragma: no cover
     """Generator for postprocessing function for aggregating segmentation outputs.
 
-    This generator creates a postprocessing function that takes the model output and input mask
-    (these parameters are mandatory for the function), and then creates a 2d tensor
+    This generator creates a postprocessing function that takes the model output and then creates a 2d tensor
     with aggregated output <batch_size, classes_numb>. This is an example of a post-processing function
     for segmentation model output that aggregates pixel results. We encouraged to write more tailored functions.
 
@@ -141,16 +137,13 @@ def agg_segmentation_postprocessing(
             If 0, use unique values in the output. Defaults to 0.
         class_axis (int, optional): The axis of the model output tensor that contains the class predictions
             if the model output is soft labels. Defaults to 1.
-        use_mask (bool, optional): Whether to use the mask to multiply the output before aggregation.
-            Defaults to True.
 
     Returns:
-        Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:
-            The postprocessing function that accepts model outputs with lime mask of masked region
-            and returns aggregated outputs.
+        Callable[[torch.Tensor], torch.Tensor]: The postprocessing function that accepts model outputs and
+            returns aggregated outputs.
     """
 
-    def postprocessing_function(output: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    def postprocessing_function(output: torch.Tensor) -> torch.Tensor:
         """Postprocessing function for aggregating segmentation outputs.
 
         This function takes the segmentation model output and sums the pixel scores for
@@ -160,51 +153,36 @@ def agg_segmentation_postprocessing(
 
         Args:
             output (torch.Tensor): The model output tensor.
-            mask (torch.Tensor): The mask tensor used to mask the input.
 
         Returns:
             torch.Tensor: The aggregated output tensor.
         """
         nonlocal classes_numb
-        # Adjust the shape of the mask to match the shape of the output
-        output, mask = adjust_shape(output, mask)
 
         # If the output is soft labels, get the class with the highest probability
         if soft_labels:
-            output_labels = output.argmax(dim=class_axis)
+            out_max = output.argmax(dim=class_axis)
+            output = output.moveaxis(class_axis, -1)
+            output_labels = torch.zeros_like(output).scatter_(-1, out_max.unsqueeze(-1).type(torch.int64), 1)
+            output_labels = output * output_labels
         else:
-            output_labels = output
+            shape = output.shape + (classes_numb,)
+            output_labels = torch.zeros(shape, device=output.device, dtype=output.dtype).scatter_(
+                -1, output.unsqueeze(-1).type(torch.int64), 1
+            )
+            output_labels = output_labels * (output.unsqueeze(-1) + 1)
+            remove_ones = torch.where(output_labels > 1, output_labels - 1, 0)
+            output_labels = output_labels - remove_ones
 
         # IMPORTANT if mask does not have the same shape as output, you need to adjust the mask to the output shape
+        # For example if mask is <batch_size, channel, height, width> and output is <batch_size, classes_numb, height, width>
+        # you need to adjust the mask to <batch_size, height, width>
 
-        if use_mask:
-            # Mask the output to only consider the pixels is in the mask
-            masked_output = torch.where(mask, output_labels, torch.ones_like(output_labels) * -1)
-        else:
-            masked_output = output_labels
-
-        # Get flattened masked output
-        batch_size = masked_output.size(0)
-        flattened_masked_output = masked_output.reshape(batch_size, -1)
-
-        # Get the unique class labels and their counts
-        unique_classes, counts = [], []
-        for batch in flattened_masked_output:
-            u, c = torch.unique(batch, return_counts=True)
-            unique_classes.append(u)
-            counts.append(c)
-
-        if classes_numb == 0:
-            # Find the maximum number of unique classes across all batches
-            classes_numb = max(int(u.max().item()) for u in unique_classes) + 1
-
-        # Create a tensor to store the final counts for each class
-        final_counts = torch.zeros(batch_size, classes_numb)
-        for i in range(batch_size):
-            for u, c in zip(unique_classes[i], counts[i]):
-                if int(u.item()) != -1:
-                    final_counts[i, int(u.item())] = c
-
+        # Sum the pixel scores for each class
+        sum_shape = list(range(output_labels.ndim))
+        sum_shape.remove(output_labels.ndim - 1)
+        sum_shape.remove(0)
+        final_counts = output_labels.sum(dim=sum_shape)
         return final_counts
 
     return postprocessing_function
