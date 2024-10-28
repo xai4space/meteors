@@ -5,10 +5,64 @@ from sklearn.model_selection import train_test_split
 
 import shap
 import numpy as np
+import torch
 
 import meteors as mt
+import meteors.shap.explanation as mt_shap_explanation
+
+import pandas as pd
 
 import pytest
+
+from pydantic import ValidationError
+
+
+class ValidationInfoMock:
+    def __init__(self, data):
+        self.data = data
+
+
+def test_ensure_explainer_type():
+    assert mt_shap_explanation.ensure_explainer_type("exact") == "exact"
+    assert mt_shap_explanation.ensure_explainer_type("invalid") == "invalid"
+
+
+def test_ensure_data_type():
+    data = np.random.rand(10, 10)
+    assert mt_shap_explanation.ensure_data_type(data) is data
+
+    pd_data = pd.DataFrame(data)
+    new_data = mt_shap_explanation.ensure_data_type(pd_data)
+
+    assert isinstance(new_data, np.ndarray)
+    assert new_data.shape == data.shape
+
+    data = torch.tensor(data)
+    new_data = mt_shap_explanation.ensure_data_type(data)
+
+    assert isinstance(new_data, np.ndarray)
+    assert new_data.shape == data.shape
+
+
+def test_process_and_validate_explanations():
+    info = ValidationInfoMock({"data": np.random.rand(10, 10)})
+
+    # test case 1 - correct shape and type
+    explanations = shap.Explanation(np.random.rand(10, 10))
+    mt_shap_explanation.process_and_validate_explanations(explanations, info)
+
+    # test case 2 - correct shape, but multidimensional output
+    explanations = shap.Explanation(np.random.rand(10, 10, 2))
+    mt_shap_explanation.process_and_validate_explanations(explanations, info)
+
+    # test case 3 - incorrect type
+    with pytest.raises(TypeError):
+        # numpy input
+        mt_shap_explanation.process_and_validate_explanations(np.random.rand(10, 10), info)
+
+    # test case 4 - incorrect shape
+    with pytest.raises(mt_shap_explanation.ShapeMismatchError):
+        mt_shap_explanation.process_and_validate_explanations(shap.Explanation(np.random.rand(10, 9)), info)
 
 
 def test_shap_explanation():
@@ -27,6 +81,9 @@ def test_shap_explanation():
     assert explanation.explanations.shape == raw_explanation.shape
     assert explanation.explanation_method == "kernel"
 
+    # passing the feature names to the explanation
+    assert all(explanation.feature_names == X_test.columns)
+
     # two dimensional output from a model
     Y_train_wide = np.vstack([Y_train, 1 - Y_train]).T
 
@@ -43,11 +100,26 @@ def test_shap_explanation():
     assert explanation.explanations.shape == raw_explanation.shape
     assert explanation.explanation_method == "linear"
 
+    # overwriting feature names of the explanation
+    explanation = mt.shap.SHAPExplanation(
+        data=X_test, explanations=raw_explanation, explanation_method="linear", feature_names=["a", "b", "c", "d"]
+    )
+    assert explanation.feature_names == ["a", "b", "c", "d"]
+
+    # incorrect feature names
+    with pytest.raises(ValidationError):
+        explanation = mt.shap.SHAPExplanation(
+            data=X_test, explanations=raw_explanation, explanation_method="linear", feature_names=["a", "b", "c"]
+        )
+
     # incorrect shape
 
     X_train_smaller = X_train[:10]
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         explanation = mt.shap.SHAPExplanation(
             data=X_train_smaller, explanations=raw_explanation, explanation_method="linear"
         )
+
+    # expect loguru warning for incorrect explanation method
+    explanation = mt.shap.SHAPExplanation(data=X_test, explanations=raw_explanation, explanation_method="invalid")
