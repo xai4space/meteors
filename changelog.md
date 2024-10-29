@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.0 (2024-10-29)
+
+### 🛎️ Chores
+- update the project version (#112)
+
+### 🩺 Bug Fixes
+- 91 docs the lime illustration image is missing in the docs (#92)
+
 ## v0.0.4 (2024-09-25)
 
 ### 🩺 Bug Fixes
