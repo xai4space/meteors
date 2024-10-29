@@ -130,12 +130,8 @@ def test_validate_target(model_data_explainer):
     assert target == 0
 
 
-def test_force(model_and_data):
-    explainable_model, (X_train, X_test, Y_train, Y_test) = model_and_data
-
-    explainer = HyperSHAP(explainable_model, X_train, explainer_type="Kernel")
-
-    explanation = explainer.explain(X_test)
+def test_force(model_data_explainer):
+    _, _, explainer, explanation = model_data_explainer
 
     fig = shap_visualize.force(explainer, explanation, observation_index=0, target=1)
 
@@ -143,21 +139,32 @@ def test_force(model_and_data):
         fig = shap_visualize.force(explainer, explanation, observation_index=0, target=10)
 
     with pytest.raises(ValueError):
-        fig = shap_visualize.force(explainer, explanation, observation_index=100, target=10)
+        fig = shap_visualize.force(explainer, explanation, observation_index=100, target=0)
 
     plt.close(fig)
 
 
-def test_beeswarm():
-    X_train, X_test, Y_train, Y_test = train_test_split(*shap.datasets.iris(), test_size=0.2, random_state=0)
-
-    knn = sklearn.neighbors.KNeighborsClassifier()
-    knn.fit(X_train, Y_train)
-
-    explainable_model = mt.models.ExplainableModel(knn.predict_proba, "classification")
-
-    explainer = HyperSHAP(explainable_model, X_train, explainer_type="Kernel")
-
-    explanation = explainer.explain(X_test)
+def test_beeswarm(model_data_explainer):
+    _, _, explainer, explanation = model_data_explainer
 
     shap_visualize.beeswarm(explainer, explanation, target=1)
+
+
+def test_waterfall(model_data_explainer):
+    _, _, explainer, explanation = model_data_explainer
+
+    shap_visualize.waterfall(explainer, explanation, target=1, observation_index=0)
+
+
+def test_heatmap(model_data_explainer):
+    _, _, explainer, explanation = model_data_explainer
+
+    shap_visualize.heatmap(explainer, explanation, target=0)
+
+
+def test_bar(model_data_explainer):
+    _, _, explainer, explanation = model_data_explainer
+
+    shap_visualize.bar(explainer, explanation, target=0)
+
+    shap_visualize.bar(explainer, explanation, target=1, observation_index=1)

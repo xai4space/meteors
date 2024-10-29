@@ -170,8 +170,8 @@ class SHAPExplanation(BaseModel):
         return self.explanations.values.shape[-1]
 
     @property
-    def explanation_for_single_observation(self) -> bool:
-        """check if the explanation is for a single observation.
+    def is_local_explanation(self) -> bool:
+        """check if the explanation is for a single observation - a local explanation.
         Returns:
             bool: True if the explanation is for a single observation, False otherwise.
         """

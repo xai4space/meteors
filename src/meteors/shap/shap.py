@@ -25,21 +25,21 @@ class HyperSHAP:
 
         self.explainable_model = callable
 
-        explainer_type = explainer_type.lower() if explainer_type is not None else None  # type: ignore
+        self.explainer_type = explainer_type.lower() if explainer_type is not None else None  # type: ignore
 
-        if explainer_type not in AVAILABLE_SHAP_EXPLAINERS:
+        if self.explainer_type not in AVAILABLE_SHAP_EXPLAINERS:
             raise ValueError(
                 f"Invalid explainer type: {explainer_type}. Available options: {AVAILABLE_SHAP_EXPLAINERS}"
             )
 
         try:
-            if explainer_type is None or explainer_type == "exact":
+            if self.explainer_type is None or self.explainer_type == "exact":
                 self._explainer = shap.Explainer(self.explainable_model.forward_func, masker, **kwargs)
-            elif explainer_type == "tree":
+            elif self.explainer_type == "tree":
                 self._explainer = shap.TreeExplainer(self.explainable_model.forward_func, masker, **kwargs)
-            elif explainer_type == "kernel":
+            elif self.explainer_type == "kernel":
                 self._explainer = shap.KernelExplainer(self.explainable_model.forward_func, masker, **kwargs)
-            elif explainer_type == "linear":
+            elif self.explainer_type == "linear":
                 self._explainer = shap.LinearExplainer(self.explainable_model.forward_func, masker, **kwargs)
         except ValueError as e:
             raise ValueError(f"Could not initialize the explainer: {e}")
@@ -60,6 +60,6 @@ class HyperSHAP:
 
         shap_values = self._explainer(data)
 
-        explanations = SHAPExplanation(data=data, explanations=shap_values, explanation_method="base")
+        explanations = SHAPExplanation(data=data, explanations=shap_values, explanation_method=self.explainer_type)
 
         return explanations
