@@ -179,4 +179,3 @@ The Lime Base class was adapted from the Captum Lime implementation. This adapta
       show_bases: true
       show_root_heading: true
       show_root_full_path: false
- 
