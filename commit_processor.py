@@ -6,7 +6,7 @@ from collections import defaultdict
 
 
 def parse_commit(commit: Commit) -> tuple[str | None, str]:
-    pattern = r"^(\w+): (.+)$"
+    pattern = r"^(\w+): ([^\n]+)"
     match = re.match(pattern, commit.message.strip())
     if match:
         return match.groups()  # type: ignore
