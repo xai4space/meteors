@@ -72,12 +72,15 @@ def test_validate_observation_index(model_data_explainer):
         validate_observation_index(len(X_test) + 1, explanation)
 
     # test case 3 - None index when multiple observations allowed
-    index = validate_observation_index(None, explanation, require_single_observation=False)
+    index = validate_observation_index(None, explanation, require_local_explanation=False)
     assert index is None
 
     # test case 4 - None index when explanation is not for single observation and require_single_observation is True
     with pytest.raises(ValueError):
-        validate_observation_index(None, explanation, require_single_observation=True)
+        validate_observation_index(
+            None,
+            explanation,
+        )
 
     # test case 5 - incorrect type
     with pytest.raises(TypeError):
@@ -85,9 +88,9 @@ def test_validate_observation_index(model_data_explainer):
 
     # test case 6 - single observation with correct index
     explanation = explainer.explain(X_test.iloc[0])
-    index = validate_observation_index(0, explanation, require_single_observation=True)
+    index = validate_observation_index(0, explanation, require_local_explanation=True)
     assert index == 0
-    index = validate_observation_index(None, explanation, require_single_observation=True)
+    index = validate_observation_index(None, explanation, require_local_explanation=True)
     assert index == 0
 
     # test case 7 - single observation with incorrect index
