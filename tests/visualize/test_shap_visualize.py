@@ -80,6 +80,7 @@ def test_validate_observation_index(model_data_explainer):
         validate_observation_index(
             None,
             explanation,
+            require_local_explanation=True,
         )
 
     # test case 5 - incorrect type
