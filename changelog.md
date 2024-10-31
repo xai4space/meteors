@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.1.0 (2024-10-29)
+
+### 🛎️ Chores
+
+- update the project version (#112)
+- reduced coverage threshold (#94)
+
+### 🔨 Features
+
+- 96 feat segmentation support for attribution methods (#103)
+- refactored the package structure (#111)
+- Custom errors (#101)
+
+### 🩺 Bug Fixes
+
+- corrected visualizations (#106)
+- Updated occlusion (#93)
+- 91 docs the lime illustration image is missing in the docs (#92)
+
+### 📚 Documentation
+
+- update changelog.md for 0.0.4 [skip ci] (#90)
+
 ## v0.0.4 (2024-09-25)
 
 ### 🩺 Bug Fixes
