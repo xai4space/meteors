@@ -81,7 +81,7 @@ def test_shap_explanation():
     assert explanation.explanations.shape == raw_explanation.shape
     assert explanation.explanation_method == "kernel"
 
-    # passing the feature names to the explanation
+    # custom property works
     assert all(explanation.feature_names == X_test.columns)
 
     # two dimensional output from a model
@@ -100,17 +100,6 @@ def test_shap_explanation():
     assert explanation.explanations.shape == raw_explanation.shape
     assert explanation.explanation_method == "linear"
 
-    # overwriting feature names of the explanation
-    explanation = mt.shap.SHAPExplanation(data=X_test, explanations=raw_explanation, explanation_method="linear")
-    explanation.feature_names = ["a", "b", "c", "d"]
-    assert all(explanation.feature_names == ["a", "b", "c", "d"])
-
-    # incorrect feature names
-    with pytest.raises(ValidationError):
-        explanation = mt.shap.SHAPExplanation(
-            data=X_test, explanations=raw_explanation, explanation_method="linear", feature_names=["a", "b", "c"]
-        )
-
     # incorrect shape
 
     X_train_smaller = X_train[:10]
@@ -122,6 +111,3 @@ def test_shap_explanation():
 
     # expect loguru warning for incorrect explanation method
     explanation = mt.shap.SHAPExplanation(data=X_test, explanations=raw_explanation, explanation_method="invalid")
-
-
-test_shap_explanation()
