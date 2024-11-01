@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing_extensions import Annotated, Any
 from pydantic.functional_validators import PlainValidator
-from pydantic import ConfigDict, Field, ValidationInfo, BaseModel, model_validator
+from pydantic import ConfigDict, Field, ValidationInfo, BaseModel, model_validator, computed_field
 
 import numpy as np
 import pandas as pd
@@ -20,6 +20,18 @@ AVAILABLE_SHAP_EXPLAINERS = ["exact", "tree", "kernel", "linear"]
 ###################################################################
 ########################### VALIDATIONS ###########################
 ###################################################################
+
+
+def validate_feature_names(feature_names: list[str] | None, data_len: int) -> list[str] | None:
+    if feature_names is not None and not all(isinstance(name, str) for name in feature_names):
+        raise TypeError("Feature names should be a list of strings.")
+
+    if feature_names is not None and len(feature_names) != data_len:
+        raise ShapeMismatchError(
+            f"Number of feature names does not match the number of features in the data. Expected {data_len}, but got {len(feature_names)}"
+        )
+
+    return feature_names
 
 
 def ensure_explainer_type(explainer_type: str | None) -> str | None:
@@ -58,6 +70,8 @@ def process_and_validate_explanations(explanations: shap.Explanation, info: Vali
                 f"Shape of the explanations does not match the shape of the input data. Expected {data_shape}, but got {explanations.shape}"
             )
 
+    validate_feature_names(explanations.feature_names, data_shape[1])
+
     return explanations
 
 
@@ -78,28 +92,17 @@ def get_feature_names(values: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Missing `data` field in the SHAPExplanation object.")
 
     data = values["data"]
+    if "explanations" not in values:
+        raise RuntimeError("Missing `explanations` field in the SHAPExplanation object.")
+
+    explanations = values["explanations"]
+    if explanations is None or not isinstance(explanations, shap.Explanation):
+        return values  # this will be handled by the validation function
+
     if isinstance(data, pd.DataFrame) and "feature_names" not in values:
         column_names = data.columns
-        values["feature_names"] = column_names
+        explanations.feature_names = column_names
     return values
-
-
-def validate_feature_names(feature_names: list[str] | None, info: ValidationInfo) -> list[str] | None:
-    if feature_names is not None and not all(isinstance(name, str) for name in feature_names):
-        raise TypeError("Feature names should be a list of strings.")
-
-    if "data" not in info.data:
-        raise RuntimeError("ValidationInfo object is broken - pydantic internal error")
-
-    data = info.data["data"]
-
-    shape_data = data.shape
-    if feature_names is not None and len(feature_names) != shape_data[1]:
-        raise ShapeMismatchError(
-            f"Number of feature names does not match the number of features in the data. Expected {shape_data[1]}, but got {len(feature_names)}"
-        )
-
-    return feature_names
 
 
 ###################################################################
@@ -141,19 +144,6 @@ class SHAPExplanation(BaseModel):
             description="The method used to generate the explanation.",
         ),
     ] = None
-    feature_names: Annotated[
-        list[str] | None,
-        PlainValidator(validate_feature_names),
-        Field(
-            description="A list of feature names.",
-        ),
-    ] = None
-    aggregations: Annotated[
-        list[list[str]] | list[str] | None,
-        Field(
-            description="A list of feature aggregations.",
-        ),
-    ] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -180,3 +170,26 @@ class SHAPExplanation(BaseModel):
         if len(self.data.shape) == 2 and self.data.shape[0] == 1:
             return True
         return False
+
+    @property
+    @computed_field(repr=True)
+    def feature_names(self) -> list[str] | pd.Series | None:
+        """list of feature names, either provided by user, extracted from explanations field or extracted from the data.
+        Returns:
+            list[str] | pd.Series | None: list of feature names.
+        """
+        if self.explanations is not None:
+            return self.explanations.feature_names
+        return None
+
+    @feature_names.setter  # type: ignore
+    def set_feature_names(self, value: list[str] | pd.Series | None) -> None:
+        """setter for the feature names. It validates the feature names and sets them to the provided value.
+
+        Args:
+            value (list[str] | pd.Series | None): feature names to be set.
+        """
+        validate_feature_names(value, self.data.shape[1])
+
+        if self.explanations is not None:
+            self.explanations.feature_names = value

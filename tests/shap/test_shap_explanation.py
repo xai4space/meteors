@@ -101,10 +101,9 @@ def test_shap_explanation():
     assert explanation.explanation_method == "linear"
 
     # overwriting feature names of the explanation
-    explanation = mt.shap.SHAPExplanation(
-        data=X_test, explanations=raw_explanation, explanation_method="linear", feature_names=["a", "b", "c", "d"]
-    )
-    assert explanation.feature_names == ["a", "b", "c", "d"]
+    explanation = mt.shap.SHAPExplanation(data=X_test, explanations=raw_explanation, explanation_method="linear")
+    explanation.feature_names = ["a", "b", "c", "d"]
+    assert all(explanation.feature_names == ["a", "b", "c", "d"])
 
     # incorrect feature names
     with pytest.raises(ValidationError):
@@ -123,3 +122,6 @@ def test_shap_explanation():
 
     # expect loguru warning for incorrect explanation method
     explanation = mt.shap.SHAPExplanation(data=X_test, explanations=raw_explanation, explanation_method="invalid")
+
+
+test_shap_explanation()
