@@ -7,6 +7,8 @@ from matplotlib.figure import Figure
 from meteors.shap import HyperSHAP, SHAPExplanation
 
 import shap
+import numpy as np
+import pandas as pd
 
 
 def validate_observation_index(
@@ -207,6 +209,7 @@ def dependence_plot(
     explanation: SHAPExplanation,
     target: int | None = None,
     interaction_index: str = "auto",
+    display_features: np.ndarray | pd.DataFrame | None = None,
     color: str = "#1E88E5",
     axis_color: str = "#333333",
     cmap: str | Colormap = None,
@@ -237,7 +240,8 @@ def dependence_plot(
         explainer (HyperSHAP): a HyperSHAP explainer object used to generate the explanation.
         explanation (SHAPExplanation): an explanation object coming from the meteors package. This object contains the explanations for the model. It should contain the global explanation for the plot to make sense.
         target (int, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
-        interaction_index (str, optional): The feature name or index of the feature to color by. Defaults to "auto", which means that the feature with the highest interaction value will be selected.
+        interaction_index (str, optional): The feature name or index of the feature to color by. Defaults to "auto", which means that the feature with the highest interaction value will be selected. If None, the plot will not be colored by any other feature importance. In case a feature index is provided, the interactions of the selected feature with the main feature will be calculated.
+        display_features (np.ndarray, pd.DataFrame, optional): An object used to decode the feature names in a more human-readable form. Defaults to None.
         color (str, optional): The color of the dots on the plot used in case `interaction_index` is None. Defaults to "#1E88E5".
         axis_color (str, optional): The color of the axis and labels. It makes the plot a little more readable. Defaults to "#333333".
         cmap (str | matplotlib.colors.Colormap, optional): The name of the colormap or the matplotlib colormap to use. Defaults to None, which means that the default colormap will be used - matplotlib.colors.red_blue
@@ -274,12 +278,29 @@ def dependence_plot(
     if explanation.is_local_explanation:
         raise ValueError("The dependence plot requires a global explanation.")
 
+    if not isinstance(feature, int) and not isinstance(feature, str):
+        raise TypeError(f"Expected int or str as feature, but got {type(feature)}")
+
+    if (
+        interaction_index is not None
+        and not isinstance(interaction_index, str)
+        and not isinstance(interaction_index, int)
+    ):
+        raise TypeError(f"Expected str or int as interaction_index, but got {type(interaction_index)}")
+
+    if (
+        display_features is not None
+        and not isinstance(display_features, pd.DataFrame)
+        and not isinstance(display_features, np.ndarray)
+    ):
+        raise TypeError(f"Expected pd.DataFrame or np.ndarray as display_features, but got {type(display_features)}")
+
     ax = shap.dependence_plot(
         ind=feature,
         shap_values=explanation_values,
         features=explanation.data,
         feature_names=explanation.feature_names,
-        diplay_features=explanation.feature_names,
+        display_features=display_features,
         interaction_index=interaction_index,
         color=color,
         axis_color=axis_color,

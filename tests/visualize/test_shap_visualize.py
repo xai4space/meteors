@@ -169,6 +169,16 @@ def test_heatmap(model_data_explainer):
 def test_bar(model_data_explainer):
     _, _, explainer, explanation = model_data_explainer
 
-    shap_visualize.bar(explainer, explanation, target=0)
+    shap_visualize.bar(explainer, explanation, target=0, use_pyplot=False)
 
-    shap_visualize.bar(explainer, explanation, target=1, observation_index=1)
+    shap_visualize.bar(explainer, explanation, target=1, observation_index=1, use_pyplot=False)
+
+
+def test_dependence(model_data_explainer):
+    _, _, explainer, explanation = model_data_explainer
+
+    shap_visualize.dependence_plot(1, explainer, explanation, target=0, use_pyplot=False)
+
+    fig, ax = plt.subplots()
+
+    shap_visualize.dependence_plot(1, explainer, explanation, target=1, ax=ax, use_pyplot=False)
