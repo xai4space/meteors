@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from matplotlib.axes import Axes
+from matplotlib.colors import Colormap
 from matplotlib.figure import Figure
 
 from meteors.shap import HyperSHAP, SHAPExplanation
@@ -200,11 +201,101 @@ def beeswarm(
     return ax
 
 
-def dependence_plot(explainer: HyperSHAP, explanation: SHAPExplanation, target: int | None = None):
+def dependence_plot(
+    feature: int | str,
+    explainer: HyperSHAP,
+    explanation: SHAPExplanation,
+    target: int | None = None,
+    interaction_index: str = "auto",
+    color: str = "#1E88E5",
+    axis_color: str = "#333333",
+    cmap: str | Colormap = None,
+    dot_size: int = 16,
+    x_jitter: float = 0,
+    alpha: float = 1,
+    title: str | None = None,
+    xmin: float | str | None = None,
+    xmax: float | str | None = None,
+    ymin: float | str | None = None,
+    ymax: float | str | None = None,
+    ax: Axes | None = None,
+    use_pyplot: bool = True,
+) -> Axes | None:
+    """Create a SHAP dependence plot for the given feature, colored by an interaction feature.
+
+    This plot is useful to understand how two features interact with each other influencing the model's behaviour.
+
+
+    Plots the value of the feature on the x-axis and the SHAP value of the same feature
+    on the y-axis. This shows how the model depends on the given feature, and is like a
+    richer extension of the classical partial dependence plots. Vertical dispersion of the
+    data points represents interaction effects. Grey ticks along the y-axis are data
+    points where the feature's value was NaN.
+
+    Args:
+        feature (int | str): A selected feature to be plotted. If this is an int it is the index of the feature to plot in the data provided. In case the string is provided, it could be either the name of the feature to plot, or it can have the form `rank(int)`, where `int` is the rank of the feature in the feature importance ranking.
+        explainer (HyperSHAP): a HyperSHAP explainer object used to generate the explanation.
+        explanation (SHAPExplanation): an explanation object coming from the meteors package. This object contains the explanations for the model. It should contain the global explanation for the plot to make sense.
+        target (int, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
+        interaction_index (str, optional): The feature name or index of the feature to color by. Defaults to "auto", which means that the feature with the highest interaction value will be selected.
+        color (str, optional): The color of the dots on the plot used in case `interaction_index` is None. Defaults to "#1E88E5".
+        axis_color (str, optional): The color of the axis and labels. It makes the plot a little more readable. Defaults to "#333333".
+        cmap (str | matplotlib.colors.Colormap, optional): The name of the colormap or the matplotlib colormap to use. Defaults to None, which means that the default colormap will be used - matplotlib.colors.red_blue
+        dot_size (int, optional): The size of the dots on the plot. Defaults to 16.
+        x_jitter (float, optional): Adds random jitter to feature values. Should be in a (0, 1) range, where 0 means no jitter. Could improve plot's readability in case the selected feature is discrete. Defaults to 0.
+        alpha (float, optional): The transparency of the dots on the plot. Defaults to 1.
+        title (str, optional): The title of the plot. Defaults to None.
+        xmin (float | str, optional): Represents the lower bound of the plot's x-axis. It can also be a string of the format `percentile(float)` that percentile of the feature's value used on the x-axis. Defaults to None, which means that the minimum value of the feature will be used.
+        xmax (float | str, optional): Represents the upper bound of the plot's x-axis. It can also be a string of the format `percentile(float)` that percentile of the feature's value used on the x-axis. Defaults to None, which means that the maximum value of the feature will be used.
+        ymin (float | str, optional): Represents the lower bound of the plot's y-axis. It can also be a string of the format `percentile(float)` that percentile of the feature's value used on the y-axis. Defaults to None, which means that the minimum value of the feature will be used.
+        ymax (float | str, optional): Represents the upper bound of the plot's y-axis. It can also be a string of the format `percentile(float)` that percentile of the feature's value used on the y-axis. Defaults to None, which means that the maximum value of the feature will be used.
+        ax (matplotlib.axes.Axes, optional): If provided, the plot will be displayed on the passed axes. Defaults to None.
+        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to True.
+
+    Raises:
+        ValueError: Raised in case the explanation is not global or is multitarget, and no target to explain is specified.
+        TypeError: Raised in case any of the passed arguments is of the wrong type.
+
+    Returns:
+        Axes | None:
+            If use_pyplot is False, returns the axes object.
+            If use_pyplot is True, returns None.
+    """
     validate_explanations_and_explainer_type(explainer, explanation)
     target = validate_target(target, explanation, require_single_target=True)
 
-    raise NotImplementedError("The function is not implemented yet.")
+    explanation_values = explanation.explanations.values
+    if target is not None:
+        explanation_values = explanation_values[..., target]
+
+    if explanation_values.ndim == 2 and target is None and not explanation.is_local_explanation:
+        raise ValueError("The dependence plot requires a single target value.")
+
+    if explanation.is_local_explanation:
+        raise ValueError("The dependence plot requires a global explanation.")
+
+    ax = shap.dependence_plot(
+        ind=feature,
+        shap_values=explanation_values,
+        features=explanation.data,
+        feature_names=explanation.feature_names,
+        diplay_features=explanation.feature_names,
+        interaction_index=interaction_index,
+        color=color,
+        axis_color=axis_color,
+        cmap=cmap,
+        dot_size=dot_size,
+        x_jitter=x_jitter,
+        alpha=alpha,
+        title=title,
+        xmin=xmin,
+        xmax=xmax,
+        ax=ax,
+        show=use_pyplot,
+        ymin=ymin,
+        ymax=ymax,
+    )
+    return ax
 
 
 def waterfall(
@@ -252,7 +343,7 @@ def bar(
     use_pyplot: bool = False,
     ax: Axes | None = None,
     **kwargs,
-):
+):  # TODO: add aggregation
     """Creates a bar plot for the given SHAP explanation. The function utilizes the `shap.plots.bar` function, which reference might be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.bar.html
 
     Args:
