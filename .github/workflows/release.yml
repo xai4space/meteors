@@ -166,7 +166,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     outputs:
-      release-body: ${{ steps.check-tags.outputs.release-body }}
+      release-body: ${{ steps.generate-release-body.outputs.release-body }}
 
     steps:
       - uses: actions/checkout@v4
@@ -200,8 +200,7 @@ jobs:
           rye sync
 
       - name: Generate release body 📝
-        id: check-tags
-        shell: generate-release-body
+        id: generate-release-body
         env:
           VERSION: ${{ needs.version-check.outputs.version }}
           PREV_VERSION: ${{ needs.version-check.outputs.previous-version }}
