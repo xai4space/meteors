@@ -61,7 +61,7 @@ def visualize_attributes(
         fig, ax = plt.subplots(2, 2, figsize=(9, 7))
 
     if not hasattr(ax, "shape"):
-        raise ValueError("Provided as is one axes object, but it should be a list of axes objects")
+        raise ValueError("Provided ax parameter is only one axes object, but it should be a list of axes objects")
     elif len(ax.shape) != 2 or ax.shape[0] < 2 or ax.shape[1] < 2:
         raise ValueError("The axes should have at least 2 rows and 2 columns.")
     else:
