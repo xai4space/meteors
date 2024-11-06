@@ -121,9 +121,10 @@ class BaseNoiseTunnel(Explainer, ABC):
         attributions = torch.empty((n_samples,) + input.image.shape, device=input.device)
         for i in range(0, n_samples, steps_per_batch):
             perturbed_batch = []
-            for i in range(n_samples):
+            numb_batch_samples = min(steps_per_batch, n_samples - i)
+            for b in range(i, i + numb_batch_samples):
                 temp_input = deepcopy(input)
-                temp_input.image = perturbed_input[i]
+                temp_input.image = perturbed_input[b]
                 perturbed_batch.append(temp_input)
 
             temp_attr = self.chained_explainer.attribute(  # type: ignore
@@ -133,22 +134,6 @@ class BaseNoiseTunnel(Explainer, ABC):
                 attributions[i : i + steps_per_batch] = torch.stack([attr.attributes for attr in temp_attr], dim=0)
             else:
                 attributions[i : i + steps_per_batch] = temp_attr.attributes
-        else:
-            steps_left = n_samples % steps_per_batch
-            if steps_left:
-                perturbed_batch = []
-                for i in range(n_samples - steps_left, n_samples):
-                    temp_input = deepcopy(input)
-                    temp_input.image = perturbed_input[i]
-                    perturbed_batch.append(temp_input)
-
-                temp_attr = self.chained_explainer.attribute(  # type: ignore
-                    perturbed_batch, target=targeted, additional_forward_args=additional_forward_args
-                )
-                if isinstance(temp_attr, list):
-                    attributions[-steps_left:] = torch.stack([attr.attributes for attr in temp_attr], dim=0)
-                else:
-                    attributions[-steps_left:] = temp_attr.attributes
         return attributions
 
 
@@ -421,7 +406,7 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
     def attribute(
         self,
         hsi: list[HSI] | HSI,
-        baselines: int | float | torch.Tensor | list[int | float | torch.Tensor] | None = None,
+        baseline: int | float | torch.Tensor | list[int | float | torch.Tensor] | None = None,
         target: list[int] | int | None = None,
         additional_forward_args: Any = None,
         n_samples: int = 5,
@@ -500,14 +485,12 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
             else:
                 change_orientation.append(False)
 
-        if not isinstance(baselines, list):
-            baselines = [baselines] * len(hsi)
-        elif len(baselines) != len(hsi):
-            raise ValueError("The number of baselines must match the number of input images")
+        if not isinstance(baseline, list):
+            baseline = [baseline] * len(hsi)
+        elif len(baseline) != len(hsi):
+            raise ValueError("The number of baseline must match the number of input images")
 
-        baselines = [
-            validate_and_transform_baseline(baseline, hsi_image) for baseline, hsi_image in zip(baselines, hsi)
-        ]
+        baseline = [validate_and_transform_baseline(base, hsi_image) for base, hsi_image in zip(baseline, hsi)]
 
         if not isinstance(target, list):
             target = [target] * len(hsi)  # type: ignore
@@ -516,10 +499,9 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
         for batch in range(0, len(hsi)):
             input = hsi[batch]
             targeted = target[batch]
-            baseline = baselines[batch]
-            perturbed_input = self.perturb_input(
-                input.image, baseline, n_samples, perturbation_prob, num_perturbed_bands
-            )
+            base = baseline[batch]
+            perturbed_input = self.perturb_input(input.image, base, n_samples, perturbation_prob, num_perturbed_bands)
+
             hnt_attributes[:, batch] = self._forward_loop(
                 perturbed_input, input, targeted, additional_forward_args, n_samples, steps_per_batch
             )
