@@ -142,18 +142,17 @@ jobs:
       - name: Fetch information from PyPI
         run: |
           response=$(curl -s https://pypi.org/pypi/meteors/json || echo "{}")
-          all_versions=$(echo "$response" | jq -r '.releases | keys[]' || echo "0.0.0")
-          echo "All version on PyPI: $all_versions"
-          echo "all_versions=$all_versions" >> $GITHUB_ENV
+          all_versions=$(echo "$response" | jq -r '.releases | keys | join(" ")' || echo "0.0.0")
+          echo "All versions on PyPI: $all_versions"
+          echo "versions=$all_versions" >> $GITHUB_OUTPUT
 
       - name: Compare versions and exit if not newer
         run: |
           NEW_PKG_VERSION=${{ needs.version-check.outputs.version }}
           NEW_VERSION=${NEW_PKG_VERSION#v}
-          ALL_VERSION=$all_versions
+          ALL_VERSIONS="${{ steps.fetch-versions.outputs.versions }}"
 
-          # First check if NEW_VERSION is in ALL_VERSION
-          if echo "$ALL_VERSION" | grep -q "^${NEW_VERSION}$"; then
+          if [[ " $ALL_VERSIONS " =~ " $NEW_VERSION " ]]; then
               echo "Version $NEW_VERSION already exists"
               exit 1
           else
