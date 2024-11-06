@@ -222,7 +222,7 @@ jobs:
           branch: update-changelog-${{ needs.version-check.outputs.version }}
 
   test-pypi-publish:
-    needs: [version-check, build, release-notes]
+    needs: [version-check, build, check-pypi, release-notes]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -277,7 +277,7 @@ jobs:
           meteors==${VERSION#v}
 
   pypi-publish:
-    needs: [version-check, build, release-notes, test-pypi-publish]
+    needs: [version-check, build, check-pypi, release-notes, test-pypi-publish]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
