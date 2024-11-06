@@ -284,7 +284,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    if: ${{ env.DRY_RUN == 'no' }}
+    if: ${{ github.event.inputs.dry-run == 'no' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -330,7 +330,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    if: ${{ env.DRY_RUN == 'no' }}
+    if: ${{ github.event.inputs.dry-run == 'no' }}
 
     steps:
       - uses: actions/checkout@v4
