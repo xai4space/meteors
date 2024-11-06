@@ -2,7 +2,7 @@ name: Docs
 
 on:
   release:
-    types: [released]
+    types: [published, edited]
   workflow_dispatch:
 
 jobs:
