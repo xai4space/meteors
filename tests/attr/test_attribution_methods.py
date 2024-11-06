@@ -1,5 +1,6 @@
 import pytest
 
+import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,7 +8,14 @@ from copy import deepcopy
 
 from meteors.models import ExplainableModel
 from meteors.utils import agg_segmentation_postprocessing
-from meteors.attr import IntegratedGradients, Saliency, InputXGradient, Occlusion
+from meteors.attr import (
+    IntegratedGradients,
+    Saliency,
+    InputXGradient,
+    Occlusion,
+    HSISpatialAttributes,
+    HSISpectralAttributes,
+)
 from meteors import HSI
 
 
@@ -60,6 +68,15 @@ def test_integrated_gradients(explainable_toy_model, explainable_segmentation_to
     assert attributions[0].attributes.shape == image.image.shape
     assert attributions[1].score is not None
     assert attributions[1].attributes.shape == image.image.shape
+
+    # Test step size
+    start_time = time.time()
+    ig.attribute(image, return_convergence_delta=True, n_steps=100)
+    longer_time = time.time() - start_time
+    start_time = time.time()
+    ig.attribute(image, return_convergence_delta=True, n_steps=1)
+    shorter_time = time.time() - start_time
+    assert longer_time > shorter_time
 
     # Test segmentation postprocessing
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
@@ -229,6 +246,7 @@ def test_occlusion(explainable_toy_model, explainable_segmentation_toy_model):
 
     attributions = occlusion.get_spatial_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2))
     assert attributions.attributes.shape == image.image.shape
+    assert isinstance(attributions, HSISpatialAttributes)
 
     attributions = occlusion.get_spatial_attributes(image, sliding_window_shapes=2, strides=2)
     assert attributions.attributes.shape == image.image.shape
@@ -279,6 +297,7 @@ def test_occlusion(explainable_toy_model, explainable_segmentation_toy_model):
 
     attributions = occlusion.get_spectral_attributes(image, sliding_window_shapes=1, strides=1)
     assert attributions.attributes.shape == image.image.shape
+    assert isinstance(attributions, HSISpectralAttributes)
 
     attributions = occlusion.get_spectral_attributes(image, sliding_window_shapes=(1,), strides=(1,))
     assert attributions.attributes.shape == image.image.shape
