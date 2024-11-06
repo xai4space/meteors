@@ -87,45 +87,45 @@ def test_noise_perturb_input():
 
 def test_hyper_noise_perturb_input():
     input = torch.ones((5, 5, 5))
-    baselines = torch.zeros((5, 5, 5))
+    baseline = torch.zeros((5, 5, 5))
     # base perturbation with given probability
-    perturbed_input = HyperNoiseTunnel.perturb_input(input, baselines, n_samples=5, perturbation_prob=0.5)
+    perturbed_input = HyperNoiseTunnel.perturb_input(input, baseline, n_samples=5, perturbation_prob=0.5)
 
     assert perturbed_input.shape == (5, 5, 5, 5)
 
     # no perturbation
-    perturbed_input = HyperNoiseTunnel.perturb_input(input, baselines, n_samples=1, num_perturbed_bands=0)
+    perturbed_input = HyperNoiseTunnel.perturb_input(input, baseline, n_samples=1, num_perturbed_bands=0)
 
     assert perturbed_input.shape == (1, 5, 5, 5)
     assert torch.all(perturbed_input.squeeze(0) == input)
 
     # full perturbation
-    perturbed_input = HyperNoiseTunnel.perturb_input(input, baselines, n_samples=1, num_perturbed_bands=5)
+    perturbed_input = HyperNoiseTunnel.perturb_input(input, baseline, n_samples=1, num_perturbed_bands=5)
 
     assert perturbed_input.shape == (1, 5, 5, 5)
-    assert torch.all(perturbed_input.squeeze(0) == baselines)
+    assert torch.all(perturbed_input.squeeze(0) == baseline)
 
     # test errors
     # try to perturb with incorrect probability
     with pytest.raises(ValueError):
-        HyperNoiseTunnel.perturb_input(input, baselines, n_samples=5, perturbation_prob=1.5)
+        HyperNoiseTunnel.perturb_input(input, baseline, n_samples=5, perturbation_prob=1.5)
 
     # try to perturb too many bands
     with pytest.raises(ValueError):
-        HyperNoiseTunnel.perturb_input(input, baselines, n_samples=5, num_perturbed_bands=6)
+        HyperNoiseTunnel.perturb_input(input, baseline, n_samples=5, num_perturbed_bands=6)
 
     with pytest.raises(ValueError):
-        HyperNoiseTunnel.perturb_input(input, baselines, n_samples=5, num_perturbed_bands=-1)
+        HyperNoiseTunnel.perturb_input(input, baseline, n_samples=5, num_perturbed_bands=-1)
 
     # try to perturb with incorrect number of samples
     with pytest.raises(ValueError):
-        HyperNoiseTunnel.perturb_input(input, baselines, n_samples=0)
+        HyperNoiseTunnel.perturb_input(input, baseline, n_samples=0)
 
     # try to perturb with incorrect input
     with pytest.raises(ShapeMismatchError):
-        HyperNoiseTunnel.perturb_input(torch.ones((5, 5)), baselines, n_samples=5)
+        HyperNoiseTunnel.perturb_input(torch.ones((5, 5)), baseline, n_samples=5)
 
-    # try to perturb with incorrect baselines
+    # try to perturb with incorrect baseline
     with pytest.raises(ShapeMismatchError):
         HyperNoiseTunnel.perturb_input(input, torch.ones((5, 5)), n_samples=5)
 
@@ -268,20 +268,20 @@ def test_hyper_attribute(explainable_toy_model, explainable_segmentation_toy_mod
     attributes = hyper_noise_tunnel.attribute(image, n_samples=1)
     assert attributes.orientation == ("W", "C", "H")
 
-    # test various baselines
-    baselines = torch.zeros((5, 5, 5))
-    attributes = hyper_noise_tunnel.attribute(image, n_samples=1, baselines=baselines)
+    # test various baseline
+    baseline = torch.zeros((5, 5, 5))
+    attributes = hyper_noise_tunnel.attribute(image, n_samples=1, baseline=baseline)
     assert attributes.attributes.shape == (5, 5, 5)
 
-    baselines = 0
-    attributes = hyper_noise_tunnel.attribute(image, n_samples=1, baselines=baselines)
+    baseline = 0
+    attributes = hyper_noise_tunnel.attribute(image, n_samples=1, baseline=baseline)
     assert attributes.attributes.shape == (5, 5, 5)
 
     with pytest.raises(ShapeMismatchError):
-        hyper_noise_tunnel.attribute(image, n_samples=1, baselines=torch.ones((5, 5)))
+        hyper_noise_tunnel.attribute(image, n_samples=1, baseline=torch.ones((5, 5)))
 
     with pytest.raises(ShapeMismatchError):
-        hyper_noise_tunnel.attribute(image, n_samples=1, baselines=torch.ones((1, 5, 5, 5)))
+        hyper_noise_tunnel.attribute(image, n_samples=1, baseline=torch.ones((1, 5, 5, 5)))
 
     # test validation
 
@@ -304,37 +304,37 @@ def test_hyper_attribute(explainable_toy_model, explainable_segmentation_toy_mod
     assert attributes[0].attributes.shape == (5, 5, 5)
     assert attributes[1].attributes.shape == (5, 5, 5)
 
-    baselines = torch.zeros((5, 5, 5))
-    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=baselines)
+    baseline = torch.zeros((5, 5, 5))
+    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, baseline=baseline)
     assert len(attributes) == 2
     assert attributes[0].attributes.shape == (5, 5, 5)
     assert attributes[1].attributes.shape == (5, 5, 5)
 
-    baselines = 0
-    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=baselines)
+    baseline = 0
+    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, baseline=baseline)
     assert len(attributes) == 2
     assert attributes[0].attributes.shape == (5, 5, 5)
 
-    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=[baselines, baselines])
+    attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, baseline=[baseline, baseline])
     assert len(attributes) == 2
     assert attributes[0].attributes.shape == (5, 5, 5)
     assert attributes[1].attributes.shape == (5, 5, 5)
 
-    baselines = torch.zeros((2, 5, 5, 5))
+    baseline = torch.zeros((2, 5, 5, 5))
     with pytest.raises(ValueError):
-        hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=baselines)
+        hyper_noise_tunnel.attribute([image, image], n_samples=1, baseline=baseline)
 
     with pytest.raises(ValueError):
-        hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=[0])
+        hyper_noise_tunnel.attribute([image, image], n_samples=1, baseline=[0])
 
     with pytest.raises(ValueError):
-        hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=[0, 0, 0])
+        hyper_noise_tunnel.attribute([image, image], n_samples=1, baseline=[0, 0, 0])
 
     with pytest.raises(TypeError):
-        hyper_noise_tunnel.attribute([image, 0], n_samples=1, baselines=[0, 0])
+        hyper_noise_tunnel.attribute([image, 0], n_samples=1, baseline=[0, 0])
 
     with pytest.raises(TypeError):
-        hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=[0, "string"])
+        hyper_noise_tunnel.attribute([image, image], n_samples=1, baseline=[0, "string"])
 
     attributes = hyper_noise_tunnel.attribute([image, image], n_samples=1, target=[None, None])
     assert len(attributes) == 2
@@ -342,7 +342,7 @@ def test_hyper_attribute(explainable_toy_model, explainable_segmentation_toy_mod
     assert attributes[1].attributes.shape == (5, 5, 5)
 
     with pytest.raises(ValueError):
-        hyper_noise_tunnel.attribute([image, image], n_samples=1, baselines=torch.ones((1, 5, 5, 5)))
+        hyper_noise_tunnel.attribute([image, image], n_samples=1, baseline=torch.ones((1, 5, 5, 5)))
 
     # Test segmentation output
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
