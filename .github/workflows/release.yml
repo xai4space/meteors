@@ -87,7 +87,7 @@ jobs:
 
   build:
     needs: version-check
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || github.event.inputs.dry-run == 'no'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || github.event.inputs.dry-run == 'yes'
     runs-on: ubuntu-latest
     permissions:
       contents: read
