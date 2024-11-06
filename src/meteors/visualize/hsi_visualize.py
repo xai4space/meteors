@@ -35,7 +35,7 @@ def visualize_hsi(hsi_or_attributes: HSI | HSIAttributes, ax: Axes | None = None
 
     hsi = hsi.change_orientation("HWC", inplace=False)
 
-    rgb = hsi.get_rgb_image(output_channel_axis=2, apply_mask=use_mask).cpu().numpy()
+    rgb = hsi.get_rgb_image(output_channel_axis=2, apply_mask=use_mask, normalize=True).cpu().numpy()
     ax = ax or plt.gca()
     ax.imshow(rgb)
 
