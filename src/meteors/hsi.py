@@ -415,7 +415,11 @@ class HSI(BaseModel):
         return self.image
 
     def get_rgb_image(
-        self, apply_mask: bool = True, apply_min_cutoff: bool = False, output_channel_axis: int | None = None
+        self,
+        apply_mask: bool = True,
+        apply_min_cutoff: bool = False,
+        output_channel_axis: int | None = None,
+        normalize: bool = True,
     ) -> torch.Tensor:
         """Extracts an RGB representation from the hyperspectral image data.
 
@@ -430,6 +434,8 @@ class HSI(BaseModel):
             output_channel_axis (int | None, optional): The axis where the RGB channels
                 should be placed in the output tensor. If None, uses the current spectral
                 axis of the hyperspectral data. Defaults to None.
+            normalize (bool, optional): Whether to normalize the band values to the [0, 1] range.
+                Defaults to True.
 
         Returns:
             torch.Tensor: The RGB representation of the hyperspectral image.
@@ -462,7 +468,7 @@ class HSI(BaseModel):
         rgb_img = torch.stack(
             [
                 self.extract_band_by_name(
-                    band, apply_mask=apply_mask, apply_min_cutoff=apply_min_cutoff, normalize=True
+                    band, apply_mask=apply_mask, apply_min_cutoff=apply_min_cutoff, normalize=normalize
                 )
                 for band in ["R", "G", "B"]
             ],

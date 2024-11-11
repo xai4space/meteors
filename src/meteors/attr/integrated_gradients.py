@@ -51,6 +51,7 @@ class IntegratedGradients(Explainer):
         baseline: int | float | torch.Tensor | list[int | float | torch.Tensor] = None,
         target: list[int] | int | None = None,
         additional_forward_args: Any = None,
+        n_steps: int = 50,
         method: Literal[
             "riemann_right", "riemann_left", "riemann_middle", "riemann_trapezoid", "gausslegendre"
         ] = "gausslegendre",
@@ -82,6 +83,7 @@ class IntegratedGradients(Explainer):
                 containing multiple additional arguments including tensors or any arbitrary python types.
                 These arguments are provided to forward_func in order following the arguments in inputs.
                 Note that attributions are not computed with respect to these arguments. Default: None
+            n_steps (int, optional): The number of steps to approximate the integral. Default: 50.
             method (Literal["riemann_right", "riemann_left", "riemann_middle", "riemann_trapezoid", "gausslegendre"],
                 optional): Method for approximating the integral, one of riemann_right, riemann_left, riemann_middle,
                 riemann_trapezoid or gausslegendre. Default: gausslegendre if no method is provided.
@@ -136,6 +138,7 @@ class IntegratedGradients(Explainer):
             input_tensor,
             baselines=baseline,
             target=target,
+            n_steps=n_steps,
             additional_forward_args=additional_forward_args,
             method=method,
             return_convergence_delta=return_convergence_delta,

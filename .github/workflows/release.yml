@@ -10,6 +10,12 @@ on:
           - "no"
           - "yes"
         default: "no"
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+a[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+b[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
 
 env:
   PYTHON_VERSION: "3.11"
@@ -17,16 +23,80 @@ env:
   DRY_RUN: ${{ github.event.inputs.dry-run }}
 
 jobs:
-  build:
-    if: github.ref == 'refs/heads/main'
+  version-check:
     runs-on: ubuntu-latest
-
     outputs:
-      pkg-name: ${{ steps.check-version.outputs.pkg-name }}
-      version: ${{ steps.check-version.outputs.version }}
+      version: ${{ steps.determine-version.outputs.version }}
+      rye-version-changed: ${{ steps.determine-version.outputs.rye-version-changed }}
+      previous-version: ${{ steps.check-previous-version.outputs.previous-version }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check trigger type 🚦
+        id: check-trigger
+        run: |
+          if [[ ${{ github.ref }} == refs/tags/* ]]; then
+            echo "IS_TAG_TRIGGER=true" >> $GITHUB_ENV
+            echo "TAG_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          else
+            echo "IS_TAG_TRIGGER=false" >> $GITHUB_ENV
+          fi
+
+      - name: Setup Rye 🌾
+        uses: eifinger/setup-rye@v3
+        with:
+          version: ${{ env.RYE_VERSION }}
+
+      - name: Pin python-version 📌
+        run: rye pin ${{ env.PYTHON_VERSION }}
+
+      - name: Get previous version from tags 🏷️
+        id: check-previous-version
+        run: |
+          PREV_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*.[0-9]*" --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "previous-version=${PREV_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Determine and validate version 🏷️
+        id: determine-version
+        run: |
+          RYE_VERSION=v$(rye version)
+          echo "rye-version-changed=false" >> $GITHUB_OUTPUT
+
+          if [[ "$IS_TAG_TRIGGER" == "true" ]]; then
+            # Compare tag version with rye version
+            if [[ "$TAG_VERSION" != "$RYE_VERSION" ]]; then
+              echo "Correcting version to match tag: $TAG_VERSION"
+              rye version ${TAG_VERSION#v}
+              echo "rye-version-changed=true" >> $GITHUB_OUTPUT
+              RYE_VERSION=v$(rye version)
+            fi
+          fi
+          echo "version=${RYE_VERSION}" >> $GITHUB_OUTPUT
+
+          # Validate that new version is not equal to the previous version
+          PREV_VERSION="${{ steps.check-previous-version.outputs.previous-version }}"
+          if [[ "$RYE_VERSION" == "$PREV_VERSION" ]]; then
+            echo "Version validation failed: $RYE_VERSION == $PREV_VERSION"
+            exit 1
+          fi
+
+          echo "Version validation passed: $NEW_VERSION != $PREV_VERSION"
+
+  build:
+    needs: version-check
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || github.event.inputs.dry-run == 'yes'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Setup Rye 🌾
         id: setup-rye
         uses: eifinger/setup-rye@v3
@@ -40,7 +110,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./venv
-          key: release
+          key: ${{ runner.os }}-rye-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-rye-
+
+      - name: Update Rye version 🌾
+        if: ${{ needs.version-check.outputs.rye-version-changed == 'true' }}
+        env:
+          TAG_VERSION: ${{ needs.version-check.outputs.version }}
+        run: |
+          rye version ${TAG_VERSION#v}
 
       - name: Install dependencies 🛠️
         run: |
@@ -56,30 +135,43 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Check Version 🏷️
-        id: check-version
-        shell: bash
+  check-pypi:
+    needs: [version-check, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch information from PyPI
         run: |
-          echo pkg-name="v$(rye version)" >> $GITHUB_OUTPUT
-          echo version="$(rye version)" >> $GITHUB_OUTPUT
+          response=$(curl -s https://pypi.org/pypi/meteors/json || echo "{}")
+          all_versions=$(echo "$response" | jq -r '.releases | keys | join(" ")' || echo "0.0.0")
+          echo "All versions on PyPI: $all_versions"
+          echo "versions=$all_versions" >> $GITHUB_OUTPUT
+
+      - name: Compare versions and exit if not newer
+        run: |
+          NEW_PKG_VERSION=${{ needs.version-check.outputs.version }}
+          NEW_VERSION=${NEW_PKG_VERSION#v}
+          ALL_VERSIONS="${{ steps.fetch-versions.outputs.versions }}"
+
+          if [[ " $ALL_VERSIONS " =~ " $NEW_VERSION " ]]; then
+              echo "Version $NEW_VERSION already exists"
+              exit 1
+          else
+              echo "Version $NEW_VERSION does not exist, continuing"
+          fi
 
   release-notes:
-    needs:
-      - build
-
+    needs: [version-check, build, check-pypi]
     permissions:
-      # Needed for `peter-evans/create-pull-request` to create a PR
       contents: write
       pull-requests: write
-
     runs-on: ubuntu-latest
     outputs:
       release-body: ${{ steps.generate-release-body.outputs.release-body }}
+
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main # this scopes to just main branch
-          fetch-depth: 0 # this fetches entire commit history
+          fetch-depth: 0
 
       - name: Setup Rye 🌾
         id: setup-rye
@@ -94,64 +186,48 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./venv
-          key: release
+          key: ${{ runner.os }}-rye-${{ hashFiles('**/pyproject.toml') }}
+
+      - name: Update Rye version 🌾
+        if: ${{ needs.version-check.outputs.rye-version-changed == 'true' }}
+        env:
+          TAG_VERSION: ${{ needs.version-check.outputs.version }}
+        run: |
+          rye version ${TAG_VERSION#v}
 
       - name: Install dependencies 🛠️
         run: |
           rye sync
 
-      - name: Check Tags 🏷️
-        id: check-tags
-        shell: bash
-        env:
-          PKG_NAME: ${{ needs.build.outputs.pkg-name }}
-          VERSION: ${{ needs.build.outputs.version }}
-        run: |
-          REGEX="^$PKG_NAME==v\\d+\\.\\d+\\.\\d+\$"
-          echo $REGEX
-          PREV_TAG=$(git describe --tags --abbrev=0)
-          TAG="${PKG_NAME}"
-          echo "Previous tag: $PREV_TAG"
-          echo "Tag: $TAG"
-          if [ "$TAG" == "$PREV_TAG" ]; then
-            echo "No new version to release"
-            exit 1
-          fi
-          if [ -z "$PREV_TAG" ]; then
-            echo "Initial version to release"
-            PREV_TAG=""
-          fi
-          echo tag="$TAG" >> $GITHUB_OUTPUT
-          echo prev-tag="$PREV_TAG" >> $GITHUB_OUTPUT
-
       - name: Generate release body 📝
         id: generate-release-body
         env:
-          PKG_NAME: ${{ needs.build.outputs.pkg-name }}
-          TAG: ${{ steps.check-tags.outputs.tag }}
-          PREV_TAG: ${{ steps.check-tags.outputs.prev-tag }}
+          VERSION: ${{ needs.version-check.outputs.version }}
+          PREV_VERSION: ${{ needs.version-check.outputs.previous-version }}
         run: |
-          changelog=$(rye run python commit_processor.py . "$TAG"  "$PREV_TAG")
+          changelog=$(rye run python commit_processor.py . "${VERSION}" "${PREV_VERSION}")
           echo "release-body<<EOF" >> $GITHUB_OUTPUT
           echo "$changelog" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           cat changelog.md
+
       - name: Commit and push updated CHANGELOG.md
         if: ${{ env.DRY_RUN == 'no' }}
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Update file
-          title: "docs: update changelog.md for ${{ needs.build.outputs.version }} [skip ci]"
-          body: Automated changes to update changelog.md
-          branch: update-changelog-${{ needs.build.outputs.version }}
+          commit-message: "docs: update changelog.md for ${{ needs.version-check.outputs.version }} [skip ci]"
+          title: "docs: update changelog.md for ${{ needs.version-check.outputs.version }} [skip ci]"
+          body: Automated changes to update changelog.md and rye version if needed
+          branch: update-changelog-${{ needs.version-check.outputs.version }}
 
   test-pypi-publish:
-    needs:
-      - build
-      - release-notes
-
+    needs: [version-check, build, check-pypi, release-notes]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - uses: actions/checkout@v4
 
@@ -168,7 +244,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./venv
-          key: release
+          key: ${{ runner.os }}-rye-${{ hashFiles('**/pyproject.toml') }}
+
+      - name: Update Rye version 🌾
+        if: ${{ needs.version-check.outputs.rye-version-changed == 'true' }}
+        env:
+          TAG_VERSION: ${{ needs.version-check.outputs.version }}
+        run: |
+          rye version ${TAG_VERSION#v}
 
       - name: Install dependencies 🛠️
         run: |
@@ -185,19 +268,22 @@ jobs:
           rye publish --yes --token ${{ secrets.TEST_PYPI_TOKEN }} --repository testpypi --repository-url https://test.pypi.org/legacy/ --skip-existing
 
       - name: Test install from TestPyPI 🧪
+        env:
+          VERSION: ${{ needs.version-check.outputs.version }}
         run: |
           pip install \
           --index-url https://test.pypi.org/simple/ \
           --extra-index-url https://pypi.org/simple \
-          meteors==${{ needs.build.outputs.version }}
+          meteors==${VERSION#v}
 
   pypi-publish:
-    needs:
-      - build
-      - release-notes
-      - test-pypi-publish
-
+    needs: [version-check, build, check-pypi, release-notes, test-pypi-publish]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    if: ${{ github.event.inputs.dry-run == 'no' }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -214,7 +300,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./venv
-          key: release
+          key: ${{ runner.os }}-rye-${{ hashFiles('**/pyproject.toml') }}
+
+      - name: Update Rye version 🌾
+        if: ${{ needs.version-check.outputs.rye-version-changed == 'true' }}
+        env:
+          TAG_VERSION: ${{ needs.version-check.outputs.version }}
+        run: |
+          rye version ${TAG_VERSION#v}
 
       - name: Install dependencies 🛠️
         run: |
@@ -227,58 +320,32 @@ jobs:
           path: dist/
 
       - name: Publish package 🚀
-        if: ${{ env.DRY_RUN == 'no' }}
         run: |
           rye publish --yes --token ${{ secrets.PYPI_TOKEN }}
 
   mark-release:
-    needs:
-      - build
-      - release-notes
-      - test-pypi-publish
-      - pypi-publish
-
+    needs: [version-check, build, release-notes, pypi-publish]
     runs-on: ubuntu-latest
     permissions:
-      # This permission is needed by `ncipollo/release-action` to
-      # create the GitHub release.
       contents: write
+    if: ${{ github.event.inputs.dry-run == 'no' }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Rye 🌾
-        id: setup-rye
-        uses: eifinger/setup-rye@v3
-        with:
-          version: ${{ env.RYE_VERSION }}
-
-      - name: Pin python-version 📌
-        run: rye pin ${{ env.PYTHON_VERSION }}
-
-      - name: Cache dependencies 📦
-        uses: actions/cache@v4
-        with:
-          path: ./venv
-          key: release
-
-      - name: Install dependencies 🛠️
-        run: |
-          rye sync
 
       - name: Download build 📦
         uses: actions/download-artifact@v4
         with:
           name: dist
 
-      - name: Create Tag 🏷️
+      - name: Create Release 🏷️
         if: ${{ env.DRY_RUN == 'no' }}
         uses: ncipollo/release-action@v1
         with:
           artifacts: "dist/*"
           token: ${{ secrets.GITHUB_TOKEN }}
           generateReleaseNotes: false
-          tag: ${{needs.build.outputs.pkg-name}}
+          tag: ${{ needs.version-check.outputs.version }}
           body: ${{ needs.release-notes.outputs.release-body }}
           commit: ${{ github.sha }}
           makeLatest: true
