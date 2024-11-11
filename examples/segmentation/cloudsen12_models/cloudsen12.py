@@ -2,23 +2,21 @@ import torch
 import torch.nn
 import segmentation_models_pytorch as smp
 import numpy as np
-from typing import Union, Optional, List
-from georeader.abstract_reader import GeoData
-from georeader.geotensor import GeoTensor
-from georeader.plot import plot_segmentation_mask
-from georeader.readers import S2_SAFE_reader
+from typing import Optional, Sequence
 import matplotlib.axes
 import matplotlib.image
 import os
 from .utils_torch import padded_predict
 from numpy.typing import ArrayLike
 
+import matplotlib.pyplot as plt
+
 
 INTERPRETATION_CLOUDSEN12 = ["clear", "Thick cloud", "Thin cloud", "Cloud shadow"]
 COLORS_CLOUDSEN12 = (
     np.array(
         [
-            [139, 64, 0],  # clear
+            [20, 20, 255],  # clear
             [220, 220, 220],  # Thick cloud
             [180, 180, 180],  # Thin cloud
             [60, 60, 60],
@@ -28,13 +26,18 @@ COLORS_CLOUDSEN12 = (
     / 255
 )
 
+# sourced from georeader.readers.S2_SAFE_reader
+BANDS_S2_L1C = ["B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12"]
+
+BANDS_S2_L2A = ["B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B11", "B12"]
+
 
 # Models stored in this folder https://drive.google.com/drive/folders/1gpqEOWZRHlxLSJMMc3TXW7BRDuGBkDRa?usp=drive_link
 MODELS_CLOUDSEN12 = {
-    "cloudsen12": {"model_file": "cloudsen12.pt", "bands": S2_SAFE_reader.BANDS_S2_L1C, "type": "weights"},
-    "UNetMobV2_V1": {"model_file": "UNetMobV2_V1.pt", "bands": S2_SAFE_reader.BANDS_S2_L1C, "type": "weights"},
-    "UNetMobV2_V2": {"model_file": "UNetMobV2_V2.pt", "bands": S2_SAFE_reader.BANDS_S2_L1C, "type": "weights"},
-    "cloudsen12l2a": {"model_file": "cloudsen12l2a.pt", "bands": S2_SAFE_reader.BANDS_S2_L2A, "type": "jit"},
+    "cloudsen12": {"model_file": "cloudsen12.pt", "bands": BANDS_S2_L1C, "type": "weights"},
+    "UNetMobV2_V1": {"model_file": "UNetMobV2_V1.pt", "bands": BANDS_S2_L1C, "type": "weights"},
+    "UNetMobV2_V2": {"model_file": "UNetMobV2_V2.pt", "bands": BANDS_S2_L1C, "type": "weights"},
+    "cloudsen12l2a": {"model_file": "cloudsen12l2a.pt", "bands": BANDS_S2_L2A, "type": "jit"},
     "dtacs4bands": {"model_file": "dtacs4bands.pt", "bands": ["B08", "B04", "B03", "B02"], "type": "jit"},
     "landsat30": {
         "model_file": "landsat30.pt",
@@ -107,7 +110,7 @@ class CDModel(torch.nn.Module):
 
     """
 
-    def __init__(self, bands: List[str], device=torch.device("cpu"), model: Optional[torch.nn.Module] = None):
+    def __init__(self, bands: Sequence[str], device=torch.device("cpu"), model: Optional[torch.nn.Module] = None):
         super().__init__()
         if model is None:
             self.model = smp.Unet(encoder_name="mobilenet_v2", encoder_weights=None, in_channels=len(bands), classes=4)
@@ -122,23 +125,24 @@ class CDModel(torch.nn.Module):
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         pred_cont = self.model(tensor)
         pred_discrete = torch.argmax(pred_cont, dim=1).type(torch.uint8)
+        pred_discrete.requires_grad = pred_cont.requires_grad
+        pred_discrete.grad_fn = pred_cont.grad_fn
         return pred_discrete
 
-    def predict(self, geotensor: Union[ArrayLike, GeoData]) -> Union[ArrayLike, GeoTensor]:
+    def predict(self, tensor: ArrayLike) -> ArrayLike:
         """
 
         Args:
-            geotensor: np.array (len(self.bands), H, W) of TOA reflectances (values between 0 and 1)
+            tensor: np.array (len(self.bands), H, W) of TOA reflectances (values between 0 and 1)
 
         Returns:
             uint8 np.array (H, W) with interpretation {0: clear, 1: Thick cloud, 2: thin cloud, 3: cloud shadow}
         """
-        if hasattr(geotensor, "values") and hasattr(geotensor, "transform"):
-            tensor = geotensor.values
-            transform = geotensor.transform
-        else:
-            tensor = geotensor
-            transform = None
+        if hasattr(tensor, "values") and hasattr(tensor, "transform"):
+            raise NotImplementedError(
+                "GeoTensor not supported, please use the original cloudsen12 code to perform inference"
+            )
+        transform = None
 
         if isinstance(tensor, np.ndarray):
             tensor = tensor.astype(np.float32)
@@ -158,7 +162,9 @@ class CDModel(torch.nn.Module):
         pred = padded_predict(tensor, self, 32, self.device)
 
         if transform is not None:
-            pred = GeoTensor(pred, transform=transform, crs=geotensor.crs, fill_value_default=None)
+            raise NotImplementedError(
+                "Transform not supported. Please use the original cloudsen12 code to perform inference"
+            )
 
         if isinstance(pred, np.ndarray):
             pred = torch.tensor(pred, dtype=torch.int8).unsqueeze(0)
@@ -184,7 +190,11 @@ def load_model_by_name(
     if name not in MODELS_CLOUDSEN12:
         raise ValueError(f"Model name {name} not in {MODELS_CLOUDSEN12.keys()}")
 
-    weights_file = os.path.join(weights_folder, MODELS_CLOUDSEN12[name]["model_file"])
+    model_file = MODELS_CLOUDSEN12[name]["model_file"]
+    if not isinstance(model_file, str) and isinstance(model_file, Sequence):
+        weights_file = os.path.join(weights_folder, *model_file)
+    else:
+        weights_file = os.path.join(weights_folder, model_file)
 
     if MODELS_CLOUDSEN12[name]["type"] == "weights":
         model = CDModel(device=device, bands=MODELS_CLOUDSEN12[name]["bands"])
@@ -206,7 +216,9 @@ def load_model_by_name(
 
 
 def plot_cloudSEN12mask(
-    mask: Union[ArrayLike, GeoData], legend: bool = True, ax: Optional[matplotlib.axes.Axes] = None
+    mask: ArrayLike,
+    legend: bool = True,
+    ax: Optional[matplotlib.axes.Axes] = None,
 ) -> matplotlib.axes.Axes:
     """
 
@@ -219,6 +231,24 @@ def plot_cloudSEN12mask(
         matplotlib.axes.Axes
     """
 
-    return plot_segmentation_mask(
-        mask=mask, color_array=COLORS_CLOUDSEN12, interpretation_array=INTERPRETATION_CLOUDSEN12, legend=legend, ax=ax
-    )
+    if not isinstance(mask, np.ndarray) and not isinstance(mask, torch.Tensor):
+        raise NotImplementedError(
+            "plotting for GeoData not supported, please use the original cloudsen12 code or refer to the georeader.plot.plot_segmentation_mask function"
+        )
+    if not isinstance(mask, np.ndarray):
+        mask = mask.numpy()
+
+    ax = ax or plt.gca()
+    ax.axis("off")
+
+    ax.imshow(COLORS_CLOUDSEN12[mask.squeeze()])
+
+    patches = [
+        matplotlib.patches.Patch(color=color, label=label)
+        for color, label in zip(COLORS_CLOUDSEN12, INTERPRETATION_CLOUDSEN12)
+    ]
+
+    if legend:
+        ax.legend(handles=patches)
+
+    return ax
