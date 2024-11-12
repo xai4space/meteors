@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Callable, Any
+from typing import Literal, Any
 
 import torch
 from captum.attr import IntegratedGradients as CaptumIntegratedGradients
@@ -17,28 +17,25 @@ from meteors.exceptions import HSIAttributesError
 class IntegratedGradients(Explainer):
     """
     IntegratedGradients explainer class for generating attributions using the Integrated Gradients method.
-    The Integrated Gradients method is based on the [`captum` implementation](https://captum.ai/docs/extension/integrated_gradients)
+    The Integrated Gradients method is based on the [`captum` implementation](https://captum.ai/api/integrated_gradients.html)
     and is an implementation of an idea coming from the [original paper on Integrated Gradients](https://arxiv.org/pdf/1703.01365),
     where more details about this method can be found.
 
     Attributes:
         _attribution_method (CaptumIntegratedGradients): The Integrated Gradients method from the `captum` library.
+        multiply_by_inputs: Indicates whether to factor model inputs’ multiplier in the final attribution scores.
+            In the literature this is also known as local vs global attribution. If inputs’ multiplier isn’t factored
+            in, then that type of attribution method is also called local attribution. If it is, then that type of
+            attribution method is called global. More detailed can be found in this [paper](https://arxiv.org/abs/1711.06104).
+            In case of integrated gradients, if multiply_by_inputs is set to True,
+            final sensitivity scores are being multiplied by (inputs - baselines).
 
     Args:
         explainable_model (ExplainableModel | Explainer): The explainable model to be explained.
-        postprocessing_segmentation_output (Callable[[torch.Tensor], torch.Tensor] | None):
-            A segmentation postprocessing function for segmentation problem type. This is required for segmentation
-            problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-            attribution method is not used.
     """
 
-    def __init__(
-        self,
-        explainable_model: ExplainableModel,
-        postprocessing_segmentation_output: Callable[[torch.Tensor], torch.Tensor] | None = None,
-        multiply_by_inputs: bool = True,
-    ):
-        super().__init__(explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output)
+    def __init__(self, explainable_model: ExplainableModel, multiply_by_inputs: bool = True):
+        super().__init__(explainable_model)
         self.multiply_by_inputs = multiply_by_inputs
 
         self._attribution_method = CaptumIntegratedGradients(

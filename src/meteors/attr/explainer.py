@@ -62,10 +62,6 @@ class Explainer(ABC):
         explainable_model (ExplainableModel | Explainer): The explainable model to be explained.
         forward_func (Callable): The forward function of the explainable model.
         chained_explainer (Explainer | None): The chained explainer. Defaults to None.
-        postprocessing_segmentation_output (Callable[[torch.Tensor], torch.Tensor] | None):
-            A segmentation postprocessing function for segmentation problem type. This is required for segmentation
-            problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-            attribution method is not used.
     """
 
     attribute: Callable[
@@ -73,11 +69,7 @@ class Explainer(ABC):
         HSIAttributes | list[HSIAttributes],
     ]
 
-    def __init__(
-        self,
-        callable: ExplainableModel | Explainer,
-        postprocessing_segmentation_output: Callable[[torch.Tensor], torch.Tensor] | None = None,
-    ) -> None:
+    def __init__(self, callable: ExplainableModel | Explainer) -> None:
         if not isinstance(callable, ExplainableModel) and not isinstance(callable, Explainer):
             raise TypeError(f"Expected ExplainableModel or Explainer as callable, but got {type(callable)}")
         self.chained_explainer = None
@@ -99,38 +91,10 @@ class Explainer(ABC):
                 f"Initializing {self.__class__.__name__} explainer on model {callable.explainable_model} chained with {callable.__class__.__name__}"
             )
         else:
-            if callable.problem_type == "segmentation":
-                if postprocessing_segmentation_output is None:
-                    logger.warning(
-                        "Segmentation problem type detected. Make sure that output of the model is 1d by using postprocessing_segmentation_output function"
-                    )
-                else:
-                    logger.info(
-                        "Segmentation problem type detected. Using postprocessing_segmentation_output function to aggregate the output"
-                    )
-                    callable.forward_func = Explainer._adjusted_segmentation_forward_func(
-                        callable.forward_func, postprocessing_segmentation_output
-                    )
-            elif postprocessing_segmentation_output is not None:
-                logger.warning(
-                    "postprocessing_segmentation_output is only used for segmentation problem type. Ignoring the function"
-                )
-
             self.explainable_model = callable
             logger.info(f"Initializing {self.__class__.__name__} explainer on model {callable}")
 
         self.forward_func = self.explainable_model.forward_func
-
-    @staticmethod
-    def _adjusted_segmentation_forward_func(
-        original_callable: Callable[[torch.Tensor], torch.Tensor],
-        postprocessing_segmentation_output: Callable[[torch.Tensor], torch.Tensor],
-    ) -> Callable[[torch.Tensor], torch.Tensor]:
-        def adjusted_forward_func(x: torch.Tensor) -> torch.Tensor:
-            output = original_callable(x)
-            return postprocessing_segmentation_output(output)
-
-        return adjusted_forward_func
 
     def has_convergence_delta(self) -> bool:
         """Check if the explainer has a convergence delta.

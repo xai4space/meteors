@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any
 
 import itertools
 import torch
@@ -36,12 +36,8 @@ class Occlusion(Explainer):
             attribution method is not used.
     """
 
-    def __init__(
-        self,
-        explainable_model: ExplainableModel,
-        postprocessing_segmentation_output: Callable[[torch.Tensor], torch.Tensor] | None = None,
-    ):
-        super().__init__(explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output)
+    def __init__(self, explainable_model: ExplainableModel):
+        super().__init__(explainable_model)
 
         self._attribution_method = CaptumOcclusion(explainable_model.forward_func)
 

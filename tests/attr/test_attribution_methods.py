@@ -4,7 +4,6 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from copy import deepcopy
 
 from meteors.models import ExplainableModel
 from meteors.utils import agg_segmentation_postprocessing
@@ -41,12 +40,15 @@ def explainable_toy_model():
     return ExplainableModel(problem_type="regression", forward_func=ToyModel())
 
 
-@pytest.fixture
-def explainable_segmentation_toy_model():
-    return ExplainableModel(problem_type="segmentation", forward_func=SegmentationToyModel())
+def explainable_segmentation_toy_model(postprocessing_segmentation_output):
+    return ExplainableModel(
+        problem_type="segmentation",
+        forward_func=SegmentationToyModel(),
+        postprocessing_output=postprocessing_segmentation_output,
+    )
 
 
-def test_integrated_gradients(explainable_toy_model, explainable_segmentation_toy_model):
+def test_integrated_gradients(explainable_toy_model):
     ig = IntegratedGradients(explainable_toy_model)
 
     assert ig is not None
@@ -80,13 +82,16 @@ def test_integrated_gradients(explainable_toy_model, explainable_segmentation_to
 
     # Test segmentation postprocessing
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
-    ig = IntegratedGradients(
-        explainable_segmentation_toy_model, postprocessing_segmentation_output=postprocessing_segmentation_output
-    )
+    explainable_segmentation_model = explainable_segmentation_toy_model(postprocessing_segmentation_output)
+    ig = IntegratedGradients(explainable_segmentation_model)
 
     image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
     attributions = ig.attribute(image, target=0)
     assert attributions.attributes.shape == image.image.shape
+
+    ig = IntegratedGradients(explainable_segmentation_model)
+    similar_attributions = ig.attribute(image, target=0)
+    assert torch.allclose(attributions.attributes, similar_attributions.attributes)
 
     attributions = ig.attribute([image, image], target=0)
     assert len(attributions) == 2
@@ -103,7 +108,7 @@ def test_integrated_gradients(explainable_toy_model, explainable_segmentation_to
         ig.attribute(image)
 
 
-def test_saliency(explainable_toy_model, explainable_segmentation_toy_model):
+def test_saliency(explainable_toy_model):
     saliency = Saliency(explainable_toy_model)
 
     assert saliency is not None
@@ -123,13 +128,16 @@ def test_saliency(explainable_toy_model, explainable_segmentation_toy_model):
 
     # Test segmentation postprocessing
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
-    saliency = Saliency(
-        explainable_segmentation_toy_model, postprocessing_segmentation_output=postprocessing_segmentation_output
-    )
+    explainable_segmentation_model = explainable_segmentation_toy_model(postprocessing_segmentation_output)
+    saliency = Saliency(explainable_segmentation_model)
 
     image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
     attributions = saliency.attribute(image, target=0)
     assert attributions.attributes.shape == image.image.shape
+
+    saliency = Saliency(explainable_segmentation_model)
+    similar_attributions = saliency.attribute(image, target=0)
+    assert torch.allclose(attributions.attributes, similar_attributions.attributes)
 
     attributions = saliency.attribute([image, image], target=0)
     assert len(attributions) == 2
@@ -146,7 +154,7 @@ def test_saliency(explainable_toy_model, explainable_segmentation_toy_model):
         saliency.attribute(image)
 
 
-def test_input_x_gradient(explainable_toy_model, explainable_segmentation_toy_model):
+def test_input_x_gradient(explainable_toy_model):
     input_x_gradient = InputXGradient(explainable_toy_model)
 
     assert input_x_gradient is not None
@@ -165,13 +173,16 @@ def test_input_x_gradient(explainable_toy_model, explainable_segmentation_toy_mo
 
     # Test segmentation postprocessing
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
-    input_x_gradient = InputXGradient(
-        explainable_segmentation_toy_model, postprocessing_segmentation_output=postprocessing_segmentation_output
-    )
+    explainable_segmentation_model = explainable_segmentation_toy_model(postprocessing_segmentation_output)
+    input_x_gradient = InputXGradient(explainable_segmentation_model)
 
     image = HSI(image=torch.rand(3, 224, 224), wavelengths=[0, 100, 200])
     attributions = input_x_gradient.attribute(image, target=0)
     assert attributions.attributes.shape == image.image.shape
+
+    input_x_gradient = InputXGradient(explainable_segmentation_model)
+    similar_attributions = input_x_gradient.attribute(image, target=0)
+    assert torch.allclose(attributions.attributes, similar_attributions.attributes)
 
     attributions = input_x_gradient.attribute([image, image], target=0)
     assert len(attributions) == 2
@@ -188,7 +199,7 @@ def test_input_x_gradient(explainable_toy_model, explainable_segmentation_toy_mo
         input_x_gradient.attribute(image)
 
 
-def test_occlusion(explainable_toy_model, explainable_segmentation_toy_model):
+def test_occlusion(explainable_toy_model):
     occlusion = Occlusion(explainable_toy_model)
     assert occlusion is not None and occlusion._attribution_method is not None
 
@@ -205,10 +216,8 @@ def test_occlusion(explainable_toy_model, explainable_segmentation_toy_model):
     assert attributions[1].attributes.shape == image.image.shape
 
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
-    segment_occlusion = Occlusion(
-        deepcopy(explainable_segmentation_toy_model),
-        postprocessing_segmentation_output=postprocessing_segmentation_output,
-    )
+    explainable_segmentation_model = explainable_segmentation_toy_model(postprocessing_segmentation_output)
+    segment_occlusion = Occlusion(explainable_segmentation_model)
 
     attributions = segment_occlusion.attribute(
         image,
@@ -217,6 +226,15 @@ def test_occlusion(explainable_toy_model, explainable_segmentation_toy_model):
         strides=(1, 2, 2),
     )
     assert attributions.attributes.shape == image.image.shape
+
+    segment_occlusion = Occlusion(explainable_segmentation_model)
+    similar_attributions = segment_occlusion.attribute(
+        image,
+        target=0,
+        sliding_window_shapes=(1, 2, 2),
+        strides=(1, 2, 2),
+    )
+    assert torch.allclose(attributions.attributes, similar_attributions.attributes)
 
     attributions = segment_occlusion.attribute(
         [image, image],
@@ -257,10 +275,8 @@ def test_occlusion(explainable_toy_model, explainable_segmentation_toy_model):
     assert attributions[1].attributes.shape == image.image.shape
 
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
-    segment_occlusion = Occlusion(
-        deepcopy(explainable_segmentation_toy_model),
-        postprocessing_segmentation_output=postprocessing_segmentation_output,
-    )
+    explainable_segmentation_model = explainable_segmentation_toy_model(postprocessing_segmentation_output)
+    segment_occlusion = Occlusion(explainable_segmentation_model)
     attributions = segment_occlusion.get_spatial_attributes(
         image,
         target=0,
@@ -308,10 +324,8 @@ def test_occlusion(explainable_toy_model, explainable_segmentation_toy_model):
     assert attributions[1].attributes.shape == image.image.shape
 
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
-    segment_occlusion = Occlusion(
-        deepcopy(explainable_segmentation_toy_model),
-        postprocessing_segmentation_output=postprocessing_segmentation_output,
-    )
+    explainable_segmentation_model = explainable_segmentation_toy_model(postprocessing_segmentation_output)
+    segment_occlusion = Occlusion(explainable_segmentation_model)
     attributions = segment_occlusion.get_spectral_attributes(
         image,
         target=0,

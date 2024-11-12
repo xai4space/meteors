@@ -1568,9 +1568,8 @@ def test_get_spatial_attributes_segmentation():
 
     # Create a sample Lime object
     lime = mt_lime.Lime(
-        explainable_model=ExplainableModel(dumb_model, "segmentation"),
+        explainable_model=ExplainableModel(dumb_model, "segmentation", postprocessing),
         interpretable_model=SkLearnLasso(alpha=0.1),
-        postprocessing_segmentation_output=postprocessing,
     )
 
     # Call the get_spatial_attributes method
@@ -1672,10 +1671,9 @@ def test_get_spatial_attributes_segmentation():
     similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
     interpretable_model = SkLearnLasso(alpha=0.08)
     lime = mt_lime.Lime(
-        explainable_model=ExplainableModel(dumb_model, "segmentation"),
+        explainable_model=ExplainableModel(dumb_model, "segmentation", postprocessing),
         interpretable_model=interpretable_model,
         similarity_func=similarity_func,
-        postprocessing_segmentation_output=postprocessing,
     )
 
     # Call the get_spatial_attributes method
@@ -2044,9 +2042,8 @@ def test_get_spectral_attributes_segmentation():
 
     # Create a sample Lime object
     lime = mt_lime.Lime(
-        explainable_model=ExplainableModel(dumb_model, "segmentation"),
+        explainable_model=ExplainableModel(dumb_model, "segmentation", postprocessing),
         interpretable_model=SkLearnLasso(alpha=0.1),
-        postprocessing_segmentation_output=postprocessing,
     )
 
     # Call the get_spectral_attributes method
@@ -2159,10 +2156,9 @@ def test_get_spectral_attributes_segmentation():
     similarity_func = mt_lime_base.get_exp_kernel_similarity_function(distance_mode="cosine", kernel_width=1000)
     interpretable_model = SkLearnLasso(alpha=0.08)
     lime = mt_lime.Lime(
-        explainable_model=ExplainableModel(dumb_model, "segmentation"),
+        explainable_model=ExplainableModel(dumb_model, "segmentation", postprocessing),
         interpretable_model=interpretable_model,
         similarity_func=similarity_func,
-        postprocessing_segmentation_output=postprocessing,
     )
 
     # Use Band mask no Band names
