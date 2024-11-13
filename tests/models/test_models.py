@@ -22,8 +22,15 @@ def test_explainable_model():
     explainable_model = ExplainableModel(problem_type="classification", forward_func=lambda x: x.mean(dim=(1, 2, 3)))
     assert explainable_model is not None
 
-    explainable_model = ExplainableModel(problem_type="segmentation", forward_func=lambda x: x.mean(dim=(1, 2, 3)))
+    explainable_model = ExplainableModel(
+        problem_type="segmentation",
+        forward_func=lambda x: x.mean(dim=(1, 2, 3)),
+        postprocessing_output=lambda x: x.mean(dim=(1, 2, 3)),
+    )
     assert explainable_model is not None
+
+    with pytest.raises(ValueError):
+        explainable_model = ExplainableModel(problem_type="segmentation", forward_func=lambda x: x.mean(dim=(1, 2, 3)))
 
     explainable_model.to("cpu")
 

@@ -42,19 +42,18 @@ class ExplainableModel:
         self.problem_type = self.validate_problem_type(problem_type)
         self.postprocessing_segmentation_output = True if postprocessing_output is not None else False
         if problem_type == "segmentation" and not self.postprocessing_segmentation_output:
-             raise ValueError("No function for postprocessing the model output for the explainable model")
+            raise ValueError(
+                "No function for postprocessing the model output for the explainable model, model output should be 1d or 2d with batch size"
+            )
         if problem_type != "segmentation" and self.postprocessing_segmentation_output:
-             warnings.warn("There is passed postprocessing segmentation output function, but the problem type is not segmentation. There will be used a default model's forward function.")
-        if problem_type == "segmentation":
-            self.forward_func = self._adjusted_forward_func(forward_func, postprocessing_output)  # type: ignore
+            warnings.warn(
+                "There is passed postprocessing segmentation output function, but the problem type is not segmentation. There will be used a default model's forward function."
+            )
+
+        if self.postprocessing_segmentation_output:
             self.forward_func = self._adjusted_forward_func(forward_func, postprocessing_output)  # type: ignore
         else:
             self.forward_func = forward_func
-
-        if self.problem_type == "segmentation" and not self.postprocessing_segmentation_output:
-            warnings.warn(
-                "Segmentation problem type detected. Make sure that output of the model is 1d by using `postprocessing_output` function"
-            )
 
     @staticmethod
     def _adjusted_forward_func(

@@ -100,13 +100,8 @@ def test_explainer():
 
 def test_explainer_segmentation():
     # Create objects for ExplainableModel and InterpretableModel
-    explainable_model = ExplainableModel(forward_func=lambda x: x + 1, problem_type="segmentation")
-    assert not explainable_model.postprocessing_segmentation_output
-
-    # Test output
-    input = torch.rand(1, 3, 224, 224)
-    output = explainable_model.forward_func(input)
-    assert output.shape == (1, 3, 224, 224)
+    with pytest.raises(ValueError):
+        explainable_model = ExplainableModel(forward_func=lambda x: x + 1, problem_type="segmentation")
 
     # Postprocessing function
     def postprocessing_segmentation_output(x):

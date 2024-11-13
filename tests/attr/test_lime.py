@@ -1687,13 +1687,12 @@ def test_get_spatial_attributes_segmentation():
     assert spatial_attributes.attributes.shape == hsi.image.shape
 
     # Test No segmentation postprocessing
-    lime = mt_lime.Lime(
-        explainable_model=ExplainableModel(dumb_model, "segmentation"),
-        interpretable_model=interpretable_model,
-        similarity_func=similarity_func,
-    )
     with pytest.raises(ValueError):
-        spatial_attributes = lime.get_spatial_attributes(hsi, segmentation_mask, target=0)
+        lime = mt_lime.Lime(
+            explainable_model=ExplainableModel(dumb_model, "segmentation"),
+            interpretable_model=interpretable_model,
+            similarity_func=similarity_func,
+        )
 
 
 def test_get_spectral_attributes_regression():
@@ -2174,14 +2173,12 @@ def test_get_spectral_attributes_segmentation():
     assert spectral_attributes.attributes.shape == hsi.image.shape
 
     # Test case 5: No segmentation postprocessing
-    lime = mt_lime.Lime(
-        explainable_model=ExplainableModel(dumb_model, "segmentation"),
-        interpretable_model=interpretable_model,
-        similarity_func=similarity_func,
-    )
-
-    with pytest.raises(Exception):
-        spectral_attributes = lime.get_spectral_attributes(hsi, band_mask, band_names=band_names, target=0)
+    with pytest.raises(ValueError):
+        lime = mt_lime.Lime(
+            explainable_model=ExplainableModel(dumb_model, "segmentation"),
+            interpretable_model=interpretable_model,
+            similarity_func=similarity_func,
+        )
 
 
 def test_attribute_wrapper():
