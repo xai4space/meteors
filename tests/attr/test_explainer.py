@@ -99,40 +99,35 @@ def test_explainer():
 
 
 def test_explainer_segmentation():
-    # Create mock objects for ExplainableModel and InterpretableModel
-    explainable_model = ExplainableModel(forward_func=lambda x: x + 1, problem_type="segmentation")
-
-    # Test output
-    input = torch.rand(1, 3, 224, 224)
-    output = explainable_model.forward_func(input)
-    assert output.shape == (1, 3, 224, 224)
+    # Create objects for ExplainableModel and InterpretableModel
+    with pytest.raises(ValueError):
+        explainable_model = ExplainableModel(forward_func=lambda x: x + 1, problem_type="segmentation")
 
     # Postprocessing function
     def postprocessing_segmentation_output(x):
         return x.mean(dim=(1, 2, 3))
 
-    # Create a Explainer object
-    explainer = explainer_module.Explainer(
-        explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output
+    # Create objects for ExplainableModel and InterpretableModel
+    explainable_model = ExplainableModel(
+        forward_func=lambda x: x + 1,
+        problem_type="segmentation",
+        postprocessing_output=postprocessing_segmentation_output,
     )
+    assert explainable_model.postprocessing_segmentation_output
 
-    # Assert that the explainable_model is set correctly
-    assert explainer.explainable_model == explainable_model
-
-    # Assert that the postprocessing_segmentation_output is set correctly
+    # Test output
+    input = torch.rand(1, 3, 224, 224)
     output = explainable_model.forward_func(input)
     assert output.shape == (1,)
 
-    # Test no postprocessing function
-    explainable_model = ExplainableModel(forward_func=lambda x: x + 1, problem_type="segmentation")
-    explainer = explainer_module.Explainer(explainable_model)
-    output = explainable_model.forward_func(input)
-    assert output.shape == (1, 3, 224, 224)
-
     # Test postprocessing function with non-segmentation problem type
-    explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(0, 2, 3)), problem_type="regression")
-    explainer = explainer_module.Explainer(
-        explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output
+    explainable_model = ExplainableModel(
+        forward_func=lambda x: x + 1,
+        problem_type="regression",
+        postprocessing_output=postprocessing_segmentation_output,
     )
+
+    # Test output
+    input = torch.rand(1, 3, 224, 224)
     output = explainable_model.forward_func(input)
-    assert output.shape == (3,)
+    assert output.shape == (1,)
