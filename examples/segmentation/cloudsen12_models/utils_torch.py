@@ -14,6 +14,7 @@ def padded_predict(
     tensor: torch.Tensor,
     model: torch.nn.Module,
     divisor: int = 32,
+    hard_labels=False,
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 ) -> torch.Tensor:
     """Predict on a tensor adding padding if necessary.
@@ -22,6 +23,7 @@ def padded_predict(
         tensor: torch.Tensor (C, H, W) of input values
         model: torch.nn.Module
         divisor: int
+        hard_labels: bool
         device: torch.device
 
     Returns:

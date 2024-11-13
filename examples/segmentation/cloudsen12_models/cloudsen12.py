@@ -122,21 +122,24 @@ class CDModel(torch.nn.Module):
         self.model.eval()
         self.model.to(self.device)
 
-    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
+    def forward(self, tensor: torch.Tensor, hard_labels=False) -> torch.Tensor:
         pred_cont = self.model(tensor)
-        pred_discrete = torch.argmax(pred_cont, dim=1).type(torch.uint8)
-        pred_discrete.requires_grad = pred_cont.requires_grad
-        pred_discrete.grad_fn = pred_cont.grad_fn
-        return pred_discrete
+        if hard_labels:
+            pred_discrete = torch.argmax(pred_cont, dim=1).type(torch.uint8)
+            return pred_discrete
+        else:
+            return torch.softmax(pred_cont, dim=1)
 
-    def predict(self, tensor: ArrayLike) -> ArrayLike:
+    def predict(self, tensor: ArrayLike, hard_labels=False) -> ArrayLike:
         """
 
         Args:
             tensor: np.array (len(self.bands), H, W) of TOA reflectances (values between 0 and 1)
+            hard_labels: if True, return the hard labels - the class with the highest probability
 
         Returns:
-            uint8 np.array (H, W) with interpretation {0: clear, 1: Thick cloud, 2: thin cloud, 3: cloud shadow}
+            uint8 np.array (H, W) with interpretation {0: clear, 1: Thick cloud, 2: thin cloud, 3: cloud shadow} in case hard_labels is True,
+            otherwise a float32 np.array (4, H, W) with the probabilities of each class
         """
         if hasattr(tensor, "values") and hasattr(tensor, "transform"):
             raise NotImplementedError(
@@ -160,6 +163,9 @@ class CDModel(torch.nn.Module):
         assert tensor.shape[0] == len(self.bands), f"Expected {len(self.bands)} channels found {tensor.shape[0]}"
 
         pred = padded_predict(tensor, self, 32, self.device)
+
+        if hard_labels:
+            pred = torch.argmax(pred, dim=0).type(torch.uint8)
 
         if transform is not None:
             raise NotImplementedError(
@@ -236,7 +242,7 @@ def plot_cloudSEN12mask(
             "plotting for GeoData not supported, please use the original cloudsen12 code or refer to the georeader.plot.plot_segmentation_mask function"
         )
     if not isinstance(mask, np.ndarray):
-        mask = mask.numpy()
+        mask = mask.detach().numpy()
 
     ax = ax or plt.gca()
     ax.axis("off")
