@@ -153,7 +153,7 @@ def agg_segmentation_postprocessing(
 
         Args:
             output (torch.Tensor): The output of a model, with shape depending on the `soft_labels` parameter. In case of soft labels,
-                the shape would be 4 dimensional with the batch size as the first dimension, unless the `class_label` would be set to 0, then the batch dimension is set to 1. 
+                the shape would be 4 dimensional with the batch size as the first dimension, unless the `class_label` would be set to 0, then the batch dimension is set to 1.
                 In case of hard labels, the shape would be 3 dimensional with the batch size as the first dimension.
 
         Returns:
