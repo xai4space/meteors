@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: meteors
+authors:
+- family-names: "Kwieciński"
+  given-names: "Tymoteusz"
+  orcid: "https://orcid.org/0009-0006-7362-9821"
+- family-names: "Zaigrajew"
+  given-names: "Vladimir"
+  orcid: "https://orcid.org/0009-0007-0817-6309"
+version: 0.1.1
+month: 11
+year: 2024 
+url: "https://github.com/xai4space/meteors"
