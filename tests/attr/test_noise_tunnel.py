@@ -34,9 +34,12 @@ def explainable_toy_model():
     return ExplainableModel(problem_type="regression", forward_func=ToyModel())
 
 
-@pytest.fixture
-def explainable_segmentation_toy_model():
-    return ExplainableModel(problem_type="segmentation", forward_func=SegmentationToyModel())
+def explainable_segmentation_toy_model(postprocessing_segmentation_output):
+    return ExplainableModel(
+        problem_type="segmentation",
+        forward_func=SegmentationToyModel(),
+        postprocessing_output=postprocessing_segmentation_output,
+    )
 
 
 def test_torch_random_choice():
@@ -133,7 +136,7 @@ def test_hyper_noise_perturb_input():
         HyperNoiseTunnel.perturb_input(input)
 
 
-def test_noise_attribute(explainable_toy_model, explainable_segmentation_toy_model):
+def test_noise_attribute(explainable_toy_model):
     ig = IntegratedGradients(explainable_toy_model)
     noise_tunnel = NoiseTunnel(ig)
 
@@ -221,9 +224,8 @@ def test_noise_attribute(explainable_toy_model, explainable_segmentation_toy_mod
 
     # Test segmentation output
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
-    ig = IntegratedGradients(
-        explainable_segmentation_toy_model, postprocessing_segmentation_output=postprocessing_segmentation_output
-    )
+    explainable_segmentation_model = explainable_segmentation_toy_model(postprocessing_segmentation_output)
+    ig = IntegratedGradients(explainable_segmentation_model)
     hyper_noise_tunnel = HyperNoiseTunnel(ig)
     attributes = hyper_noise_tunnel.attribute(image, n_samples=1, target=0)
     assert attributes.attributes.shape == image.image.shape
@@ -239,7 +241,7 @@ def test_noise_attribute(explainable_toy_model, explainable_segmentation_toy_mod
     assert attributes[1].attributes.shape == image.image.shape
 
 
-def test_hyper_attribute(explainable_toy_model, explainable_segmentation_toy_model):
+def test_hyper_attribute(explainable_toy_model):
     ig = IntegratedGradients(explainable_toy_model)
     hyper_noise_tunnel = HyperNoiseTunnel(ig)
 
@@ -346,9 +348,8 @@ def test_hyper_attribute(explainable_toy_model, explainable_segmentation_toy_mod
 
     # Test segmentation output
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
-    ig = IntegratedGradients(
-        explainable_segmentation_toy_model, postprocessing_segmentation_output=postprocessing_segmentation_output
-    )
+    explainable_segmentation_model = explainable_segmentation_toy_model(postprocessing_segmentation_output)
+    ig = IntegratedGradients(explainable_segmentation_model)
     hyper_noise_tunnel = HyperNoiseTunnel(ig)
     attributes = hyper_noise_tunnel.attribute(image, n_samples=1, target=0)
     assert attributes.attributes.shape == image.image.shape

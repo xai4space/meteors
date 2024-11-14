@@ -65,7 +65,7 @@ class BaseNoiseTunnel(Explainer, ABC):
         if not isinstance(callable, Explainer):
             raise RuntimeError("The callable object must be an instance of the Explainer class")
 
-        super().__init__(callable, None)
+        super().__init__(callable)
         assert self.chained_explainer is not None
         self.chained_explainer: Explainer
 
