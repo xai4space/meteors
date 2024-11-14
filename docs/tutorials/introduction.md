@@ -10,6 +10,12 @@ Welcome to the Meteors tutorials! These tutorials are designed to help you get s
 - Local Interpretable Model-agnostic Explanations (LIME) for hyperspectral images
 - Vision Transformer (ViT) model for hyperspectral image regression
 
+1. [Attribution Methods `attr`](attr_showcase.md)
+
+- HYPERVIEW Challenge
+- Gradient, Occlusion and Perturbation based methods from `attr` for hyperspectral images
+- Vision Transformer (ViT) model for hyperspectral image regression
+
 ## 🚀 Getting Started
 
 To get started with the tutorials, make sure you have Meteors installed and set up on your machine. If you haven't done so already, follow the installation instructions in the [Quickstart](../quickstart.md) tutorial.
