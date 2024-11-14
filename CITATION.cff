@@ -8,6 +8,9 @@ authors:
 - family-names: "Zaigrajew"
   given-names: "Vladimir"
   orcid: "https://orcid.org/0009-0007-0817-6309"
+- family-names: "Biecek"
+  given-names: "Przemysław"
+  orcid: "https://orcid.org/0000-0001-8423-1823"
 version: 0.1.1
 month: 11
 year: 2024 
