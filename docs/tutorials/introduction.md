@@ -16,6 +16,12 @@ Welcome to the Meteors tutorials! These tutorials are designed to help you get s
 - Gradient, Occlusion and Perturbation based methods from `attr` for hyperspectral images
 - Vision Transformer (ViT) model for hyperspectral image regression
 
+3. [Segmentation](segmentation.md)
+
+- Segmentation of Sentinel-2 multispectral images from CloudSEN12 dataset
+- U-Net model for semantic segmentation from CloudSEN12 authors
+- LIME and Integrated Gradients for explaining segmentation predictions
+
 ## 🚀 Getting Started
 
 To get started with the tutorials, make sure you have Meteors installed and set up on your machine. If you haven't done so already, follow the installation instructions in the [Quickstart](../quickstart.md) tutorial.
