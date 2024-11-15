@@ -520,19 +520,23 @@ def wavelengths_bar(
             if len(intersection_of_features) > maximum_intersection:
                 maximum_intersection = len(intersection_of_features)
 
-        per_transformation_contributions[transformation] = np.zeros((maximum_intersection, len(wavelengths_list)))
+        # Initialize contributions array based on the condition
+        rows = 1 if average_the_same_bands else maximum_intersection
+        per_transformation_contributions[transformation] = np.zeros((rows, len(wavelengths_list)))
 
-        # now fill in the contributions with the mean absolute SHAP values
+        # Fill the contributions array
         for wavelength_idx, wavelength in enumerate(wavelengths_list):
-            for i, feature_idx in enumerate(intersections_dict[wavelength]):
-                per_transformation_contributions[transformation][i][wavelength_idx] = mean_abs_shap_values[feature_idx]
-
-    # averages the SHAP values of the features within the same band or the same transformation/band group if the transformation mapping is provided
-    if average_the_same_bands:
-        for transformation in transformations_list:
-            per_transformation_contributions[transformation] = np.mean(
-                per_transformation_contributions[transformation], axis=0, keepdims=True
-            )
+            if average_the_same_bands:
+                # Average SHAP values for features in the same band
+                per_transformation_contributions[transformation][0][wavelength_idx] = np.mean(
+                    [mean_abs_shap_values[feature_idx] for feature_idx in intersections_dict[wavelength]]
+                )
+            else:
+                # Assign SHAP values directly to the respective features
+                for i, feature_idx in enumerate(intersections_dict[wavelength]):
+                    per_transformation_contributions[transformation][i][wavelength_idx] = mean_abs_shap_values[
+                        feature_idx
+                    ]
 
     # get the colormap
     cmap = cmap if isinstance(cmap, Colormap) else plt.get_cmap(cmap)
