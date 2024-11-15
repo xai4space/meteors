@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any
 
+import itertools
 import torch
 from captum.attr import Occlusion as CaptumOcclusion
 
 from meteors.models import ExplainableModel
 from meteors import HSI
-from meteors.attr import HSIAttributes
+from meteors.attr import HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
 from meteors.attr import Explainer
 from meteors.attr.explainer import validate_and_transform_baseline
 
@@ -35,14 +36,53 @@ class Occlusion(Explainer):
             attribution method is not used.
     """
 
-    def __init__(
-        self,
-        explainable_model: ExplainableModel,
-        postprocessing_segmentation_output: Callable[[torch.Tensor], torch.Tensor] | None = None,
-    ):
-        super().__init__(explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output)
+    def __init__(self, explainable_model: ExplainableModel):
+        super().__init__(explainable_model)
 
         self._attribution_method = CaptumOcclusion(explainable_model.forward_func)
+
+    @staticmethod
+    def _create_segmentation_mask(
+        input_shape: tuple[int, int, int], sliding_window_shapes: tuple[int, int, int], strides: tuple[int, int, int]
+    ) -> torch.Tensor:
+        """
+        Create a binary segmentation mask based on sliding windows.
+
+        Args:
+            input_shape (Tuple[int, int, int]): Shape of the input tensor (e.g., (H, W, C))
+            sliding_window_shapes (Tuple[int, int, int]): Shape of the sliding window (e.g., (h, w, c))
+            strides (Tuple[int, int, int]): Strides for the sliding window (e.g., (s_h, s_w, s_c))
+
+        Returns:
+            torch.Tensor: Binary mask tensor with ones where windows are placed
+        """
+        # Initialize empty mask
+        mask = torch.zeros(input_shape, dtype=torch.int32)
+
+        # Calculate number of windows in each dimension
+        windows = []
+        for dim_size, window_size, stride in zip(input_shape, sliding_window_shapes, strides):
+            if stride == 0:
+                raise ValueError("Stride cannot be zero.")
+            n_windows = dim_size // stride if (dim_size - window_size) % stride == 0 else dim_size // stride + 1
+            # 1 + (dim_size - window_size) // stride
+            windows.append(n_windows)
+
+        # Generate all possible indices using itertools.product
+        for i, indices in enumerate(itertools.product(*[range(w) for w in windows])):
+            # Calculate start position for each dimension
+            starts = [idx * stride for idx, stride in zip(indices, strides)]
+
+            # Calculate end position for each dimension
+            ends = [start + window for start, window in zip(starts, sliding_window_shapes)]
+
+            # Create slice objects for each dimension
+            slices = tuple(slice(start, end) for start, end in zip(starts, ends))
+
+            # Mark window position in mask
+            mask[slices] = i + 1
+
+        return mask
 
     def attribute(
         self,
@@ -96,7 +136,8 @@ class Occlusion(Explainer):
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
 
         Returns:
-            HSIAttributes: An object containing the computed attributions.
+            HSIAttributes: The computed attributions for the input hyperspectral image(s). if a list of HSI objects
+                is provided, the attributions are computed for each HSI object in the list.
 
         Raises:
             RuntimeError: If the explainer is not initialized.
@@ -144,6 +185,7 @@ class Occlusion(Explainer):
         if len(sliding_window_shapes) != 3:
             raise ValueError("Sliding window shapes must be a tuple of three integers")
 
+        assert len(sliding_window_shapes) == len(strides) == 3
         occlusion_attributions = self._attribution_method.attribute(
             input_tensor,
             sliding_window_shapes=sliding_window_shapes,
@@ -175,7 +217,7 @@ class Occlusion(Explainer):
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-    ) -> HSIAttributes | list[HSIAttributes]:
+    ) -> HSISpatialAttributes | list[HSISpatialAttributes]:
         """Compute spatial attributions for the input HSI using the Occlusion method. In this case, the sliding window
         is applied to the spatial dimensions only.
 
@@ -217,7 +259,8 @@ class Occlusion(Explainer):
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
 
         Returns:
-            HSIAttributes: An object containing the computed spatial attributions.
+            HSISpatialAttributes | list[HSISpatialAttributes]: The computed attributions for the input hyperspectral image(s).
+                if a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
 
         Raises:
             RuntimeError: If the explainer is not initialized.
@@ -276,6 +319,11 @@ class Occlusion(Explainer):
         sliding_window_shapes = tuple(list_sliding_window_shapes)  # type: ignore
         strides = tuple(list_strides)  # type: ignore
 
+        assert len(sliding_window_shapes) == len(strides) == 3
+        segment_mask = [
+            self._create_segmentation_mask(hsi_image.image.shape, sliding_window_shapes, strides) for hsi_image in hsi
+        ]
+
         occlusion_attributions = self._attribution_method.attribute(
             input_tensor,
             sliding_window_shapes=sliding_window_shapes,
@@ -289,8 +337,10 @@ class Occlusion(Explainer):
 
         try:
             spatial_attributes = [
-                HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
-                for hsi_image, attribution in zip(hsi, occlusion_attributions)
+                HSISpatialAttributes(
+                    hsi=hsi_image, attributes=attribution, attribution_method=self.get_name(), mask=mask
+                )
+                for hsi_image, attribution, mask in zip(hsi, occlusion_attributions, segment_mask)
             ]
         except Exception as e:
             raise HSIAttributesError(f"Error in generating Occlusion attributions: {e}") from e
@@ -307,7 +357,7 @@ class Occlusion(Explainer):
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-    ) -> HSIAttributes | list[HSIAttributes]:
+    ) -> HSISpectralAttributes | list[HSISpectralAttributes]:
         """Compute spectral attributions for the input HSI using the Occlusion method. In this case, the sliding window
         is applied to the spectral dimension only.
 
@@ -349,7 +399,9 @@ class Occlusion(Explainer):
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
 
         Returns:
-            HSIAttributes: An object containing the computed spectral attributions.
+            HSISpectralAttributes | list[HSISpectralAttributes]: The computed attributions for the input hyperspectral
+                image(s). if a list of HSI objects is provided, the attributions are computed for each HSI object in
+                the list.
 
         Raises:
             RuntimeError: If the explainer is not initialized.
@@ -416,6 +468,12 @@ class Occlusion(Explainer):
         sliding_window_shapes = tuple(full_sliding_window_shapes)
         strides = tuple(full_strides)
 
+        assert len(sliding_window_shapes) == len(strides) == 3
+        band_mask = [
+            self._create_segmentation_mask(hsi_image.image.shape, sliding_window_shapes, strides) for hsi_image in hsi
+        ]
+        band_names = {str(ui.item()): ui.item() for ui in torch.unique(band_mask[0])}
+
         occlusion_attributions = self._attribution_method.attribute(
             input_tensor,
             sliding_window_shapes=sliding_window_shapes,
@@ -429,8 +487,14 @@ class Occlusion(Explainer):
 
         try:
             spectral_attributes = [
-                HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
-                for hsi_image, attribution in zip(hsi, occlusion_attributions)
+                HSISpectralAttributes(
+                    hsi=hsi_image,
+                    attributes=attribution,
+                    attribution_method=self.get_name(),
+                    mask=mask,
+                    band_names=band_names,
+                )
+                for hsi_image, attribution, mask in zip(hsi, occlusion_attributions, band_mask)
             ]
         except Exception as e:
             raise HSIAttributesError(f"Error in generating Occlusion attributions: {e}") from e

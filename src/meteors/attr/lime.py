@@ -317,10 +317,6 @@ class Lime(Explainer):
             Defaults to None.
         perturb_func (Callable[[torch.Tensor], torch.Tensor] | None, optional): The perturbation function used by Lime.
             Defaults to None.
-        postprocessing_segmentation_output (Callable[[torch.Tensor], torch.Tensor] | None):
-            A segmentation postprocessing function for segmentation problem type. This is required for segmentation
-            problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-            no postprocessing function is used. attribution method is not used. Defaults to None.
     """
 
     def __init__(
@@ -329,9 +325,8 @@ class Lime(Explainer):
         interpretable_model: InterpretableModel = SkLearnLasso(alpha=0.08),
         similarity_func: Callable[[torch.Tensor], torch.Tensor] | None = None,
         perturb_func: Callable[[torch.Tensor], torch.Tensor] | None = None,
-        postprocessing_segmentation_output: Callable[[torch.Tensor], torch.Tensor] | None = None,
     ):
-        super().__init__(explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output)
+        super().__init__(explainable_model)
         self.interpretable_model = interpretable_model
         self._attribution_method: LimeBase = self._construct_lime(
             self.explainable_model.forward_func, interpretable_model, similarity_func, perturb_func

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any
 
 import torch
 from captum.attr import Saliency as CaptumSaliency
@@ -26,18 +26,10 @@ class Saliency(Explainer):
 
     Args:
         explainable_model (ExplainableModel | Explainer): The explainable model to be explained.
-        postprocessing_segmentation_output (Callable[[torch.Tensor], torch.Tensor] | None):
-            A segmentation postprocessing function for segmentation problem type. This is required for segmentation
-            problem type as attribution methods needs to have 1d output. Defaults to None, which means that the
-            attribution method is not used.
     """
 
-    def __init__(
-        self,
-        explainable_model: ExplainableModel,
-        postprocessing_segmentation_output: Callable[[torch.Tensor], torch.Tensor] | None = None,
-    ):
-        super().__init__(explainable_model, postprocessing_segmentation_output=postprocessing_segmentation_output)
+    def __init__(self, explainable_model: ExplainableModel):
+        super().__init__(explainable_model)
 
         self._attribution_method = CaptumSaliency(explainable_model.forward_func)
 

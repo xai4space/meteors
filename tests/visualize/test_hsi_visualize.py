@@ -108,6 +108,23 @@ def test_visualize_hsi_with_hsi_object():
     assert isinstance(ax, Axes)
 
 
+def test_visualize_hsi_with_axes_object():
+    fig, ax = plt.subplots()
+    # Create an hsi object
+    hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
+
+    # Call the visualize_image function
+    returned_ax = visualize.visualize_hsi(hsi, ax)
+
+    # Check if the same axes object is returned
+    assert returned_ax is ax
+
+    # Wrong number of axes
+    ax = [plt.gca(), plt.gca()]
+    with pytest.raises(AttributeError):
+        visualize.visualize_hsi(hsi, ax)
+
+
 def test_visualize_hsi_with_hsi_attributes_object():
     # Create an HSIAttributes object
     hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
