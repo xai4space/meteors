@@ -24,14 +24,14 @@ AVAILABLE_SHAP_EXPLAINERS = ["exact", "tree", "kernel", "linear"]
 
 def ensure_explainer_type(explainer_type: str | None) -> str | None:
     explainer_type = explainer_type.lower() if explainer_type is not None else None
-    if explainer_type not in AVAILABLE_SHAP_EXPLAINERS:
+    if explainer_type not in AVAILABLE_SHAP_EXPLAINERS and explainer_type is not None:
         logger.warning(f"Invalid explainer type: {explainer_type}. ")
         return explainer_type
     return explainer_type
 
 
 def ensure_data_type(data: np.ndarray | torch.Tensor | pd.DataFrame) -> np.ndarray:
-    if isinstance(data, pd.DataFrame):
+    if isinstance(data, pd.DataFrame) or isinstance(data, pd.Series):
         return data.to_numpy()
     elif isinstance(data, torch.Tensor):
         return data.numpy()

@@ -27,7 +27,7 @@ class HyperSHAP:
 
         self.explainer_type = explainer_type.lower() if explainer_type is not None else None  # type: ignore
 
-        if self.explainer_type not in AVAILABLE_SHAP_EXPLAINERS:
+        if self.explainer_type not in AVAILABLE_SHAP_EXPLAINERS and self.explainer_type is not None:
             raise ValueError(
                 f"Invalid explainer type: {explainer_type}. Available options: {AVAILABLE_SHAP_EXPLAINERS}"
             )

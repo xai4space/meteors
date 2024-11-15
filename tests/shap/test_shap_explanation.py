@@ -43,6 +43,10 @@ def test_ensure_data_type():
     assert isinstance(new_data, np.ndarray)
     assert new_data.shape == data.shape
 
+    incorrect_data = "invalid"
+    with pytest.raises(TypeError):
+        mt_shap_explanation.ensure_data_type(incorrect_data)
+
 
 def test_process_and_validate_explanations():
     info = ValidationInfoMock({"data": np.random.rand(10, 10)})
@@ -111,3 +115,9 @@ def test_shap_explanation():
 
     # expect loguru warning for incorrect explanation method
     explanation = mt.shap.SHAPExplanation(data=X_test, explanations=raw_explanation, explanation_method="invalid")
+
+    # local explanations
+    local_explanation = mt.shap.SHAPExplanation(
+        data=X_test.iloc[0], explanations=raw_explanation[0], explanation_method="linear"
+    )
+    assert local_explanation.is_local_explanation
