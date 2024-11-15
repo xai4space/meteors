@@ -528,9 +528,10 @@ def wavelengths_bar(
         for wavelength_idx, wavelength in enumerate(wavelengths_list):
             if average_the_same_bands:
                 # Average SHAP values for features in the same band
-                per_transformation_contributions[transformation][0][wavelength_idx] = np.mean(
-                    [mean_abs_shap_values[feature_idx] for feature_idx in intersections_dict[wavelength]]
-                )
+                if len(intersections_dict[wavelength]) > 0:
+                    per_transformation_contributions[transformation][0][wavelength_idx] = np.mean(
+                        [mean_abs_shap_values[feature_idx] for feature_idx in intersections_dict[wavelength]]
+                    )
             else:
                 # Assign SHAP values directly to the respective features
                 for i, feature_idx in enumerate(intersections_dict[wavelength]):
