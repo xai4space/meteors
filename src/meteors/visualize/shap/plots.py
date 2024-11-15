@@ -531,7 +531,7 @@ def wavelengths_bar(
     if average_the_same_bands:
         for transformation in transformations_list:
             per_transformation_contributions[transformation] = np.mean(
-                per_transformation_contributions[transformation], axis=0
+                per_transformation_contributions[transformation], axis=0, keepdims=True
             )
 
     # get the colormap
@@ -591,7 +591,14 @@ def wavelengths_bar(
     ax.set_xlabel("Wavelengths (nm)")
     ax.set_xticks(wavelengths_list)
     ax.set_ylabel("mean(|SHAP value|)")
-    ax.set_title("Aggregated SHAP values by wavelengths")
+
+    title = "SHAP explanations"
+    if target is not None:
+        title += f" for target {target}"
+    if average_the_same_bands:
+        title += " (averaged across the same bands)"
+
+    ax.set_title(title)
     if plot_transformations:
         ax.legend(title="Transformations", loc="upper right")
     if use_pyplot:
