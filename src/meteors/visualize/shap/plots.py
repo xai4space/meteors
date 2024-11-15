@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Literal
 
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap
@@ -117,38 +116,39 @@ def validate_explanations_and_explainer_type(explainer: HyperSHAP, explanation: 
         raise TypeError(f"Expected HyperSHAP as explanation, but got {type(explanation)}")
 
 
-def validate_aggregations_dict(
-    aggregations: dict[float | int | str, list[int] | int], explantion_values: np.ndarray, wavelengths: bool = True
+def validate_mapping_dict(
+    mapping: dict[float | int | str, list[int] | int], explantion_values: np.ndarray, wavelengths: bool = True
 ) -> dict[float | str, list[int]]:
-    """validates the aggregations dictionary. The function checks if the aggregations are in the correct format.
+    """validates the mapping dictionary. The function checks if the fields of the dictionary are in the correct format, coercing it to the correct types if possible.
+    Later, it checks if all the features are used in the mapping, and returns the parsed dictionary.
 
 
     Args:
-        aggregations (dict[float | int | str, list[int] | int]): Wavelengths mapping and aggregations mapping should be in a format: {band_wavelength | aggregating_function_name: [feature_index, ...], ...}.
-        Aggregation function name should be a string.
+        mapping (dict[float | int | str, list[int] | int]): Wavelengths mapping and transformation mapping should be in a format: {band_wavelength | transformation_function_name: [feature_index, ...] | single_feature_index, ...}.
+        Transformation function name should be a string.
         In case the wavelength is a string, there will be an attempt to convert it to a float.
-        explantion_values (np.ndarray): explanation values for the model.
-        wavelengths (bool, optional): If True, the function will proceed the check wavelengths mapping. Otherwise it will perform check for feature aggregation. Defaults to True.
+        explantion_values (np.ndarray): explanation values for the model from the shap.Explanations object.
+        wavelengths (bool, optional): If True, the function will proceed with the check for wavelengths mapping. Otherwise it will perform check for feature aggregation. Defaults to True.
 
     Raises:
-        TypeError: Raised if aggregations or explanation values are not in the correct format.
+        TypeError: Raised if mappings or explanation values are not in the correct format.
 
     Returns:
-        aggregations: dict[float, list[int]]: validated aggregations dictionary.
+        mapping: dict[float, list[int]]: validated mapping dictionary.
     """
 
-    # check if the aggregations are in the correct format
-    if not isinstance(aggregations, dict):
-        raise TypeError(f"Expected dict as aggregations, but got {type(aggregations)}")
+    # check if the mapping are in the correct format
+    if not isinstance(mapping, dict):
+        raise TypeError(f"Expected dict as mapping, but got {type(mapping)}")
     if not isinstance(explantion_values, np.ndarray):
         raise TypeError(f"Expected np.ndarray as explantion_values, but got {type(explantion_values)}")
 
     used_indices = set()
     ncols = explantion_values.shape[1]
 
-    parsed_aggregations = {}
+    parsed_mapping = {}
 
-    for key, value in aggregations.items():
+    for key, value in mapping.items():
         if wavelengths:
             if isinstance(key, str):
                 try:
@@ -159,30 +159,30 @@ def validate_aggregations_dict(
                 raise TypeError(f"Expected numeric as key in wavelengths, but got {type(key)}")
         else:
             if not isinstance(key, str):
-                raise TypeError(f"Expected str as key in aggregations, but got {type(key)}")
+                raise TypeError(f"Expected str as key in mapping, but got {type(key)}")
         if not isinstance(value, list) and not isinstance(value, int):
-            raise TypeError(f"Expected list or a single integer as value in aggregations, but got {type(value)}")
+            raise TypeError(f"Expected list or a single integer as value in mapping, but got {type(value)}")
 
         if not isinstance(value, list):
             value = [value]
 
         for feature_index in value:
             if not isinstance(feature_index, int):
-                raise TypeError(f"Expected int as feature index in aggregations, but got {type(feature_index)}")
+                raise TypeError(f"Expected int as feature index in mapping, but got {type(feature_index)}")
             if feature_index < 0 or feature_index >= explantion_values.shape[1]:
                 raise ValueError(f"Feature index out of bounds: {feature_index}")
             if feature_index in used_indices:
                 raise ValueError(f"Feature index {feature_index} already used in another entry of the aggregation.")
             used_indices.add(feature_index)
 
-        parsed_aggregations[key] = value
+        parsed_mapping[key] = value
 
     if len(used_indices) != ncols:
         raise ValueError(
-            f"Not all features are used in the aggregations. There are {ncols} features, but only {len(used_indices)} are used in the aggregations."
+            f"Not all features are used in the mapping. There are {ncols} features, but only {len(used_indices)} are used in the mapping."
         )
 
-    return parsed_aggregations
+    return parsed_mapping
 
 
 def force(
@@ -210,7 +210,7 @@ def force(
             If use_pyplot is True, returns None .
     """
     validate_explanations_and_explainer_type(explainer, explanation)
-    target = validate_target(target, explanation, require_single_target=True)
+    target = validate_target(target, explanation, require_single_target=True, plot_type="force")
     observation_index = validate_observation_index(observation_index, explanation, require_local_explanation=True)
 
     explanations_values = explanation.explanations.values
@@ -259,7 +259,7 @@ def beeswarm(
             If use_pyplot is True, returns None.
     """
     validate_explanations_and_explainer_type(explainer, explanation)
-    target = validate_target(target, explanation, require_single_target=True)
+    target = validate_target(target, explanation, require_single_target=True, plot_type="beeswarm")
     observation_index = validate_observation_index(None, explanation, require_local_explanation=False)
 
     explanations = explanation.explanations
@@ -293,7 +293,7 @@ def dependence_plot(
     ymin: float | str | None = None,
     ymax: float | str | None = None,
     ax: Axes | None = None,
-    use_pyplot: bool = True,
+    use_pyplot: bool = False,
 ) -> Axes | None:
     """Create a SHAP dependence plot for the given feature, colored by an interaction feature.
 
@@ -325,7 +325,7 @@ def dependence_plot(
         ymin (float | str, optional): Represents the lower bound of the plot's y-axis. It can also be a string of the format `percentile(float)` that percentile of the feature's value used on the y-axis. Defaults to None, which means that the minimum value of the feature will be used.
         ymax (float | str, optional): Represents the upper bound of the plot's y-axis. It can also be a string of the format `percentile(float)` that percentile of the feature's value used on the y-axis. Defaults to None, which means that the maximum value of the feature will be used.
         ax (matplotlib.axes.Axes, optional): If provided, the plot will be displayed on the passed axes. Defaults to None.
-        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to True.
+        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to False.
 
     Raises:
         ValueError: Raised in case the explanation is not global or is multitarget, and no target to explain is specified.
@@ -337,7 +337,7 @@ def dependence_plot(
             If use_pyplot is True, returns None.
     """
     validate_explanations_and_explainer_type(explainer, explanation)
-    target = validate_target(target, explanation, require_single_target=True)
+    target = validate_target(target, explanation, require_single_target=True, plot_type="dependence_plot")
 
     explanation_values = explanation.explanations.values
     if target is not None:
@@ -414,7 +414,7 @@ def waterfall(
     """
     validate_explanations_and_explainer_type(explainer, explanation)
     observation_index = validate_observation_index(observation_index, explanation, require_local_explanation=True)
-    target = validate_target(target, explanation, require_single_target=True)
+    target = validate_target(target, explanation, require_single_target=True, plot_type="waterfall")
 
     explanations_values = explanation.explanations[observation_index]
     if target is not None:
@@ -427,31 +427,50 @@ def waterfall(
     return ax
 
 
-def wavelength_bar(
+def wavelengths_bar(
     explainer: HyperSHAP,
     explanation: SHAPExplanation,
     target: int | None = None,
     wavelengths_mapping: dict | None = None,
     transformations_mapping: dict | None = None,
     separate_features: bool = True,
+    average_the_same_bands: bool = False,
+    cmap: str | Colormap = "tab20",
     use_pyplot: bool = False,
     ax: Axes | None = None,
 ):
-    """Creates the aggregated bar plot by the wavelengths.
+    """
+    Creates the aggregated bar plot of SHAP values, grouped by the wavelengths and additionally by the transformation functions
     The function aggregates the values of the features by the wavelengths and creates a bar plot for the aggregated values.
 
     Args:
-        explainer (HyperSHAP): _description_
-        explanation (SHAPExplanation): _description_
-        target (int | None, optional): _description_. Defaults to None.
-        wavelengths_mapping (dict[str, list[int]] | None, optional): Wavelengths mapping should be in a format: {"band_wavelength": [feature_index, ...], ...}, where the band wavelength is in nm. Defaults to None.
-        transformations_mapping (dict[str, list[int]] | None, optional): Transformations mapping should be in a format: {"aggregated_feature_name": [feature_index, ...], ...}. Defaults to None.
-        separate_features (bool, optional): Whether to plot the dashed lines separating features from each other. This option allows to distinguish the contributions of different features grouped in the same band. Defaults to True.
-        use_pyplot (bool, optional): Whether to show the plot or return the plot object. Defaults to False.
-        ax (Axes | None, optional): _description_. Defaults to None.
+        explainer (HyperSHAP):
+            A HyperSHAP explainer object used to generate the explanation.
+        explanation (SHAPExplanation):
+            A SHAPExplanation coming from the meteors package. This object contains the explanations for the model. It can contain both the local and global explanations.
+        target (int | None, optional):
+            Specifies which output to explain if the model has multiple outputs. Defaults to None.
+        wavelengths_mapping (dict[str, list[int]] | None, optional):
+            Maps band wavelengths (in nanometers) to feature indices in the format:
+            `{"band_wavelength": [feature_index, ...], ...}`. Must be provided. Defaults to None.
+        transformations_mapping (dict[str, list[int]] | None, optional):
+            Maps transformation names to feature indices in the format:
+            `{"transformation_name": [feature_index, ...], ...}`. Can be used to more deeply analyze the model's behaviour by inspecting which transformations are the most important. Defaults to None.
+        separate_features (bool, optional):
+            If True, includes dashed lines in the plot to separate contributions of different features within the same band. Defaults to True.
+        average_the_same_bands (bool, optional):
+            If True, averages the SHAP values of the features within the same band or the same transformation/band group if the transformation mapping is provided. Defaults to False.
+        cmap (str | Colormap, optional):
+            The name of the colormap or the matplotlib colormap to use. Defaults to "tab20". Should be a valid matplotlib colormap name or a matplotlib colormap object, that allows for iteration over the colors. Number of colors should be no less than the number of transformations. Defaults to "tab20".
+        use_pyplot (bool, optional):
+            If True, displays the plot immediately using `matplotlib.pyplot.show`. If the plot is shown, the function does not return the Axes object. Defaults to False.
+        ax (matplotlib.axes.Axes, optional):
+            If provided, the plot is drawn on the specified axes. If None, a new axes is created. Defaults to None.
 
     Raises:
-        ValueError: If the wavelengths_mapping dictionary has incorrect format.
+        ValueError: If `wavelengths_mapping` is not provided.
+        ValueError: If any of the mappings contain invalid data.
+        TypeError: If invalid types are passed for `wavelengths_mapping` or `transformations_mapping`.
 
     Returns:
         Axes | None:
@@ -459,7 +478,7 @@ def wavelength_bar(
             If use_pyplot is True, returns None.
     """
     validate_explanations_and_explainer_type(explainer, explanation)
-    target = validate_target(target, explanation, require_single_target=True)
+    target = validate_target(target, explanation, require_single_target=True, plot_type="wavelengths_bar")
 
     explanation_values = explanation.explanations.values
     if target is not None:
@@ -468,7 +487,13 @@ def wavelength_bar(
     if wavelengths_mapping is None:
         raise ValueError("Wavelengths mapping must be provided.")
 
-    parsed_wavelengths_mapping = validate_aggregations_dict(wavelengths_mapping, explanation_values)
+    parsed_wavelengths_mapping = validate_mapping_dict(wavelengths_mapping, explanation_values)
+
+    # list of wavelengths present in the data
+    wavelengths_list = list(parsed_wavelengths_mapping.keys())
+
+    # features aggregated by the original feature index - simple global explanations
+    mean_abs_shap_values = np.mean(np.abs(explanation_values), axis=0)
 
     # whether to assign transformation for each feature separately
     plot_transformations = True
@@ -476,61 +501,91 @@ def wavelength_bar(
         plot_transformations = False
         parsed_transformations_mapping = {"None": list(range(explanation_values.shape[1]))}
     else:
-        parsed_transformations_mapping = validate_aggregations_dict(
+        parsed_transformations_mapping = validate_mapping_dict(
             transformations_mapping, explanation_values, wavelengths=False
         )  # type: ignore
 
-    # features aggregated by the original feature index - simple global explanations
-    mean_abs_shap_values = np.mean(np.abs(explanation_values), axis=0)
-
-    # list of wavelengths present in the data
-    wavelengths_list = list(parsed_wavelengths_mapping.keys())
-
     # dictionary that will be filled with the contributions of each wavelength transformed with given transformation
-    if plot_transformations:
-        per_transformation_contributions = {
-            transformation: np.zeros(len(wavelengths_list)) for transformation in parsed_transformations_mapping.keys()
-        }
-    else:
-        per_transformation_contributions = {"None": np.zeros(len(wavelengths_list))}
+    # each element should be a numpy array of shape (number_of_features, number_of_wavelengths).
+    # in this way we can plot the contributions of each transformation separately as a stacked bar plot
+    per_transformation_contributions = {}
+    transformations_list = list(parsed_transformations_mapping.keys())
 
-    # fill the dictionary with the contributions
-    for wavelength_idx, wavelength in enumerate(wavelengths_list):
-        for transformation, feature_indices in parsed_transformations_mapping.items():
-            contribution = np.sum(
-                mean_abs_shap_values[idx] for idx in parsed_wavelengths_mapping[wavelength] if idx in feature_indices
+    for transformation, transformation_feature_indices in parsed_transformations_mapping.items():
+        maximum_intersection = 0
+        intersections_dict = {}
+        for wavelength, wavelength_feature_indices in parsed_wavelengths_mapping.items():
+            intersection_of_features = set(wavelength_feature_indices).intersection(transformation_feature_indices)
+            intersections_dict[wavelength] = list(intersection_of_features)
+            if len(intersection_of_features) > maximum_intersection:
+                maximum_intersection = len(intersection_of_features)
+
+        per_transformation_contributions[transformation] = np.zeros((maximum_intersection, len(wavelengths_list)))
+
+        # now fill in the contributions with the mean absolute SHAP values
+        for wavelength_idx, wavelength in enumerate(wavelengths_list):
+            for i, feature_idx in enumerate(intersections_dict[wavelength]):
+                per_transformation_contributions[transformation][i][wavelength_idx] = mean_abs_shap_values[feature_idx]
+
+    # averages the SHAP values of the features within the same band or the same transformation/band group if the transformation mapping is provided
+    if average_the_same_bands:
+        for transformation in transformations_list:
+            per_transformation_contributions[transformation] = np.mean(
+                per_transformation_contributions[transformation], axis=0
             )
-            per_transformation_contributions[transformation][wavelength_idx] += contribution
+
+    # get the colormap
+    cmap = cmap if isinstance(cmap, Colormap) else plt.get_cmap(cmap)
+    colors = [cmap(i) for i in range(len(transformations_list))]
 
     # init the axes if not provided
-    if ax is None:
-        ax = plt.gca()
+    ax = ax or plt.gca()
+
+    if len(transformations_list) > cmap.N:
+        raise ValueError(
+            f"Number of transformations ({len(transformations_list)}) is greater than the number of colors in the colormap ({cmap.N}). Please provide a colormap with more colors."
+        )
 
     # the bottoms of the current bars
     bottom = np.zeros(len(wavelengths_list))
 
-    # plot the bars
+    ### plot the bars
 
-    transformations_list = list(per_transformation_contributions.keys())
     contributions_nested_list = list(per_transformation_contributions.values())
 
-    for idx in range(len(per_transformation_contributions)):
-        transformation = transformations_list[idx]
-        contributions = contributions_nested_list[idx]
-        bars = ax.bar(wavelengths_list, contributions, bottom=bottom, label=transformation)
-        bottom += contributions
+    for transformation_idx in range(len(per_transformation_contributions)):  # iterate over transformations
+        transformation = transformations_list[transformation_idx]
+        in_group_features_number = len(per_transformation_contributions[transformation])
+        for in_group_feature_idx in range(
+            in_group_features_number
+        ):  # iterate over features in the transformation/wavelength group
+            contributions = contributions_nested_list[transformation_idx][in_group_feature_idx]
+            bars = ax.bar(
+                wavelengths_list,
+                contributions,
+                bottom=bottom,
+                label=transformation if in_group_feature_idx == 0 else "",  # Avoid duplicate legend entries
+                color=colors[transformation_idx],
+            )
+            bottom += contributions
 
-        # draw the values at the top of the bars, excluding the last one
-        if idx != len(per_transformation_contributions) - 1:
-            for bar in bars:
-                ax.hlines(
-                    bar.get_height() + bar.get_y(),
-                    bar.get_x(),
-                    bar.get_x() + bar.get_width(),
-                    colors="black",
-                    linewidth=1,
-                    linestyles="dashed",
+            # draw the values at the top of the bars, excluding the last one
+            if (
+                not (
+                    transformation_idx == len(per_transformation_contributions) - 1
+                    and in_group_feature_idx == in_group_features_number - 1
                 )
+                and separate_features
+            ):
+                for bar in bars:
+                    if bar.get_height() > 0.01:  # do not draw the values for small bars
+                        ax.hlines(
+                            bar.get_height() + bar.get_y(),
+                            bar.get_x(),
+                            bar.get_x() + bar.get_width(),
+                            linewidth=0.5,
+                            color=ax.get_facecolor(),
+                        )
 
     ax.set_ylim(0, np.max(bottom) * 1.1)
     ax.set_xlabel("Wavelengths (nm)")
@@ -538,23 +593,12 @@ def wavelength_bar(
     ax.set_ylabel("mean(|SHAP value|)")
     ax.set_title("Aggregated SHAP values by wavelengths")
     if plot_transformations:
-        ax.legend(title="Transformations")
+        ax.legend(title="Transformations", loc="upper right")
     if use_pyplot:
         plt.show()
-    else:
-        return ax
+        return None
 
-
-def wavelengths_bar(
-    explainer: HyperSHAP,
-    explanation: SHAPExplanation,
-    target: int | None = None,
-    aggregation_method: Literal["sum", "abs sum"] = "abs sum",
-    use_pyplot: bool = False,
-    ax: Axes | None = None,
-):
-    # here I would display the wavelengths in the bottom aggregating the wavelengths in the same manner as the aggregations
-    pass
+    return ax
 
 
 def bar(
@@ -565,7 +609,7 @@ def bar(
     use_pyplot: bool = False,
     ax: Axes | None = None,
     **kwargs,
-):  # TODO: add aggregation
+):
     """Creates a bar plot for the given SHAP explanation. The function utilizes the `shap.plots.bar` function, which reference might be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.bar.html
 
     Args:
@@ -583,7 +627,7 @@ def bar(
             If use_pyplot is True, returns None.
     """
     validate_explanations_and_explainer_type(explainer, explanation)
-    target = validate_target(target, explanation, require_single_target=True)
+    target = validate_target(target, explanation, require_single_target=True, plot_type="bar")
 
     explanation_values = explanation.explanations
     if target is not None:
@@ -623,7 +667,7 @@ def heatmap(
             If use_pyplot is True, returns None.
     """
     validate_explanations_and_explainer_type(explainer, explanation)
-    target = validate_target(target, explanation, require_single_target=True)
+    target = validate_target(target, explanation, require_single_target=True, plot_type="heatmap")
 
     explanation_values = explanation.explanations
     if target is not None:
@@ -633,7 +677,3 @@ def heatmap(
 
     ax = shap.plots.heatmap(explanation_values, show=use_pyplot, ax=ax, **kwargs)
     return ax
-
-
-def partial_dependence_plot(explainer: HyperSHAP, explanation: SHAPExplanation, target: int | None = None):
-    raise NotImplementedError("The function is not implemented yet.")
