@@ -709,7 +709,6 @@ def construct_feature_mask(feature_mask, formatted_inputs):
             min(torch.min(single_mask).item() for single_mask in feature_mask if single_mask.numel())
         )
         if min_interp_features != 0:
-            warnings.warn("Minimum element in feature mask is not 0, shifting indices to" " start at 0.")
             feature_mask = tuple(single_mask - min_interp_features for single_mask in feature_mask)
 
         num_interp_features = _get_max_feature_index(feature_mask) + 1
