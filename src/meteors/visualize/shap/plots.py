@@ -583,7 +583,7 @@ def wavelengths_bar(
                 and separate_features
             ):
                 for bar in bars:
-                    if bar.get_height() > 0.01:  # do not draw the values for small bars
+                    if bar.get_height() > 0.0001:  # do not draw the values for small bars
                         ax.hlines(
                             bar.get_height() + bar.get_y(),
                             bar.get_x(),
