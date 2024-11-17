@@ -141,11 +141,9 @@ The Lime Base class was adapted from the Captum Lime implementation. This adapta
       members:
         - attribute
 
-### Hyper Noise Tunnel
-
 ::: src.meteors.attr.noise_tunnel.NoiseTunnel
     options:
-      heading_level: 4
+      heading_level: 3
       show_bases: true
       show_root_heading: true
       show_root_full_path: false
@@ -155,7 +153,7 @@ The Lime Base class was adapted from the Captum Lime implementation. This adapta
 
 ::: src.meteors.attr.noise_tunnel.HyperNoiseTunnel
     options:
-      heading_level: 4
+      heading_level: 3
       show_bases: true
       show_root_heading: true
       show_root_full_path: false

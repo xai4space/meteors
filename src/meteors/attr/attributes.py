@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing_extensions import Annotated, Self
-import warnings
 from loguru import logger
 
 import torch
@@ -148,7 +147,7 @@ def align_band_names_with_mask(
                     "Band names should not contain 'not_included' if some unique ids are present in the mask and not in band names"
                 )
             else:
-                warnings.warn(
+                logger.info(
                     f"Adding 'not_included' to band names because {value} ids is present in the mask and not in band names"
                 )
                 band_names["not_included"] = value
