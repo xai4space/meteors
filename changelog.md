@@ -2,13 +2,9 @@
 
 ## v0.1.1 (2024-11-18)
 
-### 🛎️ Chores
-- update package version (#130)
-
 ### 📚 Documentation
 - refine the tutorial for lime and add tutorial for attributions methods (#128)
 - refine the example for segmentation problem type (#124)
-- update changelog.md for 0.1.0 [skip ci] (#113)
 
 ### 🩺 Bug Fixes
 - Moved the postprocessing to the ExplainableModel (#123)
