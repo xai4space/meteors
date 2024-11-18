@@ -16,7 +16,7 @@
 
 ### 🔨 Features
 
-- Updated release and docs GitHub actions to tigger when GitHub tag is pushed (#119)
+- Updated release and docs GitHub actions to trigger when GitHub tag is pushed (#119)
 
 ## v0.1.0 (2024-10-29)
 
