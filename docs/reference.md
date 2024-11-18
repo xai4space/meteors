@@ -36,34 +36,6 @@ The architecture of the package can be seen on the UML diagram:
       show_root_heading: false
       show_root_full_path: false
 
-::: src.meteors.visualize.lime_visualize.visualize_spectral_attributes_by_waveband
-    options:
-      heading_level: 3
-      show_bases: false
-      show_root_heading: true
-      show_root_full_path: false
-
-::: src.meteors.visualize.lime_visualize.visualize_spectral_attributes_by_magnitude
-    options:
-      heading_level: 3
-      show_bases: false
-      show_root_heading: true
-      show_root_full_path: false
-
-::: src.meteors.visualize.lime_visualize.visualize_spectral_attributes
-    options:
-      heading_level: 3
-      show_bases: false
-      show_root_heading: true
-      show_root_full_path: false
-
-::: src.meteors.visualize.lime_visualize.visualize_spatial_attributes
-    options:
-      heading_level: 3
-      show_bases: false
-      show_root_heading: true
-      show_root_full_path: false
-
 ## Attribution Methods
 
 ::: src.meteors.attr.attributes.HSIAttributes
