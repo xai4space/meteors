@@ -1,0 +1,1019 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../attr_showcase/">
+      
+      
+        <link rel="next" href="../../reference/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.44">
+    
+    
+      
+        <title>Segmentation - Meteors</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.0253249f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cloud-segmentation-with-meteors" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Meteors" class="md-header__button md-logo" aria-label="Meteors" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Meteors
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Segmentation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Meteors" class="md-nav__button md-logo" aria-label="Meteors" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    Meteors
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🏠 Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🚀 Quickstart
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    📚 Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            📚 Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🎓 Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lime/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LIME
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../attr_showcase/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attribution Methods `attr`
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Segmentation
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Segmentation
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-loading-the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Loading the Model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-loading-sample-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Loading Sample Images
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loading-the-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      Loading the images
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-model-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      3 Model analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3 Model analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-interpreting-the-model-with-lime" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1 Interpreting the Model with LIME
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1 Interpreting the Model with LIME">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spatial-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Spatial analysis
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spectral-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Spectral analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-interpreting-the-model-with-gradient-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2. Interpreting the Model with Gradient Methods
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    📖 API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    📝 Changelog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to-guides/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🤝 How to Contribute
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-loading-the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Loading the Model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-loading-sample-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Loading Sample Images
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loading-the-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      Loading the images
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-model-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      3 Model analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3 Model analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-interpreting-the-model-with-lime" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1 Interpreting the Model with LIME
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1 Interpreting the Model with LIME">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spatial-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Spatial analysis
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spectral-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Spectral analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-interpreting-the-model-with-gradient-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2. Interpreting the Model with Gradient Methods
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="cloud-segmentation-with-meteors">Cloud Segmentation with Meteors</h1>
+<p>This notebook presents the methods from the <code>meteors</code> package that can be used for explaining the remote sensing models implementing the segmentation problem. In the notebook we will walk through:
+- reformulation of the segmentation problem into regression
+- LIME explanations
+- Gradient-based explanations on the example of Integrated Gradients</p>
+<p>The objective of a model, implementing such task, is to divide the input image into similar spatial regions.  In this case, we will focus on <em>cloud segmentation</em> for multispectral imagery - the explained model will simply divide the input image into clouds or terrain.</p>
+<p>We'll be using the <code>UNetMobV2_V1</code> model to perform the cloud segmentation, which is based on research presented in the paper <a href="[paper_link](https://www.nature.com/articles/s41597-022-01878-2)">CloudSEN12: A Global Dataset for Semantic Understanding of Cloud and Cloud Shadow in Sentinel-2</a>.</p>
+<p><strong>Note:</strong> Before running this notebook, make sure to install all the required libraries used in the notebook. It should be sufficient to install the newest version of the package meteors from PyPI, as it carry all the required dependencies. This can be done with a single line:</p>
+<p><code>pip install meteors</code></p>
+<p>In some cases, however, a specific setup on your machine might require installing some additional ones. The cloudsen12_models module contains all the code needed for additional preprocessing and model loading. You can download it directly from the <a href="https://github.com/xai4space/meteors/tree/main/examples/segmentation">Vignettes in the <code>meteors</code> repository</a>.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#1-loading-the-model">1. Loading the Model</a></li>
+<li><a href="#loading-sample-images">2. Loading Sample Images</a></li>
+<li><a href="#3-interpreting-the-model">3. Interpreting the Model</a></li>
+<li><a href="#31-interpreting-the-model-with-lime">3.1. Interpreting the Model with LIME</a></li>
+<li><a href="#32-interpreting-the-model-with-gradient-methods">3.2. Interpreting the Model with Gradient Methods</a></li>
+</ul>
+<h2 id="1-loading-the-model">1. Loading the Model</h2>
+<p>We'll use a modified version of the <code>UNetMobV2_V1</code> model from the <code>cloudsen12_models</code> module, which contains code sourced from github repository <a href="https://github.com/Fersoil/cloudsen12_models/">Fersoil/cloudsen12_models</a>, where you can find a modification of the original <em>UNetMobV2_V1</em> model implementation, which was slighlty adjusted for the PyTorch inputs and outputs and have reduced dependencies. This implementation has been adapted to ork seamlessly with PyTorch inputs and outputs, while preserving the gradients and have reduced external dependencies.</p>
+<pre><code class="language-python">from cloudsen12_models import cloudsen12
+import numpy as np
+import matplotlib.pyplot as plt
+import meteors as mt
+import torch
+
+import meteors.visualize as vis
+</code></pre>
+<pre><code class="language-python">model = cloudsen12.load_model_by_name(name=&quot;UNetMobV2_V1&quot;, weights_folder=&quot;cloudsen12_models&quot;)
+cloudsen12_segment_interpretation = [&quot;clear&quot;, &quot;Thick cloud&quot;, &quot;Thin cloud&quot;, &quot;Cloud shadow&quot;]
+</code></pre>
+<pre><code>c:\Users\tymot\Documents\praca\pineapple\meteors2\examples\segmentation\cloudsen12_models\cloudsen12.py:209: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  weights = torch.load(weights_file, map_location=device)
+</code></pre>
+<h2 id="2-loading-sample-images">2. Loading Sample Images</h2>
+<h2 id="loading-the-images">Loading the images</h2>
+<p>To faciliate the analysis and allow for better reproduction of the examples, the images used in this notebook are already preprocessed and ready to be segmented. The original image is sourced from the Google Earth Engine, from a <em>COPERNICUS/S2_HARMONIZED</em> collection and a <em>S2A_MSIL1C_20240417T064631_N0510_R020_T40RCN_20240417T091941</em> tile. </p>
+<p>The image was later preprocessed according to the code from <a href="https://github.com/IPL-UV/cloudsen12_models/blob/main/notebooks/run_in_gee_image.ipynb">this notebook</a>.</p>
+<pre><code class="language-python">img = np.load(&quot;data/0.npz&quot;)[&quot;img&quot;]
+
+with open(&quot;data/wavelenghts.txt&quot;, &quot;r&quot;) as f:
+    sentinel_central_wavelengths = f.readline()
+sentinel_central_wavelengths = [float(wave.strip()) for wave in sentinel_central_wavelengths.split(&quot;,&quot;)]
+</code></pre>
+<p>The Meteros package provides an easy-to-use wrapper for <code>HSI</code> hyperspectral images. To take full advantage of the wrapper's potential, we also need to include wavelengths of the object. </p>
+<p>The <code>HSI</code> data object can be easily visualized in RGB format.</p>
+<pre><code class="language-python">hsi = mt.HSI(image=img, wavelengths=sentinel_central_wavelengths)
+</code></pre>
+<p>The original image is stored in the <code>image</code> attribute of the <code>HSI</code> object. Let's now test that the model can predict cloud segmentation on this image.</p>
+<pre><code class="language-python">cloudmask = model.predict(hsi.image.unsqueeze(0))
+cloudmask_hard_labels = torch.argmax(cloudmask, dim=1).type(torch.uint8)
+</code></pre>
+<p>The model output is a 4-channel tensor, where each channel represents a different class (soft labels). To get the final prediction, we need to use the <code>argmax</code> function to select the class with the highest probability.</p>
+<pre><code class="language-python">cloudmask_hard_labels.shape
+</code></pre>
+<pre><code>torch.Size([1, 622, 916])
+</code></pre>
+<p>Let's now visualize the model's prediction on the image.</p>
+<pre><code class="language-python">fig, ax = plt.subplots(1, 2, figsize=(14, 5), sharey=True, tight_layout=True)
+cloudsen12.plot_cloudSEN12mask(cloudmask_hard_labels.squeeze(), ax[1])
+ax[1].set_title(&quot;Cloud mask&quot;)
+
+vis.visualize_hsi(hsi, ax[0])
+ax[0].set_title(&quot;input Sentinel-2 image&quot;)
+fig.suptitle(&quot;Cloud mask segmentation&quot;, fontsize=16)
+
+plt.show()
+</code></pre>
+<p><img alt="png" src="../segmentation_files/segmentation_13_0.png" /></p>
+<h2 id="3-model-analysis">3 Model analysis</h2>
+<p>The XAI methods implemented in the <code>meteors</code> package are designed for creating explanations for single-output problems, usually classification or regression. However, the segmentation models ouput multi-dimensional arrays, which cannot be analysed easily by standard XAI methods. </p>
+<p>Fortunately, using a simple trick, we can create a low-dimentional output, by postprocessing the model's outputs. The postprocessing is usually aggregation performed by the region type, and in short, it comes down to simply counting pixels in each class. The <code>meteors</code> package provides a simple aggregation function <code>agg_segmentation_postprocessing</code> for this purpose, but feel free to experiment with other aggregation functions as well.</p>
+<pre><code class="language-python">from meteors.utils import agg_segmentation_postprocessing
+
+postprocessing = agg_segmentation_postprocessing(
+    soft_labels=True,
+    classes_numb=len(cloudsen12_segment_interpretation),
+    class_axis=1,
+)
+</code></pre>
+<p>The <code>agg_segmentation_postprocessing</code> function requires several parameters to properly handle different model outputs. Let's examine each parameter in detail:
+- <code>soft_labels</code> parameter specifies whether the analysed model outputs soft labels (probabilities of pixels belonging to each class) or hard labels (one class is assigned for each pixel). In case the model uses hard labels, the shape of the output should be 3 dimensional, with batch size as its first dimension. The output's shape should be 4 dimensional otherwise
+- <code>classes_numb</code> is a parameter specifying how many classes are predicted by the model
+- <code>class_axis</code> used only for soft labels. It specifies on which axis the class dimension is. If the <code>class_axis</code> equals to 0, then batch size should be at the second dimension.</p>
+<p>Let's now use the <code>agg_segmentation_postprocessing</code> function to convert the model's output into a single numerical output. We'll then use this output to interpret the model with meteors' XAI methods.</p>
+<pre><code class="language-python">aggregated_segmentation_mask = postprocessing(cloudmask)
+aggregated_segmentation_mask
+</code></pre>
+<pre><code>tensor([[461402.5625,  50634.7188,      0.0000,  33250.5391]],
+       grad_fn=&lt;SumBackward1&gt;)
+</code></pre>
+<pre><code class="language-python">cloudmask.shape
+</code></pre>
+<pre><code>torch.Size([1, 4, 622, 916])
+</code></pre>
+<pre><code class="language-python">aggregated_segmentation_mask.shape
+</code></pre>
+<pre><code>torch.Size([1, 4])
+</code></pre>
+<pre><code class="language-python">plt.bar(np.arange(4), aggregated_segmentation_mask.detach().squeeze())
+plt.xticks(np.arange(4), cloudsen12_segment_interpretation)
+plt.title(&quot;Aggregated cloudSEN12 segmentation&quot;)
+plt.ylabel(&quot;Number of pixels&quot;)
+plt.xlabel(&quot;Class&quot;)
+</code></pre>
+<pre><code>Text(0.5, 0, 'Class')
+</code></pre>
+<p><img alt="png" src="../segmentation_files/segmentation_20_1.png" /></p>
+<p>The <code>agg_segmentation_postprocessing</code> function is used to aggregate the model's pixel-wise predictions into a single numerical output. An important thing to note is that the sum of the aggregated values is not necessarily needs to equal to the number of pixels in the image, in case there are soft labels used. In that case the aggregation function takes the probabilities of the argmax class for each pixel and sums them up. </p>
+<p>Now that we tested how to aggregate the model's output, we can proceed with the explanation. One last thing is to properly initialize the model inside the <code>meteors</code> environment. This is done by creating an object that contains all the necessary information to perform an explanation, which is:
+- the forward function of the model
+- the problem type, here <code>segmentation</code>
+- in case the problem type is <code>segmentation</code>, the required parameter is the <code>postprocessing_output</code>, which is a method for aggregating the outputs as we did before.</p>
+<pre><code class="language-python">explainable_model = mt.models.ExplainableModel(
+    model.predict, problem_type=&quot;segmentation&quot;, postprocessing_output=postprocessing
+)
+</code></pre>
+<p>And let's check that model forward function now returns the aggregated output with the gradients.</p>
+<pre><code class="language-python">aggregated_segmentation_mask = explainable_model(hsi.image.unsqueeze(0))
+aggregated_segmentation_mask
+</code></pre>
+<pre><code>tensor([[461402.5625,  50634.7188,      0.0000,  33250.5391]],
+       grad_fn=&lt;SumBackward1&gt;)
+</code></pre>
+<h3 id="31-interpreting-the-model-with-lime">3.1 Interpreting the Model with LIME</h3>
+<p>We'll use the <a href="https://dl.acm.org/doi/abs/10.1145/2939672.2939778">LIME (Local Interpretable Model-agnostic Explanations)</a> method to understand our model's behavior. For a comprehensive understanding of LIME and its implementation in <code>meteors</code>, refer to our <a href="https://xai4space.github.io/meteors/latest/tutorials/lime/">LIME tutorial</a>.</p>
+<p>The intepretable model of LIME is a linear model LASSO model with a regularization parameter of 0.001.</p>
+<pre><code class="language-python">interpretable_model = mt.models.SkLearnLasso(alpha=0.001)
+lime = mt.attr.Lime(explainable_model=explainable_model, interpretable_model=interpretable_model)
+</code></pre>
+<h4 id="spatial-analysis">Spatial analysis</h4>
+<p>Firstly, let us verify, which image regions contribute the most to the specific class predictions - we will perform spatial analysis of the model. LIME explanation method requires the input feature space to be low-dimensional and to satisfy this condition, we will create a LIME segmentation mask, which will help understanding LIME which regions are more relevant for the cloudsen model. Please note here, that t</p>
+<p>Now, we will create the LIME segmentation mask, and later create attributions for the class 0 - the clear sky.</p>
+<p>We will use the <code>SLIC</code> algorithm to generate this mask. The <code>SLIC</code> algorithm is a superpixel segmentation method that groups pixels into regions based on their similarity.</p>
+<p><strong>Note:</strong> The segmentation mask created for the LIME method is something completely different from the output created by the cloudsen model.</p>
+<pre><code class="language-python">lime_seg_mask = lime.get_segmentation_mask(hsi, segmentation_method=&quot;slic&quot;, num_interpret_features=50)
+</code></pre>
+<p>method <code>get_spatial_attributes</code> apart from the 3 required fields:
+- <code>hsi</code> - the hyperspectral image data
+- <code>mask</code> - the segmentation mask
+- <code>target</code> - the target index class to be analyzed: 0 for clear</p>
+<p>takes as well few optional hyperparameters of explanations. Where one of the most important is:
+- <code>n_samples</code> - it is a number of the generated artificial samples on which the linear model is trained. The larger number of samples, the explanations produced by the linear model are usually better, since its predictions should better mimic the predictions of the explained model. However, the larger <code>n_samples</code> the longer attribution takes to be performed</p>
+<pre><code class="language-python">attributes = lime.get_spatial_attributes(
+    hsi,
+    target=0,
+    segmentation_mask=lime_seg_mask,
+    n_samples=100,
+)
+</code></pre>
+<pre><code>[32m2024-11-14 12:27:32.709[0m | [33m[1mWARNING [0m | [36mmeteors.attr.explainer[0m:[36mdevice[0m:[36m143[0m - [33m[1mNot a torch model, setting device to cpu[0m
+</code></pre>
+<p>to validate how well the trained surrogate model predicts the explained model outputs, we can use the <code>score</code> attribute of the explanations:</p>
+<pre><code class="language-python">print(f&quot;Score of the attribution: {attributes.score}&quot;)
+</code></pre>
+<pre><code>Score of the attribution: 0.9941582083702087
+</code></pre>
+<p>Score of the LIME attribution is the $R^2$ score of the interpretable model predictions. The value of this parameter is between 0 and 1, the larger the value the better the explanations. We can see, that this explanation is particulary good.</p>
+<p>And let's now visualize the LIME spatial explanation.</p>
+<pre><code class="language-python">fig, ax = mt.visualize.visualize_spatial_attributes(attributes, use_pyplot=False)
+fig.suptitle(&quot;LIME explanation for the UNetMobV2_V1 model and class 0 (clear sky)&quot;)
+
+ax[2].clear()
+cloudsen12.plot_cloudSEN12mask(cloudmask_hard_labels, ax=ax[2])
+ax[2].set_title(&quot;UNetMobV2_V1 segmentation&quot;)
+fig.tight_layout()
+plt.show()
+</code></pre>
+<p><img alt="png" src="../segmentation_files/segmentation_35_0.png" /></p>
+<p>The figure above is a slight modification of the baseline figure provided by the <code>meteors</code> pacakge, which summarizes the spatial analysis for a specific image. </p>
+<p>The colors in the attribution map, presented in the center, have the following meaning:
+- <strong>Red</strong>: This superpixel is negatively correlated with the input. In our case, it means that the presence of this superpixel contributed to lowering the value for the target class <code>0</code> (clear terrain).
+- <strong>White</strong>: This segment did not have a significant impact on the output.
+- <strong>Green</strong>: This superpixel is positively correlated with the output. Its presence increases the value for the class <code>0</code>.</p>
+<p>As we can see in the figure above, the most relevant regions are those with the actual clouds. This observation is confirmation that the model actually works properly - in case the regions with high absolute attribution values are perturbed, model perfoms the segmentation worse.</p>
+<pre><code class="language-python">attributes = lime.get_spatial_attributes(hsi, target=1, segmentation_mask=lime_seg_mask, n_samples=100)
+
+fig, ax = mt.visualize.visualize_spatial_attributes(attributes, use_pyplot=False)
+fig.suptitle(&quot;LIME explanation for the UNetMobV2_V1 model and class 1 (thick cloud)&quot;)
+ax[2].clear()
+cloudsen12.plot_cloudSEN12mask(cloudmask_hard_labels, ax=ax[2])
+ax[2].set_title(&quot;UNetMobV2_V1 segmentation&quot;)
+print(f&quot;Score of the attribution: {attributes.score}&quot;)
+fig.tight_layout()
+plt.show()
+</code></pre>
+<pre><code>Score of the attribution: 0.9991471171379089
+</code></pre>
+<p><img alt="png" src="../segmentation_files/segmentation_37_1.png" /></p>
+<p>For the class thick cloud, the situation is very similar. Again the regions with the actual clouds contribute the most to the prediction. This time, the attribution is positive, which suggests that modification in these regions increases the number of pixels classified as thick cloud class. This result is consistent with the previous one.</p>
+<h3 id="spectral-analysis">Spectral analysis</h3>
+<p>Now, we will perform spectral analysis, which focuses on different bands and their impact on the models predictions. For the multispectral images, we can analyse the impact of all the bands seperately, or group them into superbands. Firstly, let's investigate, which of the bands are the most important.</p>
+<p>To do so, we will need to create a band mask - a similar object to the lime segmentation mask, but with aggregations in the spectral dimension.</p>
+<pre><code class="language-python">band_indices = {
+    &quot;B01&quot;: 0,
+    &quot;B02&quot;: 1,
+    &quot;B03&quot;: 2,
+    &quot;B04&quot;: 3,
+    &quot;B05&quot;: 4,
+    &quot;B06&quot;: 5,
+    &quot;B07&quot;: 6,
+    &quot;B08&quot;: 7,
+    &quot;B8A&quot;: 8,
+    &quot;B09&quot;: 9,
+    &quot;B10&quot;: 10,
+    &quot;B11&quot;: 11,
+    &quot;B12&quot;: 12,
+}
+
+band_mask, band_names = lime.get_band_mask(hsi, band_indices=band_indices)
+attributes = lime.get_spectral_attributes(hsi, target=0, band_mask=band_mask, band_names=band_names, n_samples=100)
+</code></pre>
+<pre><code>C:\Users\tymot\Documents\praca\pineapple\meteors2\src\meteors\attr\lime_base.py:712: UserWarning: Minimum element in feature mask is not 0, shifting indices to start at 0.
+  warnings.warn("Minimum element in feature mask is not 0, shifting indices to" " start at 0.")
+c:\Users\tymot\Documents\praca\pineapple\meteors2\.venv\lib\site-packages\sklearn\linear_model\_coordinate_descent.py:697: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations, check the scale of the features or consider increasing regularisation. Duality gap: 1.039e+11, tolerance: 9.476e+07
+  model = cd_fast.enet_coordinate_descent(
+</code></pre>
+<p>Once the attributions are calculated, we can easily visualize them as previously but now focusing on the spatial explanations.</p>
+<pre><code class="language-python">mt.visualize.visualize_spectral_attributes(attributes)
+print(f&quot;Score of the attribution: {attributes.score}&quot;)
+fig = plt.gcf()
+fig.suptitle(&quot;LIME explanation for the UNetMobV2_V1 model and class 0 (clear)&quot;)
+plt.show()
+</code></pre>
+<pre><code>Score of the attribution: 0.5454010367393494
+</code></pre>
+<p><img alt="png" src="../segmentation_files/segmentation_42_1.png" /></p>
+<p>In the chart above, we can see which of the specified bands contribute the most to the model's prediction. On the left, we can exactly see the correlation with the output and the bands wavelenghts, whereas plot on the right allows to easily compare the attribution values. </p>
+<p>As we can see, the most important bands for segmentatating the clear sky regions are bands number 4 and 8. In fact, the bands B11, B08 and B04 are used usually to segment the clouds using the standard non-machine learning approach. </p>
+<p>Similarily, as in the case of the spatial explanations, we can also analyse easily different classes, by passing a different target value to the function. In this case, we will analyse the thick cloud class (index 1).</p>
+<pre><code class="language-python">attributes = lime.get_spectral_attributes(
+    hsi,
+    target=1,
+    band_mask=band_mask,
+    band_names=band_names,
+    n_samples=200,
+    perturbations_per_eval=4,
+)
+
+mt.visualize.visualize_spectral_attributes(attributes)
+print(f&quot;Score of the attribution: {attributes.score}&quot;)
+fig = plt.gcf()
+fig.suptitle(&quot;LIME explanation for the UNetMobV2_V1 model and class 1 (thick cloud)&quot;)
+plt.show()
+</code></pre>
+<pre><code>C:\Users\tymot\Documents\praca\pineapple\meteors2\src\meteors\attr\lime_base.py:712: UserWarning: Minimum element in feature mask is not 0, shifting indices to start at 0.
+  warnings.warn("Minimum element in feature mask is not 0, shifting indices to" " start at 0.")
+</code></pre>
+<h3 id="32-interpreting-the-model-with-gradient-methods">3.2. Interpreting the Model with Gradient Methods</h3>
+<p>To further understand the model's behavior, we can use any other attribution method implemented in the package. More detailed description of such methods can be found in <a href="https://xai4space.github.io/meteors/latest/tutorials/attr-showcase">vignette on various attribution methods</a>. These methods allows to analyze how the model's predictions change with respect to the input image, usually providing a pixel-wise attribution of the model's output, showing which pixels are the most influential in the model's decision-making process. </p>
+<p>In this tutorial we will use one of many implemented methods in the package - the Integrated Gradients, a powerful gradient-based attribution technique with methematical foundations. For detailed description of the method, please refer to the <a href="https://doi.org/10.48550/arXiv.1703.01365">original paper</a>.</p>
+<pre><code class="language-python">ig = mt.attr.IntegratedGradients(explainable_model=explainable_model)
+attributes = ig.attribute(hsi, target=0, n_steps=10)
+</code></pre>
+<pre><code class="language-python">fig, ax = vis.visualize_attributes(attributes)
+print(f&quot;Convergence of the integrated gradients: {attributes.score}&quot;)
+fig.suptitle(&quot;Integrated Gradient explanation for the UNetMobV2_V1 model and class 0 (clear)&quot;)
+</code></pre>
+<pre><code>Text(0.5, 0.98, 'Integrated Gradient explanation for the UNetMobV2_V1 model and class 0 (clear)')
+</code></pre>
+<p><img alt="png" src="../segmentation_files/segmentation_47_1.png" /></p>
+<p>The attribution visualization provides two complementary perspectives on model behavior:</p>
+<p><strong>Top Images - Spatial Attribution</strong>
+- Shows spatialy which regions in the image influence model predictions
+- Helps identify areas crucial for detecting specific features (e.g., cloud edges or clear sky)
+- Intensity indicates strength of influence on the prediction</p>
+<p><strong>Bottom Images - Spectral Attribution</strong>
+- Reveals which spectral bands are most important for predictions
+- Highlights bands that provide strong cloud/ground contrast
+- Helps understand which wavelengths are key for feature discrimination</p>
+<p>The similar attributions can be calculated for another classes, e.g. cloud shadow.</p>
+<pre><code class="language-python">attributes = ig.attribute(hsi, target=3, n_steps=10)
+print(f&quot;Convergence of the integrated gradients: {attributes.score}&quot;)
+fig, ax = vis.visualize_attributes(attributes)
+fig.suptitle(&quot;Integrated Gradient explanation for the UNetMobV2_V1 model and class 3 (cloud shadow)&quot;)
+</code></pre>
+<pre><code>Text(0.5, 0.98, 'Integrated Gradient explanation for the UNetMobV2_V1 model and class 3 (cloud shadow)')
+</code></pre>
+<p><img alt="png" src="../segmentation_files/segmentation_49_1.png" /></p>
+<p>Looking at the attribution map for class 3 (cloud shadow), we can observe a strong correlation between areas of actual cloud shadows in the original image and regions of high attribution values. Additionaly we see that in the spectral context the most important bands are the first ones, wheras the further bands are not as important.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>

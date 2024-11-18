@@ -1,0 +1,1198 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../lime/">
+      
+      
+        <link rel="next" href="../segmentation/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.44">
+    
+    
+      
+        <title>Attribution Methods `attr` - Meteors</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.0253249f.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#attribution-methods-for-hyperspectral-image-analysis-using-attr" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Meteors" class="md-header__button md-logo" aria-label="Meteors" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Meteors
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Attribution Methods `attr`
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Meteors" class="md-nav__button md-logo" aria-label="Meteors" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    Meteors
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🏠 Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🚀 Quickstart
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    📚 Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            📚 Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🎓 Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lime/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LIME
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Attribution Methods `attr`
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Attribution Methods `attr`
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-loading-the-model-and-hyperspectral-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Loading the Model and Hyperspectral data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-convert-data-into-hsi-image-and-preview-the-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Convert data into HSI image and preview the images
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-analyze-hsi-data-with-attribution-algorithms" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Analyze HSI data with Attribution Algorithms
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Analyze HSI data with Attribution Algorithms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-gradient-based-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1. Gradient Based Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1. Gradient Based Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#saliency" class="md-nav__link">
+    <span class="md-ellipsis">
+      Saliency
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inputxgradient" class="md-nav__link">
+    <span class="md-ellipsis">
+      InputXGradient
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integratedgradients" class="md-nav__link">
+    <span class="md-ellipsis">
+      IntegratedGradients
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-occlusion-based-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2. Occlusion Based Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2. Occlusion Based Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#occlusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Occlusion
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-perturbation-based-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3. Perturbation Based Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3. Perturbation Based Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#noisetunnel-smoothgrad" class="md-nav__link">
+    <span class="md-ellipsis">
+      NoiseTunnel (SmoothGrad)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hypernoisetunnel" class="md-nav__link">
+    <span class="md-ellipsis">
+      HyperNoiseTunnel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Segmentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    📖 API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    📝 Changelog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to-guides/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🤝 How to Contribute
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-loading-the-model-and-hyperspectral-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Loading the Model and Hyperspectral data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-convert-data-into-hsi-image-and-preview-the-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Convert data into HSI image and preview the images
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-analyze-hsi-data-with-attribution-algorithms" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Analyze HSI data with Attribution Algorithms
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Analyze HSI data with Attribution Algorithms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-gradient-based-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1. Gradient Based Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1. Gradient Based Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#saliency" class="md-nav__link">
+    <span class="md-ellipsis">
+      Saliency
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inputxgradient" class="md-nav__link">
+    <span class="md-ellipsis">
+      InputXGradient
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integratedgradients" class="md-nav__link">
+    <span class="md-ellipsis">
+      IntegratedGradients
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-occlusion-based-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2. Occlusion Based Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2. Occlusion Based Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#occlusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Occlusion
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-perturbation-based-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3. Perturbation Based Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3. Perturbation Based Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#noisetunnel-smoothgrad" class="md-nav__link">
+    <span class="md-ellipsis">
+      NoiseTunnel (SmoothGrad)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hypernoisetunnel" class="md-nav__link">
+    <span class="md-ellipsis">
+      HyperNoiseTunnel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="attribution-methods-for-hyperspectral-image-analysis-using-attr">Attribution Methods for Hyperspectral Image Analysis using <code>attr</code></h1>
+<p>This notebook showcase attribution methods from <code>meteors.attr</code> to interpret predictions from a hyperspectral image regression model using European Space Agency (ESA)'s <a href="https://ai4eo.eu/challenge/hyperview-challenge/">HYPERVIEW Challenge</a> dataset, which predicts <code>4</code>soil parameters from hyperspectral ground images.</p>
+<p>The model used once in this notebook is one of the top-performing models in the challenge. The trained model architecture is based on the Vision Transformer (ViT) and CLIP (Contrastive Language-Image Pretraining), and its fine-tuned weights are open-sourced under the Apache License in the <a href="https://huggingface.co/KPLabs/HYPERVIEW-VisionTransformer">Hugging Face Model Hub</a>. In the same place the original implementation of the CLIP model can be found. </p>
+<p><strong>Prerequisites</strong>: Install the meteors package from PyPI:</p>
+<pre><code class="language-bash">pip install meteors
+</code></pre>
+<p>which includes required dependencies. The <code>clip_model</code> module contains the code needed for additional preprocessing and model loading and can be downloaded from the <a href="https://github.com/xai4space/meteors/tree/main/examples/lime">Vignettes in the <code>meteors</code> repository</a></p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#1-loading-the-model">1. Loading the Model and Hyperspectral data</a></li>
+<li><a href="#3-convert-data-into-hsi-image-and-preview-the-images">2. Convert data into HSI image and preview the images</a></li>
+<li><a href="#3-analyze-hsi-data-with-attribution-algorithms">3. Analyze HSI data with Attribution Algorithms</a></li>
+<li><a href="#31-gradient-based-methods">3.1. Gradient Based Methods</a></li>
+<li><a href="#32-occlusion-based-methods">3.2. Occlusion Based Methods</a></li>
+<li><a href="#33-perturbation-based-methods">3.3. Perturbation Based Methods</a></li>
+</ul>
+<pre><code class="language-python">import os
+import torch
+import numpy as np
+import pandas as pd
+from torchvision import transforms
+import matplotlib.pyplot as plt
+
+import meteors as mt
+
+from clip_utils import load_base_clip, download
+
+# Always try to set the seed for repeatability :)
+torch.manual_seed(0)
+</code></pre>
+<pre><code>&lt;torch._C.Generator at 0x10c951590&gt;
+</code></pre>
+<pre><code class="language-python">device = torch.device(&quot;cuda:0&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+print(f&quot;Using device: {device}&quot;)
+</code></pre>
+<pre><code>Using device: cpu
+</code></pre>
+<h2 id="1-loading-the-model-and-hyperspectral-data">1. Loading the Model and Hyperspectral data</h2>
+<p>The dataset used for training this model can be found on the official page for the <a href="https://ai4eo.eu/challenge/hyperview-challenge/">HYPERVIEW Challenge</a>.</p>
+<p>In the cell below, we load the model.</p>
+<pre><code class="language-python">download_root = os.path.expanduser(&quot;~/.cache/clip&quot;)
+num_classes = 4
+</code></pre>
+<p>Load the CLIP model with the HYPERVIEW head</p>
+<pre><code class="language-python">model = load_base_clip(download_root=download_root, class_num=num_classes)
+</code></pre>
+<p>Load the pre-trained weights</p>
+<pre><code class="language-python">vit_checkpoint_path = download(
+    &quot;https://huggingface.co/KPLabs/HYPERVIEW-VisionTransformer/resolve/main/VisionTransformer.pt&quot;,
+    download_root,
+    error_checksum=False,
+)
+model.load_state_dict(torch.load(vit_checkpoint_path, map_location=device))
+model.eval()
+model = model.to(device)
+</code></pre>
+<p>And the hyperspectral data.</p>
+<pre><code class="language-python">def _shape_pad(data):
+    max_edge = np.max(data.shape[1:])
+    shape = (max_edge, max_edge)
+    padded = np.pad(
+        data,
+        ((0, 0), (0, (shape[0] - data.shape[1])), (0, (shape[1] - data.shape[2]))),
+        &quot;constant&quot;,
+        constant_values=0.0,
+    )
+    return padded
+
+
+def load_single_npz_image(image_path):
+    with np.load(image_path) as npz:
+        data = npz[&quot;data&quot;]
+        mask = npz[&quot;mask&quot;]
+
+        mask = 1 - mask.astype(int)
+
+        mask = _shape_pad(mask)
+        data = _shape_pad(data)
+
+        mask = mask.transpose((1, 2, 0))
+        data = data.transpose((1, 2, 0))
+        data = data / 5419
+
+        return data, mask
+
+
+def get_eval_transform(image_shape):
+    return transforms.Compose(
+        [
+            transforms.Resize((image_shape, image_shape)),
+        ]
+    )
+</code></pre>
+<pre><code class="language-python">data, mask = load_single_npz_image(&quot;data/0.npz&quot;)
+masked_data = data * mask
+masked_data = torch.from_numpy(masked_data.astype(np.float32)).permute(2, 0, 1)
+eval_tr = get_eval_transform(224)
+
+image_torch = eval_tr(masked_data)
+not_masked_image_torch = eval_tr(torch.from_numpy(data.astype(np.float32)).permute(2, 0, 1))
+
+print(f&quot;Original data shape: {data.shape}&quot;)
+print(f&quot;Original mask shape: {mask.shape}&quot;)
+print(f&quot;Transformed data shape: {image_torch.shape}&quot;)
+</code></pre>
+<pre><code>Original data shape: (89, 89, 150)
+Original mask shape: (89, 89, 150)
+Transformed data shape: torch.Size([150, 224, 224])
+</code></pre>
+<p>As specified in the HYPERVIEW Challenge dataset description, we will also utilize the information about bands wavelengths.</p>
+<pre><code class="language-python">with open(&quot;data/wavelenghts.txt&quot;, &quot;r&quot;) as f:
+    wavelengths = f.readline()
+wavelengths = [float(wave.strip()) for wave in wavelengths.split(&quot;,&quot;)]
+</code></pre>
+<h2 id="2-convert-data-into-hsi-image-and-preview-the-images">2. Convert data into HSI image and preview the images</h2>
+<p>Now, having the raw data - the tensor representing the image, its wavelengths and the image orientation, we can to combine this information into a complete hyperspectral image. To create the hyperspectral image, we will use the <code>HSI</code> data class from the <code>meteors</code> package.</p>
+<p>From now on, we will use the <code>HSI</code> class to represent the hyperspectral image. The <code>HSI</code> class provides a set of methods to work with hyperspectral images, including visualization.</p>
+<p>Additionally, we may provide the binary mask, which may cover data irrelevant for the task, as suggested by the challenge dataset providers. Thus, We create a binary mask from the image, where 1 is the masked region and 0 is the unmasked region.</p>
+<pre><code class="language-python">binary_mask = (image_torch &gt; 0.0).int()
+</code></pre>
+<p>The HSI object has the following attributes:
+- <code>data</code> - the preprocessed hyperspectral image data in numpy or pytorch with the shape (bands, height, width)
+- <code>wavelengths</code> - the wavelengths list of the hyperspectral image
+- <code>orientation</code> - the orientation of the image, here it is <code>CWH</code> (Channels, Width, Height)
+- <code>binary_mask</code> - the binary mask of the image
+- <code>device</code> - the device where the image data will be stored. We can provide it later with the <code>.to(device)</code> method</p>
+<pre><code class="language-python">hsi_0 = mt.HSI(
+    image=not_masked_image_torch,
+    wavelengths=wavelengths,
+    orientation=&quot;CWH&quot;,
+    binary_mask=binary_mask,
+    device=device,
+)
+</code></pre>
+<pre><code class="language-python">fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
+
+mt.visualize.visualize_hsi(hsi_0, ax1, use_mask=True)
+ax1.set_title(&quot;Masked Image&quot;)
+
+ax2.imshow(binary_mask[0, ...].T.cpu().numpy(), cmap=&quot;gray&quot;)
+ax2.set_title(&quot;Binary Mask&quot;)
+
+mt.visualize.visualize_hsi(hsi_0, ax3, use_mask=False)
+ax3.set_title(&quot;Unmasked Image&quot;)
+
+fig.suptitle(&quot;Sample image from the HYPERVIEW dataset&quot;)
+plt.show()
+</code></pre>
+<p><img alt="png" src="../attr_showcase_files/attr_showcase_18_0.png" /></p>
+<p>On the left plot, we see the input RGB representation of the data, in the middle the mask of the hyperspectral image, and on the right the whole hyperspectral image itself.</p>
+<p>The <code>HSI</code> dataclass automatically provides us the clean RGB chart of the hyperspectral image and releases us from the obligation of selecting the specific wavelengths to be plotted and considering the image orientation or processing.</p>
+<p>Now, we can provide the hyperspectral image to the model and get the prediction. The model will return the predictions for the 4 classes of the hyperspectral image.</p>
+<pre><code class="language-python">original_prediction = model(not_masked_image_torch.unsqueeze(0))
+hsi_prediction = model(hsi_0.image.unsqueeze(0))
+assert torch.allclose(original_prediction, hsi_prediction, atol=1e-3)
+</code></pre>
+<p>The classes of the HYPERVIEW dataset</p>
+<pre><code class="language-python">prediction_dict = {0: &quot;Phosphorus&quot;, 1: &quot;Potassium&quot;, 2: &quot;Magnesium&quot;, 3: &quot;pH&quot;}
+</code></pre>
+<pre><code class="language-python">predictions = {prediction_dict[i]: float(hsi_prediction[0, i].cpu().detach().numpy()) for i in range(4)}
+predictions = pd.Series(predictions)
+predictions
+</code></pre>
+<pre><code>Phosphorus    0.210551
+Potassium     0.350670
+Magnesium     0.391935
+pH            0.883228
+dtype: float64
+</code></pre>
+<h2 id="3-analyze-hsi-data-with-attribution-algorithms">3. Analyze HSI data with Attribution Algorithms</h2>
+<p>The <code>Meteors</code> package provides several attribution algorithms grouped into three categories (If you want to learn more about each method just click the method and it will redirect you to the documentation):</p>
+<ul>
+<li><strong>Gradient Based</strong>: <a href="https://xai4space.github.io/meteors/latest/reference/#src.meteors.attr.saliency.Saliency"><code>Saliency</code></a>, <a href="https://xai4space.github.io/meteors/latest/reference/#src.meteors.attr.input_x_gradients.InputXGradient"><code>InputXGradient</code></a>, <a href="https://xai4space.github.io/meteors/latest/reference/#src.meteors.attr.integrated_gradients.IntegratedGradients"><code>IntegratedGradients</code></a></li>
+<li><strong>Occlusion Based</strong>: <a href="https://xai4space.github.io/meteors/latest/reference/#src.meteors.attr.occlusion.Occlusion"><code>Occlusion</code></a></li>
+<li><strong>Perturbation Based</strong>: <a href="https://xai4space.github.io/meteors/latest/reference/#src.meteors.attr.NoiseTunnel"><code>NoiseTunnel</code></a>, <a href="https://xai4space.github.io/meteors/latest/reference/#src.meteors.attr.HyperNoiseTunnel"><code>HyperNoiseTunnel</code></a></li>
+</ul>
+<p>Let's explore how these methods help interpret our hyperspectral image model's predictions.</p>
+<p><strong>Note</strong> Each attribution method in this tutorial can only analyze one class at a time for multi-class models. We'll focus on analyzing the <code>P</code> class (index 0) in our examples, though similar analyses could be performed for other classes.</p>
+<p>Before we start, let's prepare our model for the interpretation task by wrapping it with the <code>meteors</code> helper class.</p>
+<pre><code class="language-python">explainable_model = mt.models.ExplainableModel(model, &quot;regression&quot;)
+</code></pre>
+<h3 id="31-gradient-based-methods">3.1. Gradient Based Methods</h3>
+<p>Gradient-based attribution methods compute the importance of each input feature by analyzing the model's gradients with respect to the input. These methods are computationally efficient and provide insights into how the model's predictions change with small input variations.</p>
+<h4 id="saliency">Saliency</h4>
+<p>Simple yet effective method that computes the gradient of the output with respect to the input. The magnitude of these gradients indicates which input features most strongly influence the prediction.\
+Captum Documentation: https://captum.ai/api/saliency.html\
+Paper: <a href="https://arxiv.org/abs/1312.6034">Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps</a></p>
+<h4 id="inputxgradient">InputXGradient</h4>
+<p>An extension of Saliency that multiplies the input by its gradient. This helps reduce noise in the attribution maps and better highlights relevant features by accounting for both feature values and their gradients.\
+Captum Documentation: https://captum.ai/api/input_x_gradient.html\
+Paper: <a href="https://arxiv.org/abs/1605.01713">Not Just a Black Box: Learning Important Features Through Propagating Activation Differences</a></p>
+<h4 id="integratedgradients">IntegratedGradients</h4>
+<p>More sophisticated approach that accumulates gradients along a path from a baseline to the input. This method addresses the gradient saturation problem found in simpler approaches. It works by:
+1. Accumulate gradients along a straight-line path from a baseline (usually zero) to the input
+2. Compute an integral of gradients to capture the cumulative feature importance
+3. Use multiple interpolated steps between baseline and input for better approximation
+4. Satisfy important theoretical properties like completeness (attributions sum to the difference between output and baseline)</p>
+<p>Captum Documentation: https://captum.ai/api/integrated_gradients.html\
+Paper: <a href="https://arxiv.org/abs/1703.01365">Axiomatic Attribution for Deep Networks</a></p>
+<pre><code class="language-python">saliency = mt.attr.Saliency(explainable_model)
+inputxgrad = mt.attr.InputXGradient(explainable_model)
+ig = mt.attr.IntegratedGradients(explainable_model)
+</code></pre>
+<p>To use these methods, we need to just call the <code>attribute</code> method on the interpreter model with this arguments (more details in the documentation):
+- <code>hsi</code> - the hyperspectral image data
+- <code>target</code> - the target index class to be analyzed: 0 for <code>P</code> (Phosphorus) class</p>
+<p>and to visualize the results, we can use one of the visualization methods provided by the <code>meteors</code> package.</p>
+<pre><code class="language-python">%%time
+saliency_attr = saliency.attribute(
+    hsi_0,
+    target=0,  # Class index to be analized
+)
+mt.visualize.visualize_attributes(saliency_attr, use_pyplot=True)
+</code></pre>
+<p><img alt="png" src="../attr_showcase_files/attr_showcase_29_0.png" /></p>
+<pre><code>CPU times: user 13.1 s, sys: 1.99 s, total: 15.1 s
+Wall time: 5.44 s
+</code></pre>
+<p>The plots that we use to visualize our attributions are created from the <code>visualize</code>. The <code>visualize_attributes</code> function visualizes the attribution with two spatial plots on top and two spectral plots below. The spatial plots present correlation of the spatial pixels with the output. If the correlation is negative (red), it means that this pixel lowered the model estimation for class <code>P</code>; if positive (green), it increased the prediction; and if around zero (white), then it was not impactful. In the lower plots, we see attributions aggregated per wavelength, showcasing how each wavelength correlated with the output - once again, negative values lowered, positive ones increased, and values close to zero were not impactful. These attributions are aggregated spatially and spectrally with mean over spatial or spectral axis.</p>
+<pre><code class="language-python">%%time
+inputxgrad_attr = inputxgrad.attribute(hsi_0, target=0)
+mt.visualize.visualize_attributes(inputxgrad_attr, use_pyplot=True)
+</code></pre>
+<p><img alt="png" src="../attr_showcase_files/attr_showcase_31_0.png" /></p>
+<pre><code>CPU times: user 13.3 s, sys: 1.95 s, total: 15.3 s
+Wall time: 6.34 s
+</code></pre>
+<p>For the <code>IntegratedGradients</code> method, we may also also provid:
+- <code>return_convergence_delta</code> - if set to <code>True</code>, the method will return the convergence delta, which is the difference between the approximated integral and the true integral. This can be useful to assess the quality of the approximation. The value of the delta is stored in <code>score</code> attribute of the <code>Attribution</code> object.
+- <code>n_steps</code> - the number of steps to approximate the integral - more steps will probably yield better results but will also take longer to compute.</p>
+<pre><code class="language-python">%%time
+ig_attr = ig.attribute(
+    hsi_0,
+    target=0,
+    baseline=0.0,
+    return_convergence_delta=True,
+    n_steps=50,
+)
+print(f&quot;Convergence Delta: {ig_attr.score}&quot;)
+mt.visualize.visualize_attributes(ig_attr, use_pyplot=True)
+</code></pre>
+<pre><code>Convergence Delta: 0.0011369975069135917
+</code></pre>
+<p><img alt="png" src="../attr_showcase_files/attr_showcase_33_1.png" /></p>
+<pre><code>CPU times: user 9min 3s, sys: 5min, total: 14min 3s
+Wall time: 5min 45s
+</code></pre>
+<p>Each method calculates feature importance on a per-pixel basis, which can be visualized across both spatial and spectral domains. Our analysis of the three methods revealed distinct characteristics.</p>
+<p>The saliency method, while computationally fastest, produced noisy attributions and incorrectly highlighted importance in masked (zero-value) regions.</p>
+<p>The input × gradient method offered clearer results with well-defined importance regions. It performed comparably to integrated gradients but with significantly faster computation time. The integrated gradients method, though computationally intensive, typically provided the most precise attributions. However, in this particular case, its results were not substantially better than those from the input × gradient method. Its computation time can be adjusted through the number of integration steps, offering flexibility in balancing attribution quality against processing speed.</p>
+<h3 id="32-occlusion-based-methods">3.2. Occlusion Based Methods</h3>
+<p>Occlusion-based methods offer an intuitive approach to understanding model predictions by systematically blocking (occluding) portions of the input and observing how the model's output changes. Unlike gradient methods, these techniques don't require access to model gradients, making them applicable to any model architecture.</p>
+<h4 id="occlusion">Occlusion</h4>
+<p>This method works by:
+1. Slide a mask (window) across the input image
+2. Set the masked region to a baseline value (typically zero or mean)
+3. Measure the difference in model output between original and occluded inputs 
+4. Create an attribution map where higher values indicate regions whose occlusion significantly impacts the prediction</p>
+<p>Captum Documentation: https://captum.ai/api/occlusion.html\
+Paper: <a href="https://arxiv.org/abs/1311.2901">Visualizing and Understanding Convolutional Networks</a></p>
+<p>For hyperspectral images, occlusion can be performed along the spectral dimension (blocking individual bands) or spatially (masking image regions).</p>
+<pre><code class="language-python">occlusion = mt.attr.Occlusion(explainable_model)
+</code></pre>
+<p>occlusion method can be used with the following arguments:
+- <code>hsi</code> - the hyperspectral image data
+- <code>target</code> - the target index class to be analyzed: 0 for <code>P</code> (Phosphorus) class
+- <code>baseline</code> - the baseline value to replace the occluded region. It should be a float value.
+- <code>sliding_window_shapes</code> - the shape of the sliding window to occlude the image. It should be a tuple of three integers 3D occlusion.
+- <code>strides</code> - the strides of the sliding window. It should be a tuple of three integers 3D occlusion.</p>
+<pre><code class="language-python">%%time
+occlusion_attr = occlusion.attribute(
+    hsi_0,
+    target=0,
+    baseline=0.0,
+    sliding_window_shapes=(50, 50, 50),
+    strides=(30, 30, 30),
+)
+mt.visualize.visualize_attributes(occlusion_attr, use_pyplot=True)
+</code></pre>
+<p><img alt="png" src="../attr_showcase_files/attr_showcase_38_0.png" /></p>
+<pre><code>CPU times: user 25min 12s, sys: 1min 45s, total: 26min 57s
+Wall time: 7min 6s
+</code></pre>
+<p>The visualizations are similar to those from gradient-based models; however, the granularity of the attributions is much smaller. This is due to the <code>sliding_window_shapes</code> and <code>strides</code> parameters. If we specified smaller <code>sliding_window_shapes</code>, we would get more granular attributions, and depending on the mask step (<code>strides</code>), we could also cover more or less pixels. The most important considerations when choosing the <code>strides</code> and <code>sliding_window_shapes</code> are that <code>strides</code> should not be bigger than <code>sliding_window_shapes</code>, as it is beneficial for masks to overlap minimally in every step. Additionally, we should start first with the large mask, as decreasing the mask size requires more steps to obtain the attributions, which means longer computation time.</p>
+<pre><code class="language-python">%%time
+occlusion_spatial_attr = occlusion.get_spatial_attributes(
+    hsi_0, target=0, baseline=0.0, sliding_window_shapes=(50, 50), strides=(30, 30)
+)
+mt.visualize.visualize_spatial_attributes(occlusion_spatial_attr, use_pyplot=True)
+</code></pre>
+<p><img alt="png" src="../attr_showcase_files/attr_showcase_40_0.png" /></p>
+<pre><code>CPU times: user 4min 44s, sys: 19.1 s, total: 5min 3s
+Wall time: 59.1 s
+</code></pre>
+<p>The <code>Occlusion</code> method also allows us to calculate the mask only for spatial dimensions rather than for every pixel. The parameters remain the same, but notice that we set a 2D shape instead of a 3D shape. We don't need to pass 3D <code>sliding_window_shapes</code> and <code>strides</code> because for the spatial axes we set the shape automatically to the maximum. This means that the mask and the step will always cover all spectral pixels in the given spatial context, allowing for more specific spatial analysis.</p>
+<p>The visualization process is similar to before but now uses the <code>visualize_spatial_attributes</code> function, which produces three components: the original image on the left, an attribution map in the center (where colors and values represent the correlation with the output class), and a mask visualization on the right. Note that the displayed mask is just an simple version how mask behaves, as the <code>strides</code> is not larger than the mask size. In practice, the masks should always overlap, but for visualization simplicity, we assumed non-overlapping masks.</p>
+<pre><code class="language-python">%%time
+occlusion_spectral_attr = occlusion.get_spectral_attributes(
+    hsi_0, target=0, baseline=0.0, sliding_window_shapes=(8), strides=(6)
+)
+mt.visualize.visualize_spectral_attributes(occlusion_spectral_attr, use_pyplot=True)
+</code></pre>
+<p><img alt="png" src="../attr_showcase_files/attr_showcase_42_0.png" /></p>
+<pre><code>CPU times: user 2min 16s, sys: 8.48 s, total: 2min 25s
+Wall time: 25.2 s
+</code></pre>
+<p>Just as we can perform analysis in the spatial context, we can also analyze the spectral dimension. For spectral analysis, we specify only one-dimensional shapes for <code>sliding_window_shapes</code> and <code>strides</code>, as the mask will cover all spatial pixels for each spectral position. The <code>visualize_spectral_attributes</code> function presents two plots: the left plot shows the attribution scores for each wavelength, colored by mask ID, while the right plot uses the same color coding but displays the attributions as a bar plot, with groups on the x-axis to better compare contributions across different mask IDs.</p>
+<p>TLDR: The occlusion method provides visualizations similar to gradient-based approaches but offers more granular control over spectral and spatial analysis. By selectively occluding regions, we can analyze either entire spatial or spectral regions independently. Although our results appear blurry due to large occlusion regions, they reveal clear patterns: spatial occlusion shows higher importance in non-masked regions as expected, while spectral analysis indicates that lower wavelengths have more positive importance and higher wavelengths have more negative importance. While the precision of results can be improved by using smaller occlusion regions, this comes at the cost of increased computation time.</p>
+<h3 id="33-perturbation-based-methods">3.3. Perturbation Based Methods</h3>
+<p>Perturbation-based methods analyze model behavior by introducing controlled noise or variations to the input. These methods help understand model robustness and feature importance by observing how predictions change under different types of perturbations.</p>
+<p><strong>Note</strong>: Both methods below require base attribution algorithms (e.g., Saliency, IntegratedGradients) to compute attributions for perturbed samples. Based on previous results, we'll use Saliency as the base method.</p>
+<h4 id="noisetunnel-smoothgrad">NoiseTunnel (SmoothGrad)</h4>
+<p>A technique that reduces attribution noise by:
+1. Add Gaussian noise to the input multiple times
+2. Compute attributions for each noisy sample
+3. Average the results to produce smoother, more reliable attribution maps</p>
+<p>This approach helps eliminate random fluctuations and highlights consistently important features.</p>
+<p>Captum Documentation: https://captum.ai/api/noise_tunnel.html\
+Paper: <a href="https://arxiv.org/abs/1706.03825">SmoothGrad: removing noise by adding noise</a></p>
+<h4 id="hypernoisetunnel">HyperNoiseTunnel</h4>
+<p>HyperNoiseTunnel is a novel attribution method designed specifically for hyperspectral image analysis. Unlike traditional approaches like SmoothGrad that add Gaussian noise, this method works by strategically masking spectral bands with baseline values. This process can be controlled through either a probability of masking each band independently or by specifying a fixed number of bands to mask.</p>
+<p>The method generates perturbed samples that maintain the original hyperspectral data distribution while introducing meaningful variations. By preserving unmasked bands and systematically replacing selected ones with baseline values, it produces smoother attribution maps that retain important spectral relationships. This makes it particularly valuable for remote sensing applications, where understanding the contribution of specific spectral bands is crucial for model interpretation. </p>
+<p>The method's workflow proceeds as follows:
+1. Randomly mask spectral bands with baseline values instead of adding Gaussian noise
+2. Generate samples that better preserve the original hyperspectral data distribution
+3. Produce smoother attribution maps while maintaining spectral relationships
+4. Offer more interpretable results for hyperspectral applications compared to traditional noise-based methods</p>
+<p>This specialized approach provides insights into band-specific contributions while maintaining the physical meaning of spectral signatures.</p>
+<pre><code class="language-python">base_attr = mt.attr.InputXGradient(explainable_model)
+nt_attr = mt.attr.NoiseTunnel(base_attr)
+hnt_attr = mt.attr.HyperNoiseTunnel(base_attr)
+</code></pre>
+<p>The <code>NoiseTunnel</code> and <code>HyperNoiseTunnel</code> methods can be used with the following arguments:
+- <code>hsi</code> - the hyperspectral image data
+- <code>target</code> - the target index class to be analyzed: 0 for <code>P</code> (Phosphorus) class
+- <code>n_samples</code> - the number of perturbed samples to generate
+- <code>method</code> - how the final aggregation of all the generatated perturbation attributions should be calculated
+- <code>baseline</code> - for the <code>HyperNoiseTunnel</code> method, the baseline value to replace the occluded region. It should be a float value.</p>
+<pre><code class="language-python">%%time
+nt_attr = nt_attr.attribute(
+    hsi_0,
+    target=0,
+    n_samples=3,
+    method=&quot;smoothgrad&quot;,
+)
+mt.visualize.visualize_attributes(nt_attr, use_pyplot=True)
+</code></pre>
+<p><img alt="png" src="../attr_showcase_files/attr_showcase_47_0.png" /></p>
+<pre><code>CPU times: user 34.4 s, sys: 4.04 s, total: 38.5 s
+Wall time: 7.2 s
+</code></pre>
+<p>Compared to previous methods and results in the spectral and spatial plots, we observe reduced number of important pixels. This method is specifically designed to eliminate noisy attributions that show high impact regardless of small perturbations, which is particularly evident in the spatial plots where only a few pixels deviate from white. </p>
+<p>While we set the number of perturbed samples (<code>n_samples</code>) to <code>3</code> in this example for demonstration purposes, this parameter significantly influences the results. Although increasing this value would lead to longer computation times, we encourage users to experiment with higher values and evaluate the resulting attributions to find the optimal balance between accuracy and computational efficiency.</p>
+<pre><code class="language-python">%%time
+hnt_attr = hnt_attr.attribute(hsi_0, target=0, n_samples=50, baseline=0.0)
+mt.visualize.visualize_attributes(hnt_attr, use_pyplot=True)
+</code></pre>
+<p><img alt="png" src="../attr_showcase_files/attr_showcase_49_0.png" /></p>
+<pre><code>CPU times: user 9min 3s, sys: 1min 18s, total: 10min 21s
+Wall time: 2min 4s
+</code></pre>
+<p>The HyperNoiseTunnel can produce spatial results as shown above, but as described in the method overview, its spectral analysis capabilities are particularly noteworthy. The analysis reveals that lower wavelength bands have less influence on the method's output, while moving further along the spectral axis, the impact of "removed" pixels increases. Notably, the higher wavelengths show a strong negative influence on the output.</p>
+<p>To summarize, while the Noise Tunnel (SmoothGrad) method produces results similar to Input x Gradient, it offers distinct advantages. In spatial visualization, it effectively eliminates low-value variables, highlighting only the most significant patches. This suggests that some regions identified by Input x Gradient might be noise, while these highlighted patches are crucial for prediction. The HyperNoiseTunnel's spectral analysis demonstrates improved clarity and consistency compared to the standard Noise Tunnel, producing patterns more aligned with occlusion-based methods. This similarity to occlusion results indicates that HyperNoiseTunnel provides more reliable and interpretable spectral insights.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>
