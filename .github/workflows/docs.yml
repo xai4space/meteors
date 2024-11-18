@@ -56,7 +56,7 @@ jobs:
                 dir_name=$(basename "$dir")
                 if ls "$dir"/*.ipynb 1> /dev/null 2>&1; then
                   for notebook in "$dir"/*.ipynb; do
-                    rye run jupyter nbconvert --to markdown "$notebook" --output-dir "$output_dir" --output "$dir_name"
+                    rye run jupyter nbconvert --to markdown "$notebook" --output-dir "$output_dir"
                   done
                 else
                   echo "No notebooks found in directory '$dir_name'."
