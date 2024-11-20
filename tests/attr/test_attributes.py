@@ -189,8 +189,7 @@ def test_align_band_names_with_mask():
     band_names = {"R": 1, "G": 2, "B": 3}
     band_mask = torch.tensor([[0, 1, 0], [1, 2, 1], [0, 1, 3]])
 
-    with pytest.warns(UserWarning):
-        updated_band_names = mt_attr.attributes.align_band_names_with_mask(band_names, band_mask)
+    updated_band_names = mt_attr.attributes.align_band_names_with_mask(band_names, band_mask)
 
     assert updated_band_names == {
         "R": 1,

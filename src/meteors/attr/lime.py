@@ -224,14 +224,14 @@ def adjust_and_validate_segment_ranges(
     for start, end in segment_ranges:
         if start < 0:
             if end > 0:
-                warnings.warn(f"Adjusting segment start from {start} to 0")
+                logger.debug(f"Adjusting segment start from {start} to 0")
                 start = 0
             else:
                 raise ValueError(f"Segment range {(start, end)} is out of bounds")
 
         if end > max_index:
             if start < max_index:
-                warnings.warn(f"Adjusting segment end from {(start, end)} to {(start, max_index)}")
+                logger.debug(f"Adjusting segment end from {(start, end)} to {(start, max_index)}")
                 end = max_index
             else:
                 raise ValueError(f"Segment range {(start, end)} is out of bounds")
@@ -260,7 +260,6 @@ def validate_mask_shape(mask_type: Literal["segmentation", "band"], hsi: HSI, ma
     mask_shape = mask.shape
 
     if len(mask_shape) == 2 and mask_type == "segmentation":
-        logger.warning("The segmentation mask is 2D, adding a new dimension to match the image shape")
         mask = mask.unsqueeze(hsi.spectral_axis)
         mask_shape = mask.shape
     elif len(mask_shape) != 3:
@@ -649,7 +648,7 @@ class Lime(Explainer):
                 max_wavelength = spyndex.bands[band_name].max_wavelength
 
                 if min_wavelength > wavelengths.max() or max_wavelength < wavelengths.min():
-                    logger.warning(
+                    logger.debug(
                         f"Band {band_name} is not present in the given wavelengths. "
                         f"Band ranges from {min_wavelength} nm to {max_wavelength} nm and the HSI wavelengths "
                         f"range from {wavelengths.min():.2f} nm to {wavelengths.max():.2f} nm. The given band will be skipped"
@@ -800,28 +799,35 @@ class Lime(Explainer):
         return band_indices
 
     @staticmethod
-    def _check_overlapping_segments(hsi: HSI, dict_labels_to_indices: dict[str | tuple[str, ...], list[int]]) -> None:
-        """Check for overlapping segments in the given hsi.
+    def _check_overlapping_segments(dict_labels_to_indices: dict[str | tuple[str, ...], list[int]]) -> None:
+        """Check for overlapping segments.
 
         Args:
-            hsi (HSI): The hsi object containing the wavelengths.
             dict_labels_to_indices (dict[str | tuple[str, ...], list[int]]):
                 A dictionary mapping segment labels to indices.
 
         Returns:
             None
         """
-        overlapping_segments: dict[int, str | tuple[str, ...]] = {}
-        for segment_label, indices in dict_labels_to_indices.items():
-            for idx in indices:
-                if hsi.wavelengths[idx].item() in overlapping_segments.keys():
-                    logger.warning(
-                        (
-                            f"Segments {overlapping_segments[hsi.wavelengths[idx].item()]} "
-                            f"and {segment_label} are overlapping on wavelength {hsi.wavelengths[idx].item()}"
-                        )
-                    )
-                overlapping_segments[hsi.wavelengths[idx].item()] = segment_label
+        overlapping_segments: list[tuple[str | tuple[str, ...], str | tuple[str, ...]]] = []
+        labels = list(dict_labels_to_indices.keys())
+
+        for i, segment_label in enumerate(labels):
+            for second_label in labels[i + 1 :]:
+                indices = dict_labels_to_indices[segment_label]
+                second_indices = dict_labels_to_indices[second_label]
+
+                if set(indices) & set(second_indices):
+                    overlapping_segments.append((segment_label, second_label))
+
+        for label_first, label_second in overlapping_segments:
+            label_first_str = label_first if isinstance(label_first, str) else "/".join(label_first)
+            label_second_str = label_second if isinstance(label_second, str) else "/".join(label_second)
+
+            logger.warning(
+                f"Segments {label_first_str} and {label_second_str} are overlapping,"
+                " overlapping wavelengths will be assigned to only one"
+            )
 
     @staticmethod
     def _validate_and_create_dict_labels_to_segment_ids(
@@ -942,7 +948,7 @@ class Lime(Explainer):
         logger.debug(f"Creating a band mask on the device {device} using {len(segment_labels)} segments")
 
         # Check for overlapping segments
-        Lime._check_overlapping_segments(hsi, dict_labels_to_indices)
+        Lime._check_overlapping_segments(dict_labels_to_indices)
 
         # Create or validate dict_labels_to_segment_ids
         dict_labels_to_segment_ids = Lime._validate_and_create_dict_labels_to_segment_ids(
@@ -1122,10 +1128,9 @@ class Lime(Explainer):
         if segmentation_mask is None:
             segmentation_mask = self.get_segmentation_mask(hsi[0], segmentation_method, **segmentation_method_params)
 
-            warnings.warn(
+            logger.warning(
                 "Segmentation mask is created based on the first HSI image provided, this approach may not be optimal as "
                 "the same segmentation mask may not be the best suitable for all images",
-                UserWarning,
             )
 
         if isinstance(segmentation_mask, tuple):
@@ -1288,7 +1293,7 @@ class Lime(Explainer):
         if len(hsi) != len(band_mask):
             if len(band_mask) == 1:
                 band_mask = band_mask * len(hsi)
-                logger.info("Reusing the same band mask for all images")
+                logger.debug("Reusing the same band mask for all images")
             else:
                 raise ValueError(
                     f"Number of band masks should be equal to the number of HSI images provided, provided {len(band_mask)}"

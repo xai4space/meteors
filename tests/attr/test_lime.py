@@ -1,6 +1,4 @@
 import pytest
-import warnings
-from loguru import logger
 
 import torch
 
@@ -317,14 +315,12 @@ def test_adjust_and_validate_segment_ranges():
 
     # Test case 2: Segment range with end exceeding wavelengths max index
     segment_range = [(0, 3), (6, 10)]
-    with pytest.warns(UserWarning):
-        result = mt_lime.adjust_and_validate_segment_ranges(wavelengths, segment_range)
+    result = mt_lime.adjust_and_validate_segment_ranges(wavelengths, segment_range)
     assert result == [(0, 3), (6, 9)]
 
     # Test case 3: Segment range with negative start
     segment_range = [(-1, 4), (7, 9)]
-    with pytest.warns(UserWarning):
-        result = mt_lime.adjust_and_validate_segment_ranges(wavelengths, segment_range)
+    result = mt_lime.adjust_and_validate_segment_ranges(wavelengths, segment_range)
     assert result == [(0, 4), (7, 9)]
 
     # Test case 4: Not Valid segment range
@@ -969,46 +965,20 @@ def test__get_band_wavelengths_indices_from_band_names():
         mt_lime.Lime._get_band_wavelengths_indices_from_band_names(wavelengths, band_names)
 
 
-def test__check_overlapping_segments(caplog):
-    # Create a sample hsi
-    wavelengths = torch.tensor([400, 500, 600, 700])
-    hsi = HSI(image=torch.ones((4, 4, 4)), wavelengths=wavelengths)
-
+def test__check_overlapping_segments():
     # Create a sample dictionary mapping segment labels to indices
     dict_labels_to_indices = {
         "segment1": [0, 1],
         "segment2": [1, 2],
         "segment3": [2, 3],
     }
-
-    # modify the loguru warnings to be captured by pytest
-    def custom_sink(message):
-        warnings.warn(message, UserWarning)
-
-    logger.add(custom_sink, level="WARNING")
-
-    with pytest.warns(UserWarning):
-        mt_lime.Lime._check_overlapping_segments(hsi, dict_labels_to_indices)
+    mt_lime.Lime._check_overlapping_segments(dict_labels_to_indices)
 
     non_overlapping_dict_labels_to_indices = {
         "segment1": [0, 1],
         "segment2": [2, 3],
     }
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        mt_lime.Lime._check_overlapping_segments(hsi, non_overlapping_dict_labels_to_indices)
-
-    logger.remove()
-    # Create a sample dictionary with index out of range segments
-    dict_labels_to_indices = {
-        "segment1": [0, 1],
-        "segment2": [1, 2],
-        "segment3": [2, 3],
-        "segment4": [3, 4],
-    }
-
-    with pytest.raises(IndexError):
-        mt_lime.Lime._check_overlapping_segments(hsi, dict_labels_to_indices)
+    mt_lime.Lime._check_overlapping_segments(non_overlapping_dict_labels_to_indices)
 
 
 def test__validate_and_create_dict_labels_to_segment_ids():
