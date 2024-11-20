@@ -6,6 +6,7 @@
 [![GitHub star chart](https://img.shields.io/github/stars/xai4space/meteors?style=flat-square)](https://star-history.com/#xai4space/meteors)
 [![Open Issues](https://img.shields.io/github/issues-raw/xai4space/meteors?style=flat-square)](https://github.com/xai4space/meteors/issues)
 [![Docs - GitHub.io](https://img.shields.io/static/v1?logo=meteors&style=flat&color=pink&label=docs&message=meteors)](https://xai4space.github.io/meteors/latest)
+[![codecov](https://codecov.io/gh/xai4space/meteors/graph/badge.svg?token=R67DN5266N)](https://codecov.io/gh/xai4space/meteors)
 
 ## 🛰️ Introduction
 
