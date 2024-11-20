@@ -37,7 +37,7 @@ theme:
       toggle:
         icon: material/lightbulb
         name: Switch to light mode
-   
+
   features:
     - navigation.tracking
     - navigation.path
@@ -51,7 +51,7 @@ extra:
 
 extra_css:
   - stylesheets/extra.css
-  
+
 repo_url: https://github.com/xai4space/meteors
 repo_name: xai4space/meteors
 
