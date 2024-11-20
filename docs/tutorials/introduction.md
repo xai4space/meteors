@@ -5,22 +5,19 @@ Welcome to the Meteors tutorials! These tutorials are designed to help you get s
 ## 📚 Tutorial List
 
 1. [LIME](lime.md)
-
-- HYPERVIEW Challenge
-- Local Interpretable Model-agnostic Explanations (LIME) for hyperspectral images
-- Vision Transformer (ViT) model for hyperspectral image regression
+    - HYPERVIEW Challenge
+    - Local Interpretable Model-agnostic Explanations (LIME) for hyperspectral images
+    - Vision Transformer (ViT) model for hyperspectral image regression
 
 2. [Attribution Methods `attr`](attr_showcase.md)
-
-- HYPERVIEW Challenge
-- Gradient, Occlusion and Perturbation based methods from `attr` for hyperspectral images
-- Vision Transformer (ViT) model for hyperspectral image regression
+    - HYPERVIEW Challenge
+    - Gradient, Occlusion and Perturbation based methods from `attr` for hyperspectral images
+    - Vision Transformer (ViT) model for hyperspectral image regression
 
 3. [Segmentation](segmentation.md)
-
-- Segmentation of Sentinel-2 multispectral images from CloudSEN12 dataset
-- U-Net model for semantic segmentation from CloudSEN12 authors
-- LIME and Integrated Gradients for explaining segmentation predictions
+    - Segmentation of Sentinel-2 multispectral images from CloudSEN12 dataset
+    - U-Net model for semantic segmentation from CloudSEN12 authors  
+    - LIME and Integrated Gradients for explaining segmentation predictions
 
 ## 🚀 Getting Started
 
