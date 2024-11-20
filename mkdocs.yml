@@ -6,6 +6,8 @@ nav:
   - 📚 Tutorials:
       - 🎓 Introduction: tutorials/introduction.md
       - LIME: tutorials/lime.md
+      - Attribution Methods `attr`: tutorials/attr_showcase.md
+      - Segmentation: tutorials/segmentation.md
   - 📖 API Reference: reference.md
   - 📝 Changelog: changelog.md
   - 🤝 How to Contribute: how-to-guides.md
