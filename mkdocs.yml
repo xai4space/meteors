@@ -1,4 +1,5 @@
 site_name: Meteors
+site_url: "https://xai4space.github.io/meteors/"
 
 nav:
   - 🏠 Home: index.md
@@ -29,6 +30,7 @@ theme:
 extra:
   version:
     provider: mike
+    default: latest
 
 watch:
   - src
