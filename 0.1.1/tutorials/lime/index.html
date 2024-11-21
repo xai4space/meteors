@@ -1,0 +1,1538 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://xai4space.github.io/meteors/0.1.1/tutorials/lime/">
+      
+      
+        <link rel="prev" href="../introduction/">
+      
+      
+        <link rel="next" href="../attr_showcase/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.45">
+    
+    
+      
+        <title>LIME - Meteors</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.0253249f.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#interpreting-hyperspectral-images-with-lime-hyperview-challenge" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Meteors" class="md-header__button md-logo" aria-label="Meteors" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Meteors
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              LIME
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/xai4space/meteors" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    xai4space/meteors
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Meteors" class="md-nav__button md-logo" aria-label="Meteors" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    Meteors
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/xai4space/meteors" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    xai4space/meteors
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🏠 Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🚀 Quickstart
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    📚 Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            📚 Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🎓 Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    LIME
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    LIME
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-loading-the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Loading the Model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-load-the-hyperspectral-data-from-hyperview-challenge" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Load the Hyperspectral data from HYPERVIEW Challenge
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-convert-data-into-hsi-image-and-preview-the-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Convert Data into HSI Image and Preview the Images
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-analyze-hsi-data-with-lime" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Analyze HSI Data with LIME
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-analyze-hsi-data-with-lime_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Analyze HSI data with LIME
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Analyze HSI data with LIME">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-spatial-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.1. Spatial Analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1. Spatial Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#different-segmentation-masks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Different segmentation masks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Different segmentation masks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#patch-segmentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Patch segmentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-segmentation-mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom segmentation mask
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom segmentation mask">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mask-importance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mask importance
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-spectral-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2. Spectral Analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2. Spectral Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#band-and-indices-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      Band and indices names
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wavelengths-ranges" class="md-nav__link">
+    <span class="md-ellipsis">
+      Wavelengths ranges
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#global-attributions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Global attributions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../attr_showcase/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attribution Methods `attr`
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Segmentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    📖 API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    📝 Changelog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to-guides/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🤝 How to Contribute
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-loading-the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Loading the Model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-load-the-hyperspectral-data-from-hyperview-challenge" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Load the Hyperspectral data from HYPERVIEW Challenge
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-convert-data-into-hsi-image-and-preview-the-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Convert Data into HSI Image and Preview the Images
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-analyze-hsi-data-with-lime" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Analyze HSI Data with LIME
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-analyze-hsi-data-with-lime_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Analyze HSI data with LIME
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Analyze HSI data with LIME">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-spatial-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.1. Spatial Analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1. Spatial Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#different-segmentation-masks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Different segmentation masks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Different segmentation masks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#patch-segmentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Patch segmentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-segmentation-mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom segmentation mask
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Custom segmentation mask">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mask-importance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mask importance
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-spectral-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2. Spectral Analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2. Spectral Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#band-and-indices-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      Band and indices names
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wavelengths-ranges" class="md-nav__link">
+    <span class="md-ellipsis">
+      Wavelengths ranges
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#global-attributions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Global attributions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="interpreting-hyperspectral-images-with-lime-hyperview-challenge">Interpreting Hyperspectral Images with LIME: HYPERVIEW Challenge</h1>
+<p>This notebook demonstrates the usability of the Local Interpretable Model-agnostic Explanations (LIME) algorithm to interpret the predictions of a hyperspectral image regression model. The dataset used in this notebook is from the <a href="https://ai4eo.eu/challenge/hyperview-challenge/">HYPERVIEW Challenge</a> organized by The European Space Agency (ESA). The goal of the challenge is to predict <code>4</code> soil parameters based on the hyperspectral images of the ground.</p>
+<p>The model used in this notebook is one of the top-performing models in the challenge. The trained model architecture is based on the Vision Transformer (ViT) and CLIP (Contrastive Language-Image Pretraining), and its fine-tuned weights are open-sourced under the Apache License in the <a href="https://huggingface.co/KPLabs/HYPERVIEW-VisionTransformer">Hugging Face Model Hub</a>. In the same place the original implementation of the CLIP model can be found. </p>
+<p><strong>Note</strong>: Before running this notebook, make sure to install the required libraries used in the notebook. It should be sufficient to install the package <code>meteors</code> from PyPI, as it carry all the required dependencies, but in some cases, you might need to install additional ones. The <code>clip_model</code> module contains the code needed for additional preprocessing and model loading and can be downloaded from the <a href="https://github.com/xai4space/meteors/tree/main/examples/lime">Vignettes in the <code>meteors</code> repository</a></p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#1-loading-the-model">1. Loading the Model</a></li>
+<li><a href="#2-load-the-hyperspectral-data-from-hyperview-challenge">2. Loading the Hyperspectral data from HYPERVIEW Challenge</a></li>
+<li><a href="#3-convert-data-into-hsi-image-and-preview-the-images">3. Convert data into HSI image and preview the images</a></li>
+<li><a href="#4-analyze-hsi-data-with-lime">4. Analyze HSI data with LIME</a></li>
+<li><a href="#41-spatial-analysis">4.1. Spatial Analysis</a></li>
+<li><a href="#42-spectral-analysis">4.2. Spectral Analysis</a></li>
+</ul>
+<pre><code class="language-python">import os
+import torch
+import urllib
+import numpy as np
+import pandas as pd
+from PIL import Image
+from torchvision import transforms
+import matplotlib.pyplot as plt
+
+import meteors as mt
+
+from clip_utils import load_base_clip, download
+
+# Always try to set the seed for repeatability :)
+torch.manual_seed(0)
+</code></pre>
+<pre><code>&lt;torch._C.Generator at 0x112dcd590&gt;
+</code></pre>
+<pre><code class="language-python">device = torch.device(&quot;cuda:0&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+print(f&quot;Using device: {device}&quot;)
+</code></pre>
+<pre><code>Using device: cpu
+</code></pre>
+<h2 id="1-loading-the-model">1. Loading the Model</h2>
+<p>The dataset used for training this model can be found on the official page for the <a href="https://ai4eo.eu/challenge/hyperview-challenge/">HYPERVIEW Challenge</a>.</p>
+<p>The following code loads pre-trained CLIP weights and fine-tuned weights for the model.</p>
+<pre><code class="language-python">download_root = os.path.expanduser(&quot;~/.cache/clip&quot;)
+num_classes = 4
+</code></pre>
+<p>Load the CLIP model with the HYPERVIEW head</p>
+<pre><code class="language-python">model = load_base_clip(download_root=download_root, class_num=num_classes)
+</code></pre>
+<p>Load the pre-trained weights</p>
+<pre><code class="language-python">vit_checkpoint_path = download(
+    &quot;https://huggingface.co/KPLabs/HYPERVIEW-VisionTransformer/resolve/main/VisionTransformer.pt&quot;,
+    download_root,
+    error_checksum=False,
+)
+model.load_state_dict(torch.load(vit_checkpoint_path, map_location=device))
+model.eval()
+model = model.to(device)
+</code></pre>
+<h2 id="2-load-the-hyperspectral-data-from-hyperview-challenge">2. Load the Hyperspectral data from HYPERVIEW Challenge</h2>
+<p>In this notebook, we will use the sample images from the HYPERVIEW Challenge dataset. The images are stored in the <a href="https://github.com/xai4space/meteors/tree/main/examples/hyperview_challenge">vignettes folder for the lime example</a> in the <code>data</code> folder. The images are in the <code>.npy</code> format. The images are 3D hyperspectral images with 150 bands and various spatial dimensions. The images are stored in the raw format and contain both the hyperspectral image and the mask applied while training the model.</p>
+<p>First, we need to define the loading and preprocessing functions for the data.</p>
+<pre><code class="language-python">def _shape_pad(data):
+    max_edge = np.max(data.shape[1:])
+    shape = (max_edge, max_edge)
+    padded = np.pad(
+        data,
+        ((0, 0), (0, (shape[0] - data.shape[1])), (0, (shape[1] - data.shape[2]))),
+        &quot;constant&quot;,
+        constant_values=0.0,
+    )
+    return padded
+
+
+def load_single_npz_image(image_path):
+    with np.load(image_path) as npz:
+        data = npz[&quot;data&quot;]
+        mask = npz[&quot;mask&quot;]
+
+        mask = 1 - mask.astype(int)
+
+        mask = _shape_pad(mask)
+        data = _shape_pad(data)
+
+        mask = mask.transpose((1, 2, 0))
+        data = data.transpose((1, 2, 0))
+        data = data / 5419
+
+        return data, mask
+
+
+def get_eval_transform(image_shape):
+    return transforms.Compose(
+        [
+            transforms.Resize((image_shape, image_shape)),
+        ]
+    )
+</code></pre>
+<p>Now, let's load the hyperspectral image using functions we defined earlier.</p>
+<pre><code class="language-python">data, mask = load_single_npz_image(&quot;data/0.npz&quot;)
+masked_data = data * mask
+masked_data = torch.from_numpy(masked_data.astype(np.float32)).permute(2, 0, 1)
+eval_tr = get_eval_transform(224)
+
+image_torch = eval_tr(masked_data)
+not_masked_image_torch = eval_tr(torch.from_numpy(data.astype(np.float32)).permute(2, 0, 1))
+
+print(f&quot;Original data shape: {data.shape}&quot;)
+print(f&quot;Original mask shape: {mask.shape}&quot;)
+print(f&quot;Transformed data shape: {image_torch.shape}&quot;)
+</code></pre>
+<pre><code>Original data shape: (89, 89, 150)
+Original mask shape: (89, 89, 150)
+Transformed data shape: torch.Size([150, 224, 224])
+</code></pre>
+<p>As we can see, the image is a 3D NumPy array with a shape transformed to (150, 224, 224), where 150 is the number of bands and 224x224 is the spatial dimension of the image. We will keep the image in both masked and unmasked formats.</p>
+<p>Now, we need to specify the wavelengths of the bands in the image. The wavelengths were provided in the challenge dataset, but to avoid loading additional files, we save it as a simple pythonic list.</p>
+<pre><code class="language-python">with open(&quot;data/wavelenghts.txt&quot;, &quot;r&quot;) as f:
+    wavelengths = f.readline()
+wavelengths = [float(wave.strip()) for wave in wavelengths.split(&quot;,&quot;)]
+</code></pre>
+<h2 id="3-convert-data-into-hsi-image-and-preview-the-images">3. Convert Data into HSI Image and Preview the Images</h2>
+<p>Now, having the raw data - the tensor representing the image, its wavelengths and the image orientation, we can to combine this information into a complete hyperspectral image. To create the hyperspectral image, we will use the <code>HSI</code> data class from the <code>meteors</code> package.</p>
+<p>The <code>HSI</code> (HyperSpectral Image) class takes the hyperspectral image data, the wavelength data, and the orientation of the image as input and creates the meaningful hyperspectral image, that can be easily analysed in any downstream task.</p>
+<p>Additionally, we may provide the binary mask, which may cover data irrelevant for the task, as suggested by the challenge dataset providers. In our case we cover the regions where there is land whose parameters we do not want to estimate, for instance some forests, roads or rivers. If we learned the model on such unmasked data, it could falsely underestimate the predictions, since the measured soil parameters in such uncultivated land is usually lower. We create a binary mask from the image, where 1 is the masked region and 0 is the unmasked region.</p>
+<pre><code class="language-python">binary_mask = (image_torch &gt; 0.0).int()
+</code></pre>
+<p>The HSI object attributes:</p>
+<ul>
+<li><code>data</code>: Preprocessed hyperspectral image data (numpy/pytorch array, shape: bands × height × width)</li>
+<li><code>wavelengths</code>: List of hyperspectral image wavelengths</li>
+<li><code>orientation</code>: Image orientation, e.g. <code>CWH</code> (Channels × Width × Height)</li>
+<li><code>binary_mask</code>: Binary mask for the image</li>
+<li><code>device</code>: Storage device for image data (can be set later via <code>.to(device)</code>)</li>
+</ul>
+<pre><code class="language-python">hsi_0 = mt.HSI(
+    image=not_masked_image_torch,
+    wavelengths=wavelengths,
+    orientation=&quot;CWH&quot;,
+    binary_mask=binary_mask,
+    device=device,
+)
+</code></pre>
+<p>Now, let's view the hyperspectral image along with the masked and unmasked versions.</p>
+<pre><code class="language-python">fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
+
+mt.visualize.visualize_hsi(hsi_0, ax1, use_mask=True)
+ax1.set_title(&quot;Masked Image&quot;)
+
+ax2.imshow(binary_mask[0, ...].T.cpu().numpy(), cmap=&quot;gray&quot;)
+ax2.set_title(&quot;Binary Mask&quot;)
+
+mt.visualize.visualize_hsi(hsi_0, ax3, use_mask=False)
+ax3.set_title(&quot;Unmasked Image&quot;)
+
+fig.suptitle(&quot;Sample image from the HYPERVIEW dataset&quot;)
+plt.show()
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_20_0.png" /></p>
+<p>The <code>HSI</code> dataclass streamlines hyperspectral image processing by automatically generating clean RGB visualizations from the complex hyperspectral data. This automation eliminates common manual tasks like wavelength band selection and image orientation correction. The dataclass handles the conversion from high-dimensional spectral data to a standard RGB representation, making it easier to visually inspect and validate the hyperspectral imagery before analysis.</p>
+<p>For model prediction, we can directly input the processed hyperspectral image into our classifier. The model performs multi-class classification across 4 distinct classes.</p>
+<pre><code class="language-python">original_prediction = model(not_masked_image_torch.unsqueeze(0))
+hsi_prediction = model(hsi_0.image.unsqueeze(0))
+assert torch.allclose(original_prediction, hsi_prediction, atol=1e-3)
+</code></pre>
+<p>The classes of the HYPERVIEW dataset</p>
+<pre><code class="language-python">prediction_dict = {0: &quot;Phosphorus&quot;, 1: &quot;Potassium&quot;, 2: &quot;Magnesium&quot;, 3: &quot;pH&quot;}
+</code></pre>
+<pre><code class="language-python">predictions = {prediction_dict[i]: float(hsi_prediction[0, i].cpu().detach().numpy()) for i in range(4)}
+predictions = pd.Series(predictions)
+predictions
+</code></pre>
+<pre><code>Phosphorus    0.210551
+Potassium     0.350670
+Magnesium     0.391935
+pH            0.883228
+dtype: float64
+</code></pre>
+<h2 id="4-analyze-hsi-data-with-lime">4. Analyze HSI Data with LIME</h2>
+<p><a href="https://dl.acm.org/doi/abs/10.1145/2939672.2939778">LIME</a> (Local Interpretable Model-agnostic Explanations) is a model-agnostic algorithm that explains the predictions of a model by approximating the model's decision boundary around the prediction. It transforms the local area of the sample into interpretable space by creating superbands or superpixels which are the blocks that make up the sample. The algorithm generates a set of perturbed samples around the input sample and fits a linear model to the predictions of the perturbed samples. The linear model is then used to explain the prediction of the input sample.</p>
+<pre><code class="language-python">img = Image.open(urllib.request.urlopen(&quot;https://ema.drwhy.ai/figure/lime_introduction.png&quot;))
+fig, ax = plt.subplots(figsize=(7, 7))
+
+ax.imshow(img)
+ax.axis(&quot;off&quot;)
+
+plt.figtext(
+    0.5,
+    0.01,
+    'Illustration of LIME method idea. The colored areas corresponds to the descison regions of a complex classification model, which we aim to explain. The black cross indicates the sample (observation) of interest. Dots correspond to artificial data around the instance of interest.The dashed line represents a simple linear model fitted to the artificial data and explained model predictions. The simple surrogate model &quot;explains&quot; local behaviour of the black-box model around the instance of interest',
+    wrap=True,
+    horizontalalignment=&quot;center&quot;,
+)
+
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_27_0.png" /></p>
+<p>An image above with explanation of LIME idea is taken from the <em>Explanatory Model Analysis</em> book, by Przemyslaw Biecek and Tomasz Burzykowski (2021).</p>
+<p>To initialize the LIME object, we need to provide the following parameters:</p>
+<ul>
+<li><code>explainable_model</code>: The model to be explained, used to predict the hyperspectral image and the task type. In order to integrate any model with our methods, the model has to be wrapped in a class from the meteors package, providing additional info for the LIME explainer, such as the problem type</li>
+<li><code>interpretable_model</code>: The model used to approximate the decision boundary of the model. It could be any kind of easily interpretable model. The package provides implementations of Ridge and Lasso linear models ported from <code>sklearn</code> library and in this notebook we use a Lasso regression model</li>
+</ul>
+<p>Meteors package supports explaining the model solving 3 different machine learning problems:</p>
+<ul>
+<li>Regression</li>
+<li>Classification</li>
+<li>Segmentation</li>
+</ul>
+<p>Since the linear, interpretable models used in the package for creating the LIME explanations do not solve directly the segmentation problem, we apply a handy trick that converts this problem into a regression problem that can be solved by linear models. This idea is inspired from the <code>captum</code> library and involves appropriately counting pixels in the segmentation mask so that the number of pixels in each segment can be estimated by the regression model.</p>
+<p>First, lets wrap the model in the meteors model wrapper</p>
+<pre><code class="language-python">explainable_model = mt.models.ExplainableModel(model, &quot;regression&quot;)
+</code></pre>
+<p>next create the interpretable model with regularization strength of 0.001</p>
+<pre><code class="language-python">interpretable_model = mt.models.SkLearnLasso(alpha=0.001)
+</code></pre>
+<p>Let's initialize the LIME explainer with the CLIP model!</p>
+<pre><code class="language-python">lime = mt.attr.Lime(explainable_model, interpretable_model)
+</code></pre>
+<h2 id="4-analyze-hsi-data-with-lime_1">4. Analyze HSI data with LIME</h2>
+<p>Our implementation of LIME explainer enables to analyze HSI data based on the spatial or spectral dimension. It allows to investigate which regions or which spectral bands are the most relevant for the model. The rest of the notebook will be divided into spectral and spatial analysis of HSI data.</p>
+<h3 id="41-spatial-analysis">4.1. Spatial Analysis</h3>
+<p>Similar to the original implementation of LIME for images, we will create spatial superpixels which are perturbed and used to train a surrogate model for explaining. These explanations will produce a correlation map with the output for each superpixel.
+Firstly, to generate attributions, we need to prepare the segmentation mask. Essentially, the segmentation mask is a torch tensor or numpy ndarray that contains information to which superpixel (region) does the specified pixel belongs. Integer values in such tensor represent the labels of superpixels. The mask should have the same shape as the image, but should be repeated along the channels dimension. The package now supports three methods to create the mask:</p>
+<ul>
+<li>Using <a href="https://scikit-image.org/docs/stable/auto_examples/segmentation/plot_segmentations.html">SLIC</a> for superpixel detection</li>
+<li>Using patch segmentation. Knowing that ViT uses squared non-overlapping sliding windows, we can also make superpixels based on the same technique</li>
+<li>Providing a custom mask</li>
+</ul>
+<p>In this notebook we will present, how can we utilize different segmentation masks to investigate the model's performance and explore interesting areas in the images</p>
+<pre><code class="language-python">segmentation_mask_slic = lime.get_segmentation_mask(hsi_0, segmentation_method=&quot;slic&quot;)
+segmentation_mask_patch = lime.get_segmentation_mask(hsi_0, segmentation_method=&quot;patch&quot;, patch_size=14)
+</code></pre>
+<pre><code class="language-python">fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
+
+ax1.imshow(segmentation_mask_slic[0, ...].T)
+ax1.set_title(&quot;SLIC Mask Segmentation&quot;)
+
+mt.visualize.visualize_hsi(hsi_0, ax2, use_mask=True)
+ax2.set_title(&quot;Original HSI Image&quot;)
+
+ax3.imshow(segmentation_mask_patch[0, ...].T)
+ax3.set_title(&quot;Patch Mask Segmentation&quot;)
+
+fig.suptitle(&quot;Segmentation masks for the LIME explainer&quot;)
+
+plt.show()
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_36_0.png" /></p>
+<p>Now, since we have our HSI sample data, segmentation mask and LIME model prepared, we will produce attribution maps for the segments. To do this, we simply need to execute one method <code>get_spatial_attributes</code>, and provide the HSI data, segmentation mask, and target class to be analyzed. If our model predicts more than one class (the model's output is multidimensional), we need to specify which target class we want to analyze. For each class, the analysis of the correlation with segments can be different.</p>
+<pre><code class="language-python">spatial_attributes = lime.get_spatial_attributes(
+    hsi_0,
+    segmentation_mask_slic,
+    target=1,
+    n_samples=10,
+    perturbations_per_eval=4,
+)
+</code></pre>
+<p>method <code>get_spatial_attributes</code> apart from the 3 required fields:</p>
+<ul>
+<li><code>hsi</code> - the hyperspectral image data</li>
+<li><code>mask</code> - the segmentation mask</li>
+<li><code>target</code> - the target index class to be analyzed: K - potassium - 1</li>
+</ul>
+<p>takes as well few optional hyperparameters of explanations. Those are:</p>
+<ul>
+<li><code>n_samples</code> - it is a number of the generated artificial samples on which the linear model is trained. The larger number of samples, the explanations produced by the linear model are usually better, since its predictions should better mimic the predictions of the explained model. However, the larger <code>n_samples</code> the longer attribution takes to be performed</li>
+<li><code>perturbations_per_eval</code> - an inner batch size, this parameter may fasten the attribution, depending your machine capacity</li>
+<li><code>verbose</code> - a parameter specifying whether to output a progress bar, that makes the waiting time for attribution more pleasant</li>
+</ul>
+<p>The method has also an option to generate the segmentaion mask by itself, utilizing the static method <code>get_segmentation_mask</code> method under the hood.</p>
+<p>More information about the <code>get_spatial_attributes</code> function can be found in its <a href="https://xai4space.github.io/meteors/latest/reference/#src.meteors.attr.lime.Lime">reference page</a> on the documentation website.</p>
+<p>The obtained <code>spatial_attributes</code> object is an object containing all the necessary data about the explanation. It consists of few fields:</p>
+<ul>
+<li><code>hsi</code> - a HyperSpectral Image object, </li>
+<li><code>mask</code> - here used for creation superpixels </li>
+<li><code>attributes</code> - explanations produced by the explainer of the same shape as the HSI</li>
+<li><code>score</code> - R2 score of the linear model used for the attribution</li>
+</ul>
+<p>Now, let us see how the attributions look like! </p>
+<p>Using the visualization capabilities provided by the <code>meteors</code> package, it is incredibely easy.</p>
+<pre><code class="language-python">mt.visualize.visualize_spatial_attributes(spatial_attributes)
+plt.show()
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_42_0.png" /></p>
+<p>The plot presents three components (from the left)</p>
+<ol>
+<li>On the left, the original image provided to LIME.</li>
+<li>In the middle, the attribution map for each segment.</li>
+<li>On the right, the segmented mask with IDs of the segments. The number 0 represents the masked region, and because it surrounds each segment, the placement of the number is in the middle of the segment.</li>
+</ol>
+<p>The colors in the attribution map have the following meanings:</p>
+<ul>
+<li><strong>Red</strong>: This superpixel is negatively correlated with the input. In our case, it means that the presence of this superpixel contributed to lowering the value for the target class 1.</li>
+<li><strong>White</strong>: This segment did not have a significant impact on the output.</li>
+<li><strong>Green</strong>: This superpixel is positively correlated with the output. Its presence increases the value for the class <code>1</code>.</li>
+</ul>
+<p>To validate how well the surrogate model was trained, we also provide the <code>score</code> attribute, which indicates the <code>R2</code> metric (coefficient of determination) that measures how well the surrogate model was trained.</p>
+<pre><code class="language-python">spatial_attributes.score
+</code></pre>
+<pre><code>0.9498702883720398
+</code></pre>
+<p>High R2 score for the surrogate model hints that the attributions are sensible. In case the R2 score were very low, it could mean that the surrogate linear model can't tell which regions are more important for the explainable model preditions.</p>
+<p>Let's analyze the attribution maps for class <code>0</code> representing phosphorus estimation. We can simply modify the <code>target</code> parameter, utilizing the same segmentation mask, and rerun the explanation process.</p>
+<pre><code class="language-python">spatial_attributes = lime.get_spatial_attributes(hsi_0, segmentation_mask_slic, target=0, n_samples=10)
+</code></pre>
+<pre><code class="language-python">mt.visualize.visualize_spatial_attributes(spatial_attributes)
+print(f&quot;R2 metric: {spatial_attributes.score:.4f}&quot;)
+plt.show()
+</code></pre>
+<pre><code>R2 metric: 0.6901
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_47_1.png" /></p>
+<p>In our case, the green regions may correspond to areas with a higher concentration of the parameter being tested - here phosporus. </p>
+<h4 id="different-segmentation-masks">Different segmentation masks</h4>
+<p>The most semantically meaningful segmentation mask is the one created by slic method. It contains superpixels that are created based on the image structure, which choice is very similiar to the regions that a human would choose</p>
+<p>However, <code>meteors</code> also supports creating the patch segmentation mask, but we are planning to increase support for different methods very soon.</p>
+<h5 id="patch-segmentation">Patch segmentation</h5>
+<p>Patch segmentation mask tests the importance of regions shaped as rectangles. It is designed to work well with the ViT architecure, but it gives less semantic meaning.</p>
+<p>Let's check the <code>patch</code> segmentation mask and see how it affects the attribution maps.</p>
+<pre><code class="language-python">spatial_attributes = lime.get_spatial_attributes(hsi_0, segmentation_mask_patch, target=1, n_samples=10)
+</code></pre>
+<pre><code class="language-python">fig, ax = mt.visualize.visualize_spatial_attributes(spatial_attributes)
+print(f&quot;R2 metric: {spatial_attributes.score:.4f}&quot;)
+fig.suptitle(&quot;Patch Mask Segmentation for Potassium&quot;)
+plt.show()
+</code></pre>
+<pre><code>R2 metric: 0.8699
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_50_1.png" /></p>
+<p>As we can see the Lime explainer focused on different regions of the image, which are not consistent with the previous results. Let's try using a larger number of perturbed samples. In this way, the linear model will be trained on much more perturbed versions of the original image and will be able to mimic the predictions of the explained model better.</p>
+<pre><code class="language-python">spatial_attributes = lime.get_spatial_attributes(
+    hsi_0, segmentation_mask_patch, target=1, n_samples=100, perturbations_per_eval=10
+)
+</code></pre>
+<pre><code class="language-python">fig, ax = mt.visualize.visualize_spatial_attributes(spatial_attributes)
+print(f&quot;R2 metric: {spatial_attributes.score:.4f}&quot;)
+fig.suptitle(&quot;LIME Explanation for Potassium with increased number of perturbed samples&quot;)
+plt.show()
+</code></pre>
+<pre><code>R2 metric: 0.5538
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_53_1.png" /></p>
+<p>The explainer focuses again on the part of the image in the lower right corner and marks it as positively correlated with the output. It may suggests that the model indeed finds something interesting in this important region.</p>
+<h4 id="custom-segmentation-mask">Custom segmentation mask</h4>
+<p>Additionally, an user might want to create their own segmentation mask, or modify the one created by the package.</p>
+<p>Therefore, we can inspect this lower right region more thoroughly by creating a more specific segmentation mask based on the slic one.</p>
+<pre><code class="language-python">thorough_segmentation_mask_slic = segmentation_mask_slic.clone()
+thorough_segmentation_mask_slic[(thorough_segmentation_mask_slic != 10) &amp; (thorough_segmentation_mask_slic != 0)] = 1
+
+spatial_attributes = lime.get_spatial_attributes(
+    hsi_0, thorough_segmentation_mask_slic, target=1, n_samples=100, perturbations_per_eval=10
+)
+</code></pre>
+<pre><code class="language-python">mt.visualize.visualize_spatial_attributes(spatial_attributes)
+print(f&quot;R2 metric: {spatial_attributes.score:.4f}&quot;)
+</code></pre>
+<pre><code>R2 metric: 0.9755
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_57_1.png" /></p>
+<p>it is visible, that this superpixel covers area that seems to be the most important region for the model. Why? This is another problem to be explained.</p>
+<h5 id="mask-importance">Mask importance</h5>
+<p>Using an another custom segmentation mask, we can inspect, if binary mask covers regions that should not be relevant for the model. Now we will use the binary mask used for covering irrelevant regions as a segmentation mask to verify our hypothesis.</p>
+<p>Firstly, let's create a another HSI object, this time a plain image without any covering binary mask</p>
+<pre><code class="language-python">image_without_mask = not_masked_image_torch.clone()
+hsi_without_mask = mt.HSI(
+    image=image_without_mask,
+    wavelengths=wavelengths,
+    orientation=&quot;CWH&quot;,
+    device=device,
+)
+</code></pre>
+<p>Now, this image with the segmentation mask that consists of only two classes, we may explore, how each region is important for the model. To do so, we repeat this process for the potassium class.</p>
+<pre><code class="language-python">segmentation_mask_from_binary = binary_mask + 1
+spatial_attributes = lime.get_spatial_attributes(
+    hsi_without_mask, segmentation_mask_from_binary, target=1, n_samples=10
+)
+</code></pre>
+<pre><code class="language-python">fig, ax = mt.visualize.visualize_spatial_attributes(spatial_attributes)
+fig.suptitle(&quot;Importance of regions covered by the mask for Potassium class&quot;)
+print(f&quot;R2 metric: {spatial_attributes.score:.4f}&quot;)
+</code></pre>
+<pre><code>R2 metric: 0.4493
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_63_1.png" /></p>
+<p>as we can see, the model correctly has learned that the relevant information is not covered with the mask. The region that was covered by default using the mask is strongly negatively correlated with the output, which may suggest that indeed, mask covers some regions, causing the model to output lower values for the estimated soil parameter</p>
+<h3 id="42-spectral-analysis">4.2. Spectral Analysis</h3>
+<p>The spectral analysis is similar to the spatial one, but instead of analyzing the spatial dimension of the hyperspectral images, we analyze the spectral dimension - the image bands. In the process we group the specific channels of the image into superbands (groups of bands) and investigate importances of such groups. The spectral or band mask is a similar torch tensor or numpy ndarray as the segmentation mask, but instead of grouping regions it groups image channels. In the similar manner it is repeated along the width and height dimensions of the image.</p>
+<p>Since this kind of spectral analysis has sense only in hyperspectral imaginery, we paid special attention to this novel feature. As in the case of segmentation mask, user has several options how to create the band mask, to ensure that they had no difficulty using the analysis package and could rather focus on explaining the model. In the current package version user can:</p>
+<ul>
+<li>provide the spectral indices or indexes of the commmonly recognized bands</li>
+<li>specify exactly which wavelengths should compose the band mask</li>
+<li>specify which wavelength indices corresponding to the wavelength list from the explained HSI object should be used</li>
+</ul>
+<p>All these band masks can be obtained using one simple method <code>get_band_mask</code>, which detailed documentation may also be found in the <a href="https://xai4space.github.io/meteors/latest/reference/#src.meteors.attr.lime.Lime.get_band_mask">reference</a>. Now we will go through these different methods of creating the band mask and create some attributions.</p>
+<h4 id="band-and-indices-names">Band and indices names</h4>
+<p>This, definetely the fastest for the user, method provides a quick way to explore importance of some well known superbands. To create the band mask using this approach, all we need to do is to pass a list or a dictionary of the band names:</p>
+<pre><code class="language-python">band_mask, band_names = lime.get_band_mask(hsi_0, [&quot;R&quot;, &quot;G&quot;, &quot;B&quot;])
+</code></pre>
+<pre><code>[32m2024-11-18 00:18:29.065[0m | [33m[1mWARNING [0m | [36mmeteors.attr.lime[0m:[36m_check_overlapping_segments[0m:[36m827[0m - [33m[1mSegments G and B are overlapping, overlapping wavelengths will be assigned to only one[0m
+</code></pre>
+<p>this method outpus a tuple of two variables:</p>
+<ul>
+<li><code>band_mask</code> - a created band mask</li>
+<li><code>band_names</code> - a dictionary containing mapping from provided labels and segment indices</li>
+</ul>
+<p><strong>Note</strong> The warning indicates that certain band groups have overlapping wavelengths. In such cases, each wavelength will be uniquely assigned to only <strong>one</strong> band group, avoiding duplicate assignments.</p>
+<p>In this case we created a band mask that contains 4 superpixels - one for each of the base colours and another one including all the background.</p>
+<pre><code class="language-python">band_names
+</code></pre>
+<pre><code>{'R': 1, 'G': 2, 'B': 3}
+</code></pre>
+<pre><code class="language-python">plt.scatter(wavelengths, band_mask.squeeze(1).squeeze(1))
+
+plt.title(&quot;Band Mask for the RGB bands&quot;)
+
+plt.show()
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_70_0.png" /></p>
+<p>The plot presents how bands are grouped. The bands with the value 0 creates the additional band group <code>not_included</code> which also will be used in the analysis. You may also notice that the overlapping wavelengths are only assigned to one group.</p>
+<p>Now, we can analyze the hyperspectral image based on the spectral dimension. We will use the same LIME model as in the spatial analysis (initialize with the same parameters), but we will provide the band mask instead of the segmentation mask and also band names.</p>
+<pre><code class="language-python">lime = mt.attr.Lime(
+    explainable_model=mt.models.ExplainableModel(model, &quot;regression&quot;),
+    interpretable_model=mt.models.SkLearnLasso(alpha=0.001),
+)
+</code></pre>
+<pre><code class="language-python">spectral_attributes = lime.get_spectral_attributes(
+    hsi_0,
+    band_mask=band_mask,
+    target=1,
+    band_names=band_names,
+    n_samples=10,
+)
+</code></pre>
+<p>The spectral attributions are similar to spatial attributes consisting of <code>hsi</code>, <code>mask</code>, <code>attributes</code> and <code>score</code> of the linear model.</p>
+<pre><code class="language-python">assert len(wavelengths) == spectral_attributes.flattened_attributes.shape[0]
+plt.scatter(wavelengths, spectral_attributes.flattened_attributes)
+plt.title(&quot;Spectral Attributes Map&quot;)
+plt.show()
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_75_0.png" /></p>
+<p>But again as with spatial analysis it is much easier to visualize the results using the provided meteors visualization functions.</p>
+<pre><code class="language-python">fig, ax = mt.visualize.visualize_spectral_attributes(spectral_attributes, show_not_included=True)
+fig.suptitle(&quot;Spectral Attributes for Potassium class and RGB bands&quot;)
+plt.show()
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_77_0.png" /></p>
+<p>The plot this time consists of two parts. On the left, we have the attribution value per band for the hyperspectral image it helps to identify, which particular bands are important, whilist the right plot helps to identify the most important superbands and compare magnitudes of its importance. </p>
+<p>On the plot above, we may see that the red superband is much more important than the green and blue ones. How would the situation change if we compared red superband and blue and green superband together?</p>
+<p>Fortunately, thanks to the method <code>get_band_mask</code> it is incredibely easy - we just need to specify bands that will produce the superband.</p>
+<pre><code class="language-python">band_mask, band_names = lime.get_band_mask(hsi_0, [&quot;R&quot;, [&quot;G&quot;, &quot;B&quot;]])
+</code></pre>
+<p>and as before we can create the attributions for the selected superbands using LIME explainer.</p>
+<pre><code class="language-python">spectral_attributes = lime.get_spectral_attributes(
+    hsi_0,
+    band_mask=band_mask,
+    target=1,
+    band_names=band_names,
+    n_samples=10,
+)
+</code></pre>
+<pre><code class="language-python">fig, ax = mt.visualize.visualize_spectral_attributes(spectral_attributes, show_not_included=True)
+fig.suptitle(&quot;Spectral Attributes for Potassium class and R and GB superbands&quot;)
+plt.show()
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_83_0.png" /></p>
+<p>it looks that, indeed, green and blue superbands combined are more important than the red one.</p>
+<p>To validate the model, we again can use the <code>score</code> attribute, which indicates the <code>R2</code> metric of how well-trained the surrogate model was.</p>
+<pre><code class="language-python">spectral_attributes.score
+</code></pre>
+<pre><code>0.65287184715271
+</code></pre>
+<p>All the band names are sourced from the <a href="https://github.com/awesome-spectral-indices/awesome-spectral-indices?tab=readme-ov-file#expressions">Awesome Spectral Indices</a> repository and handled using the <code>spyndex</code> library. Therefore, we can explore all the bands or try out some more exotic combinations using the predefined band indices <a href="https://github.com/awesome-spectral-indices/awesome-spectral-indices?tab=readme-ov-file#spectral-indices-by-application-domain">here</a> </p>
+<p>We will use now one of the indices taken from the library, a Bare Soil Index, which is a combination of couple of base bands. It can be defined as
+$$
+BI = \frac{(S1 + R) - (N + B)}{(S1 + R) + (N + B)}
+$$</p>
+<p>where S1 corresponds to SWIR 1 band, R and B to red and blue respectively and N to NIR band. It is used, as the name suggests, to detect bare soil in the hyperspectral imaginery and possibly can be used as well to detect soil parameters.</p>
+<pre><code class="language-python">band_mask, band_names = lime.get_band_mask(hsi_0, [&quot;G&quot;, &quot;BI&quot;])
+</code></pre>
+<pre><code>[32m2024-11-18 00:18:59.549[0m | [33m[1mWARNING [0m | [36mmeteors.attr.lime[0m:[36m_check_overlapping_segments[0m:[36m827[0m - [33m[1mSegments G and BI are overlapping, overlapping wavelengths will be assigned to only one[0m
+</code></pre>
+<p>now, using the same methods as before, we can attribute the new superbands using the LIME explainer and visualize the output</p>
+<pre><code class="language-python">band_names
+</code></pre>
+<pre><code>{'G': 1, 'BI': 2}
+</code></pre>
+<pre><code class="language-python">spectral_attributes = lime.get_spectral_attributes(
+    hsi_0,
+    band_mask=band_mask,
+    target=1,
+    band_names=band_names,
+    n_samples=10,
+)
+</code></pre>
+<pre><code class="language-python">mt.visualize.visualize_spectral_attributes(spectral_attributes, show_not_included=True)
+print(f&quot;R2 metric: {spectral_attributes.score:.4f}&quot;)
+plt.show()
+</code></pre>
+<pre><code>R2 metric: 0.9540
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_92_1.png" /></p>
+<p>it seems that the superband BI is actually irrelevant for the model in this specific case. It looks that the model does not base its predictions for the current image on this specific bands</p>
+<p>In this way, we may investigate if the model uses the bands that were commonly used for the similar tasks in the literature, which could help us debbuging the model! 
+Now we will use some bands, that should really be important to the model.</p>
+<h4 id="wavelengths-ranges">Wavelengths ranges</h4>
+<p>In some cases, we do not want to use any well known band combinations. In our team, we had access to knowledge of domain experts who gave us the exact wavelength values that are used to detect potassium, phosphorus, magnessium and pH in the soil. Now we can utilize this knowledge and create our own superbands. </p>
+<p>Now we will try out the values for the potassium. Unfortunately, not all the wavelengths provided are exactly mentioned in our wavelengths list, thus we need to find the closest corresponding indices to the values given by the experts.</p>
+<pre><code class="language-python">potassium_superband_indices = [0, 1, 4, 10, 43, 46, 47]
+potassium_superband_wavelengths = [wavelengths[i] for i in potassium_superband_indices]
+</code></pre>
+<pre><code class="language-python">potassium_superband_wavelengths
+</code></pre>
+<pre><code>[462.08, 465.27, 474.86, 494.04, 599.53, 609.12, 612.32]
+</code></pre>
+<pre><code class="language-python">band_dict = {&quot;potassium&quot;: potassium_superband_indices, &quot;another_superpixel&quot;: [i for i in range(20, 30)]}
+band_dict
+</code></pre>
+<pre><code>{'potassium': [0, 1, 4, 10, 43, 46, 47],
+ 'another_superpixel': [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]}
+</code></pre>
+<pre><code class="language-python">band_mask, band_names = lime.get_band_mask(hsi_0, band_indices=band_dict)
+</code></pre>
+<pre><code class="language-python">band_names
+</code></pre>
+<pre><code>{'potassium': 1, 'another_superpixel': 2}
+</code></pre>
+<pre><code class="language-python">spectral_attributes = lime.get_spectral_attributes(
+    hsi_0,
+    band_mask=band_mask,
+    target=1,
+    band_names=band_names,
+    n_samples=100,
+)
+</code></pre>
+<pre><code class="language-python">mt.visualize.visualize_spectral_attributes(spectral_attributes, show_not_included=True)
+print(f&quot;R2 metric: {spectral_attributes.score:.4f}&quot;)
+plt.show()
+</code></pre>
+<pre><code>R2 metric: 0.4785
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_101_1.png" /></p>
+<p>As it turns out, in this case, the bands given us by the experts are not necessarily important for the model. We need to remember, that this analysis is performed for solely one image. Perhaps, this is just one outlier and in different cases model might actually use the specified bands. For such cases, we can utilize the <em>global explanations</em> which are attributions aggregeated for multiple input images. </p>
+<h3 id="global-attributions">Global attributions</h3>
+<p>An interesting capability unique to spectral analysis is the ability to aggregate results across multiple samples, allowing us to transition from local interpretation to global interpretation. This is usually not possible for spatial analysis, as the images differ significantly when it comes to the covered land. Aggregating spatial information is challenging due to the lack of straightforward method for determining which parts of different images are similar, as the covered land can vary significantly. On the contrary, spectral analysis benefits from consistent bands accross images, allowing for specification of common superbands.</p>
+<p>To give an idea how to perform such analysis, we need a second sample of the hyperspectral image.</p>
+<pre><code class="language-python">data, mask = load_single_npz_image(&quot;data/1.npz&quot;)
+masked_data = data * mask
+masked_data = torch.from_numpy(masked_data.astype(np.float32)).permute(2, 0, 1)
+eval_tr = get_eval_transform(224)
+
+image_torch_1 = eval_tr(masked_data)
+not_masked_image_torch_1 = eval_tr(torch.from_numpy(data.astype(np.float32)).permute(2, 0, 1))
+</code></pre>
+<pre><code class="language-python">binary_mask_1 = (image_torch_1 &gt; 0.0).int()
+
+hsi_1 = mt.HSI(
+    image=not_masked_image_torch_1, wavelengths=wavelengths, orientation=&quot;CWH&quot;, binary_mask=binary_mask_1, device=device
+)
+
+ax = mt.visualize.visualize_hsi(hsi_1, use_mask=True)
+ax.set_title(&quot;Another sample image from the HYPERVIEW dataset&quot;)
+</code></pre>
+<pre><code>Text(0.5, 1.0, 'Another sample image from the HYPERVIEW dataset')
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_104_1.png" /></p>
+<p>Now, once the image is properly loaded and preprocessed, let's get the attributions for the second sample, using the same band mask as before</p>
+<pre><code class="language-python">spectral_attributes_1 = lime.get_spectral_attributes(
+    hsi_1, band_mask=band_mask, target=1, band_names=band_names, n_samples=100
+)
+</code></pre>
+<pre><code class="language-python">mt.visualize.visualize_spectral_attributes(spectral_attributes, show_not_included=True)
+print(f&quot;R2 metric: {spectral_attributes.score:.4f}&quot;)
+plt.show()
+</code></pre>
+<pre><code>R2 metric: 0.4785
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_107_1.png" /></p>
+<p>To get the global interpretation we will provide the list of attributions to the meteors visualizer to create the global interpretation visualization.</p>
+<pre><code class="language-python">mt.visualize.visualize_spectral_attributes([spectral_attributes, spectral_attributes_1], show_not_included=True)
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img alt="png" src="../lime_files/lime_109_0.png" /></p>
+<p>As it turns out, the model does not necessarily use the specified bands in the prediction of the potassium class. This is probably insufficient to conclude anything using only attributions from 2 images, especially because the <code>score</code> of the explanations was low, but our model suprisingly does not use the expected wavelengths.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tracking", "navigation.path", "navigation.top"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>
