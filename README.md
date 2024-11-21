@@ -1,11 +1,12 @@
 # ☄️🛰️ Meteors <img src="assets/logo.png" align="right" width="150"/>
 
-[![PyPI](https://img.shields.io/pypi/v/meteors.svg)](https://github.com/xai4space/meteors/blob/main/LICENSE)
-[![PyPI - License](https://img.shields.io/pypi/l/meteors?style=flat-square)](https://opensource.org/licenses/MIT)
+[![PyPI](https://img.shields.io/pypi/v/meteors.svg)](https://pypi.org/project/meteors/)
+[![PyPI - License](https://img.shields.io/pypi/l/meteors?style=flat-square)](https://github.com/xai4space/meteors/blob/main/LICENSE)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/meteors?style=flat-square)](https://pypistats.org/packages/meteors)
 [![GitHub star chart](https://img.shields.io/github/stars/xai4space/meteors?style=flat-square)](https://star-history.com/#xai4space/meteors)
 [![Open Issues](https://img.shields.io/github/issues-raw/xai4space/meteors?style=flat-square)](https://github.com/xai4space/meteors/issues)
 [![Docs - GitHub.io](https://img.shields.io/static/v1?logo=meteors&style=flat&color=pink&label=docs&message=meteors)](https://xai4space.github.io/meteors/latest)
+[![codecov](https://codecov.io/gh/xai4space/meteors/graph/badge.svg?token=R67DN5266N)](https://codecov.io/gh/xai4space/meteors)
 
 ## 🛰️ Introduction
 

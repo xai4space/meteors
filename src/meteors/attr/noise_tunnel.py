@@ -141,7 +141,7 @@ class NoiseTunnel(BaseNoiseTunnel):
     """Noise Tunnel is a method that is used to explain the model's predictions by adding noise to the input tensor.
     The noise is added to the input tensor, and the model's output is computed. The process is repeated multiple times
     to obtain a distribution of the model's output. The final attribution is computed as the mean of the outputs.
-    For more information about the method, see captum documentation: https://captum.ai/api/noise_tunnel.html.
+    For more information about the method, see [`captum` documentation](https://captum.ai/api/noise_tunnel.html).
 
     Arguments:
         chained_explainer: The explainable method that will be used to compute the attributions.
@@ -218,7 +218,8 @@ class NoiseTunnel(BaseNoiseTunnel):
         """
         Method for generating attributions using the Noise Tunnel method.
 
-        hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
+        Args:
+            hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
                 If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
                 The output will be a list of HSIAttributes objects.
             baseline (int | float | torch.Tensor, optional): Baselines define reference value which replaces each

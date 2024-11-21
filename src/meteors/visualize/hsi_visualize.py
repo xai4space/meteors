@@ -20,11 +20,11 @@ def visualize_hsi(
         use_mask (bool): Whether to use the image mask if provided for the visualization.
         title (str | None): the title of the plot Defaults to None.
 
-
     Returns:
         matplotlib.figure.Figure | None:
             If use_pyplot is False, returns the figure and axes objects.
             If use_pyplot is True, returns None.
+
     Raises:
         TypeError: If hsi_or_attributes is not an instance of HSI or HSIAttributes.
     """
