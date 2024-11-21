@@ -22,7 +22,7 @@ The architecture of the package can be seen on the UML diagram:
 
 ## Visualizations
 
-::: src.meteors.visualize.hsi_visualize
+::: src.meteors.visualize.hsi_visualize.visualize_hsi
     options:
       heading_level: 3
       show_bases: false
@@ -35,6 +35,15 @@ The architecture of the package can be seen on the UML diagram:
       show_bases: false
       show_root_heading: false
       show_root_full_path: false
+      members:
+        - visualize_attributes
+        - visualize_spatial_aggregated_attributes
+        - visualize_spectral_aggregated_attributes
+        - visualize_aggregated_attributes
+        - visualize_spectral_attributes_by_waveband
+        - visualize_spectral_attributes_by_magnitude
+        - visualize_spectral_attributes
+        - visualize_spatial_attributes
 
 ## Attribution Methods
 
