@@ -45,7 +45,7 @@ jobs:
       - name: Get Version from VERSION file 🏷️
         id: get_version
         run: |
-          echo VERSION="$(rye version)" >> $GITHUB_OUTPUT
+          echo "VERSION=$(rye version)" >> $GITHUB_ENV
 
       - name: Convert Jupyter examples to Markdown 📓➡️📄
         run: |
@@ -79,5 +79,5 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          rye run mike deploy --push --branch gh-pages --update-aliases ${VERSION} latest
+          rye run mike deploy --push --branch gh-pages --update-aliases "$VERSION" latest
           rye run mike set-default --push --branch gh-pages latest
