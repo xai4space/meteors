@@ -66,15 +66,16 @@ def visualize_attributes(
     elif len(ax.shape) != 2 or ax.shape[0] < 2 or ax.shape[1] < 2:
         raise ValueError("The axes should have at least 2 rows and 2 columns.")
     else:
-        fig = ax[0, 0].get_figure()
+        fig = ax.ravel()[0].get_figure()
 
     ax[0, 0].set_title("Attribution Heatmap")
     ax[0, 0].grid(False)
     ax[0, 0].axis("off")
 
     if title is None:
-        title = f"HSI Attributes of: {rotated_attributes_dataclass.attributes}"
-    fig.suptitle(f"HSI Attributes of: {rotated_attributes_dataclass.attribution_method}")
+        title = f"HSI Attributes of: {rotated_attributes_dataclass.attribution_method}"
+
+    fig.suptitle(title)
 
     _ = viz.visualize_image_attr(
         rotated_attributes,
@@ -154,7 +155,7 @@ def visualize_spatial_attributes(
     spatial_attributes: HSISpatialAttributes,
     ax: Axes | None = None,
     use_pyplot: bool = False,
-    title="Spatial Attributes Visualization",
+    title: str | None = None,
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the spatial attributes of an hsi using Lime attribution.
 
@@ -165,7 +166,7 @@ def visualize_spatial_attributes(
             The axes object to plot the visualization on. If None, a new axes will be created.
         use_pyplot (bool, optional):
             Whether to use pyplot for visualization. Defaults to False.
-        title (str, optional): The title of the plot. Defaults to "Spatial Attributes Visualization".
+        title (str, optional): The title of the plot. If None will be set to "Spatial Attributes Visualization", Defaults to None.
 
     Returns:
         tuple[matplotlib.figure.Figure, matplotlib.axes.Axes] | matplotlib.axes.Axes | None:
@@ -182,7 +183,6 @@ def visualize_spatial_attributes(
     if ax is None:
         use_ax = False
         fig, ax = plt.subplots(1, 3 if mask_enabled else 2, figsize=(15, 5))
-        fig.suptitle(title)
 
     if not hasattr(ax, "shape"):
         raise ValueError("Provided as is one axes object, but it should be a list of axes objects")
@@ -190,6 +190,11 @@ def visualize_spatial_attributes(
         raise ValueError("The axes should have at least 3 rows or 3 columns")
     else:
         fig = ax[0].get_figure()
+
+    if title is None:
+        title = "Spatial Attributes Visualization"
+
+    fig.suptitle(title)
 
     spatial_attributes = spatial_attributes.change_orientation("HWC", inplace=False)
 
@@ -300,7 +305,12 @@ def visualize_spectral_attributes(
     if ax is None:
         use_ax = False
         fig, ax = plt.subplots(1, 3 if agg else 2, figsize=(15, 5))
-        fig.suptitle(title)
+    else:
+        if isinstance(ax, np.ndarray):
+            fig = ax.ravel()[0].get_figure()
+        else:
+            fig = ax.get_figure()
+    fig.suptitle(title)
 
     if not hasattr(ax, "shape"):
         raise ValueError("Provided as is one axes object, but it should be a list of axes objects")
@@ -623,7 +633,7 @@ def visualize_spatial_aggregated_attributes(
         score=attributes.score,
     )
 
-    out = visualize_spatial_attributes(new_spatial_attributes, ax=ax, use_pyplot=False)
+    out = visualize_spatial_attributes(new_spatial_attributes, ax=ax, use_pyplot=False, title=title)  # type: ignore
     if ax is not None:
         return out
 
@@ -676,10 +686,6 @@ def visualize_spectral_aggregated_attributes(
     attributes_example = attributes if isinstance(attributes, HSIAttributes) else attributes[0]
     if isinstance(band_mask, np.ndarray):
         band_mask = torch.from_numpy(band_mask)
-
-    if title is None:
-        if isinstance(attributes, HSIAttributes):
-            title = "Spectral Attributes Visualization"
 
     if band_mask.shape != attributes_example.hsi.image.shape:
         band_mask = expand_spectral_mask(attributes_example.hsi, band_mask, repeat_dimensions=True)
