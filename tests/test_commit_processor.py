@@ -93,3 +93,39 @@ def test_update_changelog(MockRepo, mock_file):
 ## Old content
 """
     mock_file().write.assert_called_once_with(expected_content)
+
+
+def test_parse_commit_with_pr_reference():
+    mock_commit = MagicMock(spec=commit_processor.Commit)
+
+    # Test PR reference
+    mock_commit.message = "feat: Add new feature (#123)"
+    assert commit_processor.parse_commit(mock_commit) == (
+        "feat",
+        "Add new feature ([#123](https://github.com/xai4space/meteors/pull/123))",
+    )
+
+    # Test multiple PR references
+    mock_commit.message = "fix: Fix multiple bugs (#124) (#125)"
+    assert commit_processor.parse_commit(mock_commit) == (
+        "fix",
+        "Fix multiple bugs ([#124](https://github.com/xai4space/meteors/pull/124)) ([#125](https://github.com/xai4space/meteors/pull/125))",
+    )
+
+
+def test_generate_changelog_with_pr_references(mock_repo):
+    mock_commits = [
+        MagicMock(spec=commit_processor.Commit, message="feat: Add feature A (#100)"),
+        MagicMock(spec=commit_processor.Commit, message="fix: Fix bug B (#101)"),
+    ]
+    mock_repo.iter_commits.return_value = mock_commits
+
+    changelog = commit_processor.generate_changelog("/fake/path", "v1.0.0")
+
+    expected_changelog = """### 🔨 Features
+- Add feature A ([#100](https://github.com/xai4space/meteors/pull/100))
+
+### 🩺 Bug Fixes
+- Fix bug B ([#101](https://github.com/xai4space/meteors/pull/101))
+"""
+    assert changelog == expected_changelog
