@@ -107,6 +107,10 @@ def test_visualize_hsi_with_hsi_object():
     # Check if the axes object is returned
     assert isinstance(ax, Axes)
 
+    # Check if title is set
+    ax = visualize.visualize_hsi(hsi, None, title="Test Title")
+    assert ax.get_title() == "Test Title"
+
 
 def test_visualize_hsi_with_axes_object():
     fig, ax = plt.subplots()
