@@ -27,10 +27,35 @@ plugins:
 theme:
   name: material
   logo: assets/logo.png
+  palette:
+    - scheme: default
+      primary: custom
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      toggle:
+        icon: material/lightbulb
+        name: Switch to light mode
+
+  features:
+    - navigation.tracking
+    - navigation.path
+    - navigation.top
+  icon:
+    repo: fontawesome/brands/github
+
 extra:
   version:
     provider: mike
     default: latest
+
+extra_css:
+  - stylesheets/extra.css
+
+repo_url: https://github.com/xai4space/meteors
+repo_name: xai4space/meteors
 
 watch:
   - src
