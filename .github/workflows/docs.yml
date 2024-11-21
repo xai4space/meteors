@@ -12,9 +12,16 @@ jobs:
       contents: write # This is required to push the changes to the repository
     steps:
       - name: Checkout code 📂
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Configure Git 🛠️
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # Fetch gh-pages branch
+          git fetch origin gh-pages --depth=1
 
       - name: Setup Rye 🌾
         id: setup-rye
@@ -41,11 +48,6 @@ jobs:
       - name: Get the ChangeLog 📝
         run: |
           cp changelog.md docs/changelog.md
-
-      - name: Get Version from VERSION file 🏷️
-        id: get_version
-        run: |
-          echo "VERSION=$(rye version)" >> $GITHUB_ENV
 
       - name: Convert Jupyter examples to Markdown 📓➡️📄
         run: |
@@ -77,7 +79,12 @@ jobs:
 
       - name: Build Docs Website 🌐
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          rye run mike deploy --push --branch gh-pages --update-aliases "$VERSION" latest
+          # Extract version from rye
+          export VERSION=$(rye version)
+          echo "Building the docs with version $VERSION"
+
+          # Deploy new version with --update-aliases flag
+          rye run mike deploy --push --branch gh-pages -u "$VERSION" latest
+
+          # Set default version
           rye run mike set-default --push --branch gh-pages latest
