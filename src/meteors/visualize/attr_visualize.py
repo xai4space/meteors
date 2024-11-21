@@ -20,7 +20,7 @@ from meteors.attr.attributes import align_band_names_with_mask
 
 
 def visualize_attributes(
-    image_attributes: HSIAttributes, ax: Axes | None = None, use_pyplot: bool = False
+    image_attributes: HSIAttributes, ax: Axes | None = None, use_pyplot: bool = False, title: str | None = None
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the attributes of an image on the given axes.
 
@@ -29,6 +29,7 @@ def visualize_attributes(
         ax (Axes | None): The axes to visualize the image on. If None, creates a new figure and axes.
         use_pyplot (bool): If True, uses pyplot to display the image. If False, returns the figure and axes objects.
             if ax is not None, use_pyplot is ignored.
+        title (str): The title of the chart. If it equals to None, will be replaced with title "HSI Attributes of {method used for explanations}". Defaults to None
 
     Returns:
         matplotlib.figure.Figure | matplotlib.axes.Axes | None: The figure and axes objects.
@@ -71,6 +72,8 @@ def visualize_attributes(
     ax[0, 0].grid(False)
     ax[0, 0].axis("off")
 
+    if title is None:
+        title = f"HSI Attributes of: {rotated_attributes_dataclass.attribution}"
     fig.suptitle(f"HSI Attributes of: {rotated_attributes_dataclass.attribution_method}")
 
     _ = viz.visualize_image_attr(
@@ -148,7 +151,7 @@ def _merge_band_names_segments(band_names: dict[str | tuple[str, ...], int]) -> 
 
 
 def visualize_spatial_attributes(
-    spatial_attributes: HSISpatialAttributes, ax: Axes | None = None, use_pyplot: bool = False
+    spatial_attributes: HSISpatialAttributes, ax: Axes | None = None, use_pyplot: bool = False, title = "Spatial Attributes Visualization"
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the spatial attributes of an hsi using Lime attribution.
 
@@ -159,6 +162,7 @@ def visualize_spatial_attributes(
             The axes object to plot the visualization on. If None, a new axes will be created.
         use_pyplot (bool, optional):
             Whether to use pyplot for visualization. Defaults to False.
+        title (str, optional): The title of the plot. Defaults to "Spatial Attributes Visualization".
 
     Returns:
         tuple[matplotlib.figure.Figure, matplotlib.axes.Axes] | matplotlib.axes.Axes | None:
@@ -175,7 +179,7 @@ def visualize_spatial_attributes(
     if ax is None:
         use_ax = False
         fig, ax = plt.subplots(1, 3 if mask_enabled else 2, figsize=(15, 5))
-        fig.suptitle("Spatial Attributes Visualization")
+        fig.suptitle(title)
 
     if not hasattr(ax, "shape"):
         raise ValueError("Provided as is one axes object, but it should be a list of axes objects")
@@ -247,6 +251,7 @@ def visualize_spectral_attributes(
     use_pyplot: bool = False,
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
+    title: str = "Spectral Attributes Visualization",
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the spectral attributes of an hsi object or a list of hsi objects.
 
@@ -267,6 +272,7 @@ def visualize_spectral_attributes(
             If True, includes the spectral bands that are not included in the visualization.
             If False, only includes the spectral bands that are included in the visualization.
             Defaults to True.
+        title (str, optional): The title of the plot. Defaults to "Spectral Attributes Visualization".
 
     Returns:
         tuple[matplotlib.figure.Figure, matplotlib.axes.Axes] | matplotlib.axes.Axes | None:
@@ -288,7 +294,7 @@ def visualize_spectral_attributes(
     if ax is None:
         use_ax = False
         fig, ax = plt.subplots(1, 3 if agg else 2, figsize=(15, 5))
-        fig.suptitle("Spectral Attributes Visualization")
+        fig.suptitle(title)
 
     if not hasattr(ax, "shape"):
         raise ValueError("Provided as is one axes object, but it should be a list of axes objects")
@@ -570,6 +576,7 @@ def visualize_spatial_aggregated_attributes(
     ax: Axes | None = None,
     use_pyplot: bool = False,
     aggregate_func: Callable[[torch.Tensor], torch.Tensor] = torch.mean,
+    title: str = "Spatial Aggregated Attributes",
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the spatial attributes of an hsi object aggregated by a custom mask.
 
@@ -583,6 +590,7 @@ def visualize_spatial_aggregated_attributes(
         aggregate_func (Callable[[torch.Tensor], torch.Tensor], optional): The aggregation function to be applied.
             The function should take a tensor as input and return a tensor as output.
             We recommend using torch functions. Defaults to torch.mean.
+        title (str, optional): The title of the plot. Defaults to "Spatial Aggregated Attributes".
 
     Raises:
         ShapeMismatchError: If the shape of the aggregated mask does not match the shape of the spatial attributes.
@@ -611,7 +619,7 @@ def visualize_spatial_aggregated_attributes(
         return out
 
     fig, ax = out  # type: ignore
-    fig.suptitle("Spatial Attributes Visualization Aggregated")
+    fig.suptitle(title)
 
     if use_pyplot:
         plt.show()  # pragma: no cover
@@ -629,6 +637,7 @@ def visualize_spectral_aggregated_attributes(
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
     aggregate_func: Callable[[torch.Tensor], torch.Tensor] = torch.mean,
+    title: str = "Spectral Aggregated Attributes",
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the spectral attributes of an hsi object aggregated by a custom band mask.
 
@@ -646,6 +655,7 @@ def visualize_spectral_aggregated_attributes(
         aggregate_func (Callable[[torch.Tensor], torch.Tensor], optional): The aggregation function to be applied.
             The function should take a tensor as input and return a tensor as output.
             We recommend using torch functions. Defaults to torch.mean.
+        title (str, optional): The title of the plot. Defaults to "Spectral Aggregated Attributes".
 
     Raises:
         ShapeMismatchError: If the shape of the band mask does not match the shape of the spectral attributes.
@@ -692,6 +702,7 @@ def visualize_spectral_aggregated_attributes(
         use_pyplot=False,
         color_palette=color_palette,
         show_not_included=show_not_included,
+        title=title,
     )  # type: ignore
     if ax is not None:
         return out
@@ -712,6 +723,7 @@ def visualize_aggregated_attributes(
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
     aggregate_func: Callable[[torch.Tensor], torch.Tensor] = torch.mean,
+    title: str = "Aggregated Attributes",
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the aggregated attributes of an hsi object.
 
@@ -730,6 +742,7 @@ def visualize_aggregated_attributes(
         aggregate_func (Callable[[torch.Tensor], torch.Tensor], optional): The aggregation function to be applied.
             The function should take a tensor as input and return a tensor as output.
             We recommend using torch functions. Defaults to torch.mean.
+        title (str, optional): The title of the plot. Defaults to "Aggregated Attributes".
 
     Raises:
         ValueError: If the shape of the mask does not match the shape of the attributes.
@@ -743,9 +756,9 @@ def visualize_aggregated_attributes(
     if band_names is None:
         logger.info("Band names not provided. Using Spatial Analysis.")
         assert not agg, "In Spatial Analysis, attributes must be a single HSIAttributes object."
-        return visualize_spatial_aggregated_attributes(attributes, mask, ax, use_pyplot, aggregate_func)  # type: ignore
+        return visualize_spatial_aggregated_attributes(attributes, mask, ax, use_pyplot, aggregate_func, title = title)  # type: ignore
     else:
         logger.info("Band names provided. Using Spectral Analysis.")
         return visualize_spectral_aggregated_attributes(
-            attributes, band_names, mask, ax, use_pyplot, color_palette, show_not_included, aggregate_func
+            attributes, band_names, mask, ax, use_pyplot, color_palette, show_not_included, aggregate_func, title = title
         )

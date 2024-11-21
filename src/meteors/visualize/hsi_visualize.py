@@ -7,7 +7,7 @@ from meteors import HSI
 from meteors.attr import HSIAttributes
 
 
-def visualize_hsi(hsi_or_attributes: HSI | HSIAttributes, ax: Axes | None = None, use_mask: bool = True) -> Axes:
+def visualize_hsi(hsi_or_attributes: HSI | HSIAttributes, ax: Axes | None = None, use_mask: bool = True, title = None) -> Axes:
     """Visualizes a Hyperspectral image object on the given axes. It uses either the object from HSI class or a field
     from the HSIAttributes class.
 
@@ -16,6 +16,7 @@ def visualize_hsi(hsi_or_attributes: HSI | HSIAttributes, ax: Axes | None = None
         ax (matplotlib.axes.Axes | None): The axes on which the image will be plotted.
             If None, the current axes will be used.
         use_mask (bool): Whether to use the image mask if provided for the visualization.
+        title (str | None): the title of the plot Defaults to None.
 
 
     Returns:
@@ -38,5 +39,8 @@ def visualize_hsi(hsi_or_attributes: HSI | HSIAttributes, ax: Axes | None = None
     rgb = hsi.get_rgb_image(output_channel_axis=2, apply_mask=use_mask, normalize=True).cpu().numpy()
     ax = ax or plt.gca()
     ax.imshow(rgb)
+    ax.axis("off")
+    if title:
+        ax.set_title(title)
 
     return ax
