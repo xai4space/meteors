@@ -6,10 +6,17 @@ from collections import defaultdict
 
 
 def parse_commit(commit: Commit) -> tuple[str | None, str]:
+    message = commit.message.strip()
+
+    # Add PR links
+    pr_pattern = r"\(#(\d+)\)"
+    message = re.sub(pr_pattern, r"([#\1](https://github.com/xai4space/meteors/pull/\1))", message)
+
     pattern = r"^(\w+): ([^\n]+)"
-    match = re.match(pattern, commit.message.strip())
+    match = re.match(pattern, message)
     if match:
-        return match.groups()  # type: ignore
+        tag, main_message = match.groups()
+        return tag, main_message
     return None, commit.message.strip()
 
 
