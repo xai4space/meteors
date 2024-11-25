@@ -117,7 +117,7 @@ def validate_explanations_and_explainer_type(explainer: HyperSHAP, explanation: 
 
 
 def validate_mapping_dict(
-    mapping: dict[float | int | str, list[int] | int], explantion_values: np.ndarray, wavelengths: bool = True
+    mapping: dict[float | int | str, list[int] | int], explanation_values: np.ndarray, wavelengths: bool = True
 ) -> dict[float | str, list[int]]:
     """validates the mapping dictionary. The function checks if the fields of the dictionary are in the correct format, coercing it to the correct types if possible.
     Later, it checks if all the features are used in the mapping, and returns the parsed dictionary.
@@ -127,7 +127,7 @@ def validate_mapping_dict(
         mapping (dict[float | int | str, list[int] | int]): Wavelengths mapping and transformation mapping should be in a format: {band_wavelength | transformation_function_name: [feature_index, ...] | single_feature_index, ...}.
         Transformation function name should be a string.
         In case the wavelength is a string, there will be an attempt to convert it to a float.
-        explantion_values (np.ndarray): explanation values for the model from the shap.Explanations object.
+        explanation_values (np.ndarray): explanation values for the model from the shap.Explanations object.
         wavelengths (bool, optional): If True, the function will proceed with the check for wavelengths mapping. Otherwise it will perform check for feature aggregation. Defaults to True.
 
     Raises:
@@ -140,11 +140,11 @@ def validate_mapping_dict(
     # check if the mapping are in the correct format
     if not isinstance(mapping, dict):
         raise TypeError(f"Expected dict as mapping, but got {type(mapping)}")
-    if not isinstance(explantion_values, np.ndarray):
-        raise TypeError(f"Expected np.ndarray as explantion_values, but got {type(explantion_values)}")
+    if not isinstance(explanation_values, np.ndarray):
+        raise TypeError(f"Expected np.ndarray as explantion_values, but got {type(explanation_values)}")
 
     used_indices = set()
-    ncols = explantion_values.shape[1]
+    ncols = explanation_values.shape[1]
 
     parsed_mapping = {}
 
@@ -169,7 +169,7 @@ def validate_mapping_dict(
         for feature_index in value:
             if not isinstance(feature_index, int):
                 raise TypeError(f"Expected int as feature index in mapping, but got {type(feature_index)}")
-            if feature_index < 0 or feature_index >= explantion_values.shape[1]:
+            if feature_index < 0 or feature_index >= explanation_values.shape[1]:
                 raise ValueError(f"Feature index out of bounds: {feature_index}")
             if feature_index in used_indices:
                 raise ValueError(f"Feature index {feature_index} already used in another entry of the aggregation.")
@@ -270,8 +270,7 @@ def beeswarm(
 
     # fig = shap.plots.beeswarm(explanations, ax=ax, show=use_pyplot)
     # Current release of SHAP does not support passing ax parameter to the beeswarm plot, even though it is present in the documentation.
-    ax = shap.plots.beeswarm(explanations, show=use_pyplot)
-    return ax
+    return shap.plots.beeswarm(explanations, show=use_pyplot)
 
 
 def dependence_plot(
