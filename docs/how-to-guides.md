@@ -41,7 +41,7 @@ When contributing code to Meteors, please follow these guidelines:
 
 ## 📜 Code of Conduct
 
-Please note that by contributing to Meteors, you are expected to adhere to our [Code of Conduct](https://github.com/xai4space/meteors/blob/main/code_of_conduct.md). Be respectful, inclusive, and considerate in your interactions with others.
+Please note that by contributing to Meteors, you are expected to adhere to our [Code of Conduct](https://github.com/xai4space/meteors/blob/main/.github/CODE_OF_CONDUCT.md). Be respectful, inclusive, and considerate in your interactions with others.
 
 ## 🙌 Recognition
 

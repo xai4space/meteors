@@ -17,11 +17,11 @@ def visualize_hsi(hsi_or_attributes: HSI | HSIAttributes, ax: Axes | None = None
             If None, the current axes will be used.
         use_mask (bool): Whether to use the image mask if provided for the visualization.
 
-
     Returns:
         matplotlib.figure.Figure | None:
             If use_pyplot is False, returns the figure and axes objects.
             If use_pyplot is True, returns None.
+
     Raises:
         TypeError: If hsi_or_attributes is not an instance of HSI or HSIAttributes.
     """
