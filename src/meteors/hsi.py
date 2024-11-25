@@ -141,7 +141,7 @@ def ensure_wavelengths_tensor(
 
     try:
         if not isinstance(wavelengths, torch.Tensor):
-            wavelengths = torch.tensor(wavelengths)
+            wavelengths = torch.as_tensor(wavelengths)
     except Exception as e:
         raise TypeError(f"Failed to convert wavelengths to a PyTorch tensor: {str(e)}") from e
 
