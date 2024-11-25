@@ -9,7 +9,7 @@ import meteors as mt
 
 
 def simple_explanation_test():
-    X_train, X_test, Y_train, Y_test = train_test_split(*shap.datasets.iris(), test_size=0.2, random_state=0)
+    X_train, X_test, Y_train, _ = train_test_split(*shap.datasets.iris(), test_size=0.2, random_state=0)
 
     knn = sklearn.neighbors.KNeighborsClassifier()
     knn.fit(X_train, Y_train)
@@ -21,9 +21,6 @@ def simple_explanation_test():
     explanation = hyper_shap.explain(X_test)
 
     assert isinstance(explanation, mt.shap.SHAPExplanation)
-
-    with pytest.raises(TypeError):
-        mt.shap.HyperSHAP("invalid", X_train, explainer_type="Kernel")
 
 
 def test_explainer_types():
@@ -65,7 +62,7 @@ def test_explainer_types():
 
 
 def test_shap_explain():
-    X_train, X_test, Y_train, Y_test = train_test_split(*shap.datasets.iris(), test_size=0.2, random_state=0)
+    X_train, X_test, Y_train, _ = train_test_split(*shap.datasets.iris(), test_size=0.2, random_state=0)
 
     linear = sklearn.linear_model.LogisticRegression()
     linear.fit(X_train, Y_train)
@@ -81,3 +78,4 @@ def test_shap_explain():
     # incorrect data type
     with pytest.raises(TypeError):
         explainer.explain("invalid")
+

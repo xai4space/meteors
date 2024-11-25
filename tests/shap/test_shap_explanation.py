@@ -48,25 +48,25 @@ def test_ensure_data_type():
         mt_shap_explanation.ensure_data_type(incorrect_data)
 
 
-def test_process_and_validate_explanations():
-    info = ValidationInfoMock({"data": np.random.rand(10, 10)})
+# def test_process_and_validate_explanations():
+#     info = ValidationInfoMock({"data": np.random.rand(10, 10)})
 
-    # test case 1 - correct shape and type
-    explanations = shap.Explanation(np.random.rand(10, 10))
-    mt_shap_explanation.process_and_validate_explanations(explanations, info)
+#     # test case 1 - correct shape and type
+#     explanations = shap.Explanation(np.random.rand(10, 10))
+#     mt_shap_explanation.process_and_validate_explanations(explanations, info)
 
-    # test case 2 - correct shape, but multidimensional output
-    explanations = shap.Explanation(np.random.rand(10, 10, 2))
-    mt_shap_explanation.process_and_validate_explanations(explanations, info)
+#     # test case 2 - correct shape, but multidimensional output
+#     explanations = shap.Explanation(np.random.rand(10, 10, 2))
+#     mt_shap_explanation.process_and_validate_explanations(explanations, info)
 
-    # test case 3 - incorrect type
-    with pytest.raises(TypeError):
-        # numpy input
-        mt_shap_explanation.process_and_validate_explanations(np.random.rand(10, 10), info)
+#     # test case 3 - incorrect type
+#     with pytest.raises(TypeError):
+#         # numpy input
+#         mt_shap_explanation.process_and_validate_explanations(np.random.rand(10, 10), info)
 
-    # test case 4 - incorrect shape
-    with pytest.raises(mt_shap_explanation.ShapeMismatchError):
-        mt_shap_explanation.process_and_validate_explanations(shap.Explanation(np.random.rand(10, 9)), info)
+#     # test case 4 - incorrect shape
+#     with pytest.raises(mt_shap_explanation.ShapeMismatchError):
+#         mt_shap_explanation.process_and_validate_explanations(shap.Explanation(np.random.rand(10, 9)), info)
 
 
 def test_shap_explanation():
@@ -104,8 +104,7 @@ def test_shap_explanation():
     assert explanation.explanations.shape == raw_explanation.shape
     assert explanation.explanation_method == "linear"
 
-    # incorrect shape
-
+    # incorrect shapes
     X_train_smaller = X_train[:10]
 
     with pytest.raises(ValidationError):
