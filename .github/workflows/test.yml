@@ -24,9 +24,10 @@ jobs:
 
       - name: Setup Rye 🌾
         id: setup-rye
-        uses: eifinger/setup-rye@v3
+        uses: eifinger/setup-rye@v4
         with:
-          version: "0.35.0"
+          enable-cache: true
+          version: "0.42.0"
 
       - name: Pin python-version ${{ matrix.python-version }} 📌
         run: rye pin ${{ matrix.python-version }}
