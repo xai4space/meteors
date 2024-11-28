@@ -80,6 +80,15 @@ def test_integrated_gradients(explainable_toy_model):
     shorter_time = time.time() - start_time
     assert longer_time > shorter_time
 
+    # Test internal batch size
+    start_time = time.time()
+    ig.attribute(image, return_convergence_delta=True, internal_batch_size=5, n_steps=5)
+    longer_time = time.time() - start_time
+    start_time = time.time()
+    ig.attribute(image, return_convergence_delta=True, internal_batch_size=1, n_steps=5)
+    shorter_time = time.time() - start_time
+    assert longer_time > shorter_time
+
     # Test segmentation postprocessing
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
     explainable_segmentation_model = explainable_segmentation_toy_model(postprocessing_segmentation_output)
