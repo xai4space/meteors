@@ -21,8 +21,11 @@ from meteors import HSI
 class ToyModel(nn.Module):
     def __init__(self):
         super().__init__()
+        self.number_of_passes = 0
 
     def forward(self, input):
+        self.number_of_passes = max(input.shape[0], self.number_of_passes)
+        print(self.number_of_passes)
         return torch.sum(F.relu(input), dim=(1, 2, 3))
 
 
@@ -72,22 +75,23 @@ def test_integrated_gradients(explainable_toy_model):
     assert attributions[1].attributes.shape == image.image.shape
 
     # Test step size
-    start_time = time.time()
+    start_time = time.perf_counter()
     ig.attribute(image, return_convergence_delta=True, n_steps=100)
-    longer_time = time.time() - start_time
-    start_time = time.time()
+    longer_time = time.perf_counter() - start_time
+    start_time = time.perf_counter()
     ig.attribute(image, return_convergence_delta=True, n_steps=1)
-    shorter_time = time.time() - start_time
+    shorter_time = time.perf_counter() - start_time
     assert longer_time > shorter_time
 
     # Test internal batch size
-    start_time = time.time()
-    ig.attribute(image, return_convergence_delta=True, internal_batch_size=5, n_steps=5)
-    longer_time = time.time() - start_time
-    start_time = time.time()
-    ig.attribute(image, return_convergence_delta=True, internal_batch_size=1, n_steps=5)
-    shorter_time = time.time() - start_time
-    assert longer_time > shorter_time
+    explainable_toy_model.forward_func.number_of_passes = 0
+    ig.attribute(image, return_convergence_delta=True, internal_batch_size=1, n_steps=10)
+    batch_size = explainable_toy_model.forward_func.number_of_passes
+    assert batch_size == 1
+    explainable_toy_model.forward_func.number_of_passes = 0
+    ig.attribute(image, return_convergence_delta=True, internal_batch_size=10, n_steps=10)
+    batch_size = explainable_toy_model.forward_func.number_of_passes
+    assert batch_size == 10
 
     # Test segmentation postprocessing
     postprocessing_segmentation_output = agg_segmentation_postprocessing(classes_numb=3)
