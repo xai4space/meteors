@@ -38,7 +38,7 @@ def visualize_hsi(
 
     hsi = hsi.change_orientation("HWC", inplace=False)
 
-    rgb = hsi.get_rgb_image(output_channel_axis=2, apply_mask=use_mask, normalize=True).cpu().numpy()
+    rgb = hsi.get_rgb_image(output_channel_axis=2, apply_mask=use_mask, normalize=True).detach().cpu().numpy()
     ax = ax or plt.gca()
     ax.imshow(rgb)
     ax.axis("off")
