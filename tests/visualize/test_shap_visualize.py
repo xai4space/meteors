@@ -164,6 +164,9 @@ def test_validate_mapping_dict():
     mapping = {"invalid_key": [0], 500.2: [1, 2, 3, 4]}
     with pytest.raises(ValueError, match="Expected numeric as key in wavelengths"):
         validate_mapping_dict(mapping, explanation_values)
+    mapping = {(0, 1): [0], 500.2: [1, 2, 3, 4]}
+    with pytest.raises(TypeError, match="Expected numeric as key in wavelengths"):
+        validate_mapping_dict(mapping, explanation_values)
 
     # Case 6: Invalid key type in transformation mapping
     mapping = {123: [0, 1, 2, 3, 4]}
@@ -188,6 +191,11 @@ def test_validate_mapping_dict():
     # Case 10: Missing features in mapping
     mapping = {400.5: [0, 1]}
     with pytest.raises(ValueError, match="Not all features are used in the mapping"):
+        validate_mapping_dict(mapping, explanation_values)
+
+    # Case 11: Incorrect feature index type
+    mapping = {400.5: [0, 1], 600.3: ["invalid", 4]}
+    with pytest.raises(TypeError, match="Expected int as feature index in mapping"):
         validate_mapping_dict(mapping, explanation_values)
 
 
