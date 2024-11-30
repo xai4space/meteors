@@ -154,6 +154,11 @@ def test_visualize_ig_attributes(ig_model):
     assert ax[1, 1].get_xlabel() == "Wavelength"
     assert ax[1, 1].get_ylabel() == "Attribution Absolute Value"
 
+    # test with title
+    fig, ax = plt.subplots(2, 2, figsize=(9, 7))
+    ax = visualize.visualize_attributes(image_attributes, ax=ax, title="Test Title")
+    assert fig.texts[0].get_text() == "Test Title"
+
     # test with incorrect ax shape
     fig, ax = plt.subplots(2, 3, figsize=(9, 7))
     ax = visualize.visualize_attributes(image_attributes, ax=ax)
@@ -191,7 +196,7 @@ def test_incorrect_orientation(ig_model):
     assert isinstance(ax, np.ndarray)
     assert ax.shape == (2, 2)
     assert all([isinstance(a, Axes) for a in ax.ravel()])
-    assert fig.texts[0].get_text() == "HSI Attributes of: Integrated Gradients"
+    assert fig.get_suptitle() == "HSI Attributes of: Integrated Gradients"
     assert ax[0, 0].get_title() == "Attribution Heatmap"
     assert ax[0, 1].get_title() == "Attribution Module Values"
     assert ax[1, 0].get_title() == "Spectral Attribution"
@@ -276,6 +281,11 @@ def test_visualize_spatial_attributes():
     assert ax[2].get_title() == "Mask"
     plt.close(fig)
     del ax, fig
+
+    # test with title
+    fig, ax = plt.subplots(1, 3, figsize=(9, 7))
+    ax = visualize.visualize_spatial_attributes(hsi_attributes_spatial, ax=ax, title="Test Title")
+    assert fig._suptitle.get_text() == "Test Title"
 
     # test with incorrect ax shape
     fig, ax = plt.subplots(1, 4, figsize=(9, 7))
@@ -821,6 +831,14 @@ def test_visualize_spectral_attributes():
     plt.close(fig)
     del ax, fig
 
+    # test with title
+    fig, ax = plt.subplots(1, 2, figsize=(9, 7))
+    ax = visualize.visualize_spectral_attributes(spectral_attributes, ax=ax, title="Test Title")
+    assert fig.get_suptitle() == "Test Title"
+    # cleanup
+    plt.close("all")
+    del ax, fig
+
     # test with incorrect ax shape
     fig, ax = plt.subplots(1, 3, figsize=(9, 7))
     ax = visualize.visualize_spectral_attributes(spectral_attributes, ax=ax)
@@ -1065,6 +1083,16 @@ def test_visualize_spatial_aggregated_attributes():
     plt.close(fig)
     del ax, fig
 
+    # test with title
+    fig, ax = plt.subplots(1, 3, figsize=(9, 7))
+    ax = visualize.visualize_spatial_aggregated_attributes(
+        hsi_attributes_spatial, new_segmentation_mask, ax=ax, title="Test Title"
+    )
+    assert fig.get_suptitle() == "Test Title"
+    # cleanup
+    plt.close("all")
+    del ax, fig
+
     # test with incorrect ax shape
     fig, ax = plt.subplots(1, 4, figsize=(9, 7))
     ax = visualize.visualize_spatial_aggregated_attributes(hsi_attributes_spatial, new_segmentation_mask, ax=ax)
@@ -1255,6 +1283,16 @@ def test_visualize_spectral_aggregated_attributes():
     assert ax[1].get_title() == "Attributions by Magnitude"
     assert ax[2].get_title() == "Distribution of Score Values"
     plt.close(fig)
+    del ax, fig
+
+    # test with title
+    fig, ax = plt.subplots(1, 3, figsize=(9, 7))
+    ax = visualize.visualize_spectral_aggregated_attributes(
+        [spectral_attributes, spectral_attributes_new], band_names, new_band_mask, ax=ax, title="Test Title"
+    )
+    assert fig.get_suptitle() == "Test Title"
+    # cleanup
+    plt.close("all")
     del ax, fig
 
     # test with incorrect ax shape
