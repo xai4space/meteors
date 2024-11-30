@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
 from meteors.shap import HyperSHAP
-import meteors.visualize.shap as shap_visualize
+import meteors.visualize.shap_visualize as shap_visualize
 from meteors.models import ExplainableModel
 
 
-from meteors.visualize.shap.plots import (
+from meteors.visualize.shap_visualize import (
     validate_explanations_and_explainer_type,
     validate_observation_index,
     validate_target,
