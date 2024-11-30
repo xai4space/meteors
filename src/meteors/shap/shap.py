@@ -5,11 +5,13 @@ import numpy as np
 import pandas as pd
 import torch
 
-from .explanation import SHAPExplanation, AVAILABLE_SHAP_EXPLAINERS
+from .explanation import SHAPExplanation
 
 from meteors.models import ExplainableModel
 
 from typing import Literal
+
+AVAILABLE_SHAP_EXPLAINERS = ["exact", "tree", "kernel", "linear"]
 
 
 class HyperSHAP:
@@ -17,7 +19,7 @@ class HyperSHAP:
         self,
         callable: ExplainableModel,
         masker,
-        explainer_type: Literal["exact", "tree", "kernel", "linear"] | None = None,
+        explainer_type: Literal["exact", "tree", "kernel", "linear"] = "exact",
         **kwargs,
     ) -> None:
         if not isinstance(callable, ExplainableModel):
@@ -27,13 +29,13 @@ class HyperSHAP:
 
         self.explainer_type = explainer_type.lower() if explainer_type is not None else None  # type: ignore
 
-        if self.explainer_type not in AVAILABLE_SHAP_EXPLAINERS and self.explainer_type is not None:
+        if self.explainer_type not in AVAILABLE_SHAP_EXPLAINERS:
             raise ValueError(
                 f"Invalid explainer type: {explainer_type}. Available options: {AVAILABLE_SHAP_EXPLAINERS}"
             )
 
         try:
-            if self.explainer_type is None or self.explainer_type == "exact":
+            if self.explainer_type == "exact":
                 self._explainer = shap.Explainer(self.explainable_model.forward_func, masker, **kwargs)
             elif self.explainer_type == "tree":
                 self._explainer = shap.TreeExplainer(self.explainable_model.forward_func, masker, **kwargs)

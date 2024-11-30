@@ -22,11 +22,6 @@ class ValidationInfoMock:
         self.data = data
 
 
-def test_ensure_explainer_type():
-    assert mt_shap_explanation.ensure_explainer_type("exact") == "exact"
-    assert mt_shap_explanation.ensure_explainer_type("invalid") == "invalid"
-
-
 def test_ensure_data_type():
     data = np.random.rand(10, 10)
     assert mt_shap_explanation.ensure_data_type(data) is data
@@ -46,27 +41,6 @@ def test_ensure_data_type():
     incorrect_data = "invalid"
     with pytest.raises(TypeError):
         mt_shap_explanation.ensure_data_type(incorrect_data)
-
-
-# def test_process_and_validate_explanations():
-#     info = ValidationInfoMock({"data": np.random.rand(10, 10)})
-
-#     # test case 1 - correct shape and type
-#     explanations = shap.Explanation(np.random.rand(10, 10))
-#     mt_shap_explanation.process_and_validate_explanations(explanations, info)
-
-#     # test case 2 - correct shape, but multidimensional output
-#     explanations = shap.Explanation(np.random.rand(10, 10, 2))
-#     mt_shap_explanation.process_and_validate_explanations(explanations, info)
-
-#     # test case 3 - incorrect type
-#     with pytest.raises(TypeError):
-#         # numpy input
-#         mt_shap_explanation.process_and_validate_explanations(np.random.rand(10, 10), info)
-
-#     # test case 4 - incorrect shape
-#     with pytest.raises(mt_shap_explanation.ShapeMismatchError):
-#         mt_shap_explanation.process_and_validate_explanations(shap.Explanation(np.random.rand(10, 9)), info)
 
 
 def test_shap_explanation():
