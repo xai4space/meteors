@@ -136,8 +136,10 @@ class SHAPExplanation(BaseModel):
         return self
 
     @property
-    def target_dims(self) -> int:
+    def num_target_outputs(self) -> int:
         """number of target dimensions in the explanations. It is equal to the number of outputs of the model.
+        For instance, in scope of the HYPERVIEW Challenge, the EAGLEEYES model has 4 outputs - it predicts 4 different soil parameters.
+        For explanations of this model, the `num_target_outputs` property will equal to 4.
         Returns:
             int: number of target dimensions in the explanations.
         """

@@ -78,4 +78,3 @@ def test_shap_explain():
     # incorrect data type
     with pytest.raises(TypeError):
         explainer.explain("invalid")
-

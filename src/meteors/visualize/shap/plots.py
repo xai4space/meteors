@@ -85,11 +85,11 @@ def validate_target(
     if target is not None and not isinstance(target, int):
         raise TypeError(f"Expected int or None as target, but got {type(target)}")
 
-    if target is not None and (target < 0 or target >= explanation.target_dims):
+    if target is not None and (target < 0 or target >= explanation.num_target_outputs):
         raise ValueError(f"Target index out of bounds: {target}")
 
     if require_single_target:
-        if target is None and explanation.target_dims > 1:
+        if target is None and explanation.num_target_outputs > 1:
             raise ValueError(
                 f"The plot of type {plot_type} requires a single target value. \nPassed explanation contains multiple targets and no target index specified."
             )
