@@ -43,12 +43,12 @@ def ensure_data_type(data: np.ndarray | torch.Tensor | pd.DataFrame) -> np.ndarr
     Ensures that the input data is converted to a NumPy ndarray.
 
     Args:
-        data (np.ndarray | torch.Tensor | pd.DataFrame): The input data which can be a NumPy ndarray, 
+        data (np.ndarray | torch.Tensor | pd.DataFrame): The input data which can be a NumPy ndarray,
                                                      a PyTorch tensor, or a Pandas DataFrame/Series.
 
     Returns:
         np.ndarray: The input data converted to a NumPy ndarray.
-    
+
     """
     if isinstance(data, pd.DataFrame) or isinstance(data, pd.Series):
         return data.to_numpy()
@@ -100,7 +100,7 @@ class SHAPExplanation(BaseModel):
     ] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    
+
     def _validate_shapes(self):
         """
         Validates that the shape of the explanations matches the shape of the input data.
@@ -124,7 +124,6 @@ class SHAPExplanation(BaseModel):
                     f"Shape of the explanations does not match the shape of the input data. Expected {data_shape}, but got {self.explanations.shape}"
                 )
 
-    
     @model_validator(mode="after")
     def validate_explanations(self) -> Self:
         """
