@@ -365,7 +365,7 @@ def dependence_plot(
     ):
         raise TypeError(f"Expected pd.DataFrame or np.ndarray as display_features, but got {type(display_features)}")
 
-    ax = shap.dependence_plot(
+    shap.dependence_plot(
         ind=feature,
         shap_values=explanation_values,
         features=explanation.data,
@@ -386,6 +386,10 @@ def dependence_plot(
         ymin=ymin,
         ymax=ymax,
     )
+    if use_pyplot:
+        return None
+    if ax is None:
+        ax = plt.gca()
     return ax
 
 
@@ -395,6 +399,7 @@ def waterfall(
     target: int | None = None,
     observation_index: int | None = None,
     use_pyplot: bool = False,
+    title: str = "SHAP Waterfall Plot",
 ) -> Axes | None:
     """Create a waterfall chart for the passed SHAP explanation.
     The reference on this plot may be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.waterfall.html
@@ -405,7 +410,7 @@ def waterfall(
         target (int | None, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
         observation_index (int | None, optional): An index of observation that should be locally explained. In case the passed explanation object is already local and contains data about only a single observation, this value could be also set to None. Defaults to None.
         use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to False.
-
+        title (str | None, optional): The title of the plot. Defaults to "SHAP Waterfall Plot".
     Returns:
         Axes | None:
             If use_pyplot is False, returns the axes object.
@@ -423,6 +428,7 @@ def waterfall(
         explanations_values,
         show=use_pyplot,
     )
+    ax.set_title(title)
     return ax
 
 

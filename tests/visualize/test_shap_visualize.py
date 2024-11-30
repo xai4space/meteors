@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 import shap
 import pytest
 import numpy as np
+import pandas as pd
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
@@ -218,11 +219,24 @@ def test_beeswarm(model_data_explainer):
 
     shap_visualize.beeswarm(explainer, explanation, target=1, use_pyplot=False)
 
+    shap_visualize.beeswarm(explainer, explanation, target=1, observation_index=0, use_pyplot=False)
+
 
 def test_waterfall(model_data_explainer):
     _, _, explainer, explanation = model_data_explainer
 
     shap_visualize.waterfall(explainer, explanation, target=1, observation_index=0)
+
+    # Case 2: Test title
+    fig, ax = plt.subplots()
+    shap_visualize.waterfall(explainer, explanation, target=1, observation_index=0, title="Test", ax=ax)
+    assert ax.get_title() == "Test"
+
+    plt.close(fig)
+
+    # Case 3: Test invalid observation index
+    with pytest.raises(ValueError):
+        shap_visualize.waterfall(explainer, explanation, target=1, observation_index=None)
 
 
 def test_heatmap(model_data_explainer):
@@ -234,6 +248,9 @@ def test_heatmap(model_data_explainer):
         target=0,
     )
 
+    # test local explanation
+    shap_visualize.heatmap(explainer, explanation, target=0, observation_index=0)
+
 
 def test_bar(model_data_explainer):
     _, _, explainer, explanation = model_data_explainer
@@ -243,14 +260,127 @@ def test_bar(model_data_explainer):
     shap_visualize.bar(explainer, explanation, target=1, observation_index=1, use_pyplot=False)
 
 
-def test_dependence(model_data_explainer):
-    _, _, explainer, explanation = model_data_explainer
+def test_dependence(model_data_explainer, monkeypatch):
+    # Unpack the fixture
+    _, (X_train, X_test, _, _), explainer, explanation = model_data_explainer
 
-    shap_visualize.dependence_plot(1, explainer, explanation, target=0, use_pyplot=False)
+    # Prepare display features for testing
+    display_features = pd.DataFrame(X_train, columns=["sepal length", "sepal width", "petal length", "petal width"])
 
-    fig, ax = plt.subplots()
+    # TEST CASE 1: Basic functionality with feature index
+    # Verify plot generation with default parameters using feature index
+    ax1 = shap_visualize.dependence_plot(feature=0, explainer=explainer, target=0, explanation=explanation)
+    assert ax1 is not None, "Failed to generate plot with feature index"
+    plt.close()  # Close the plot to prevent display
 
-    shap_visualize.dependence_plot(1, explainer, explanation, target=1, ax=ax, use_pyplot=False)
+    # TEST CASE 2: Feature specified by name
+    # Check plot generation when feature is specified by name
+    ax2 = shap_visualize.dependence_plot(
+        feature="sepal length (cm)", explainer=explainer, target=0, explanation=explanation
+    )
+    assert ax2 is not None, "Failed to generate plot with feature name"
+    plt.close()
+
+    # TEST CASE 3: Interaction index scenarios
+    # Test with explicit interaction index
+    ax3 = shap_visualize.dependence_plot(
+        feature=0, explainer=explainer, explanation=explanation, target=0, interaction_index=1
+    )
+    assert ax3 is not None, "Failed to generate plot with explicit interaction index"
+    plt.close()
+
+    # TEST CASE 4: Interaction index as 'auto'
+    ax4 = shap_visualize.dependence_plot(
+        feature=0, explainer=explainer, explanation=explanation, target=0, interaction_index="auto"
+    )
+    assert ax4 is not None, "Failed to generate plot with auto interaction index"
+    plt.close()
+
+    # TEST CASE 5: Custom display features
+    ax5 = shap_visualize.dependence_plot(
+        feature=0, explainer=explainer, explanation=explanation, target=0, display_features=display_features
+    )
+    assert ax5 is not None, "Failed to generate plot with display features"
+    plt.close()
+
+    # TEST CASE 6: Comprehensive styling
+    ax6 = shap_visualize.dependence_plot(
+        feature=0,
+        explainer=explainer,
+        explanation=explanation,
+        target=0,
+        color="#FF0000",  # Red color
+        axis_color="#00FF00",  # Green axis
+        cmap="viridis",  # Specific colormap
+        dot_size=20,  # Custom dot size
+        x_jitter=0.2,  # Add jitter
+        alpha=0.5,  # Transparency
+        title="Test Dependence Plot",
+    )
+    assert ax6 is not None, "Failed to generate plot with comprehensive styling"
+    plt.close()
+
+    # TEST CASE 7: Percentile-based axis bounds
+    ax7 = shap_visualize.dependence_plot(
+        feature=0,
+        explainer=explainer,
+        explanation=explanation,
+        target=0,
+        xmin="percentile(10)",
+        xmax="percentile(90)",
+        ymin="percentile(5)",
+        ymax="percentile(95)",
+    )
+    assert ax7 is not None, "Failed to generate plot with percentile-based bounds"
+    plt.close()
+
+    # TEST CASE 8: Use pyplot flag
+    # Temporarily mock pyplot to verify behavior
+    def mock_show():
+        pass
+
+    monkeypatch.setattr(plt, "show", mock_show)
+    result = shap_visualize.dependence_plot(
+        feature=0, explainer=explainer, explanation=explanation, target=0, use_pyplot=True
+    )
+    assert result is None, "use_pyplot=True should return None"
+
+    # ERROR HANDLING TEST CASES
+
+    # TEST CASE 9: Invalid feature type
+    with pytest.raises(TypeError, match="Expected int or str as feature"):
+        shap_visualize.dependence_plot(
+            feature=1.5,  # Invalid type
+            explainer=explainer,
+            explanation=explanation,
+            target=0,
+        )
+
+    # TEST CASE 10: Invalid interaction index type
+    with pytest.raises(TypeError, match="Expected str or int as interaction_index"):
+        shap_visualize.dependence_plot(
+            feature=0,
+            explainer=explainer,
+            explanation=explanation,
+            interaction_index=[1, 2],  # Invalid type
+            target=0,
+        )
+
+    # TEST CASE 11: Invalid display features type
+    with pytest.raises(TypeError, match="Expected pd.DataFrame or np.ndarray as display_features"):
+        shap_visualize.dependence_plot(
+            feature=0,
+            explainer=explainer,
+            explanation=explanation,
+            display_features={"invalid": "type"},
+            target=0,
+        )
+
+    # Simulate a local explanation to test local explanation error
+    # TEST CASE 12: Local explanation error
+    local_explanation = explainer.explain(X_test[0:1])
+    with pytest.raises(ValueError, match="The dependence plot requires a global explanation"):
+        shap_visualize.dependence_plot(feature=0, explainer=explainer, explanation=local_explanation, target=0)
 
 
 def test_wavelengths_bar(model_data_explainer):
