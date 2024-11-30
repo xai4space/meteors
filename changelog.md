@@ -3,12 +3,15 @@
 ## v0.1.2 (2024-11-21)
 
 ### 🛎️ Chores
+
 - update the package version ([#142](https://github.com/xai4space/meteors/pull/142))
 
 ### 🩺 Bug Fixes
+
 - documentation version alias update fixed ([#139](https://github.com/xai4space/meteors/pull/139))
 
 ### 📚 Documentation
+
 - tutorials fixes ([#129](https://github.com/xai4space/meteors/pull/129))
 - fixed documentation versioning ([#135](https://github.com/xai4space/meteors/pull/135))
 - Documentation template update ([#134](https://github.com/xai4space/meteors/pull/134))
@@ -17,6 +20,7 @@
 - update changelog.md for v0.1.1 [skip ci] ([#131](https://github.com/xai4space/meteors/pull/131))
 
 ### 🔨 Features
+
 - Added Hyperlinks to the PR in changelog ([#136](https://github.com/xai4space/meteors/pull/136))
 
 ## v0.1.1 (2024-11-18)
