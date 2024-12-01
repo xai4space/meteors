@@ -227,12 +227,7 @@ def test_waterfall(model_data_explainer):
 
     shap_visualize.waterfall(explainer, explanation, target=1, observation_index=0)
 
-    # Case 2: Test title
-    fig, ax = plt.subplots()
-    shap_visualize.waterfall(explainer, explanation, target=1, observation_index=0, title="Test", ax=ax)
-    assert ax.get_title() == "Test"
-
-    plt.close(fig)
+    plt.close(plt.gcf())
 
     # Case 3: Test invalid observation index
     with pytest.raises(ValueError):
@@ -240,7 +235,7 @@ def test_waterfall(model_data_explainer):
 
 
 def test_heatmap(model_data_explainer):
-    _, _, explainer, explanation = model_data_explainer
+    _, (X_train, X_test, _, _), explainer, explanation = model_data_explainer
 
     shap_visualize.heatmap(
         explainer,
@@ -249,7 +244,9 @@ def test_heatmap(model_data_explainer):
     )
 
     # test local explanation
-    shap_visualize.heatmap(explainer, explanation, target=0, observation_index=0)
+    explanation = explainer.explain(X_test[0:1])
+    with pytest.raises(ValueError):
+        shap_visualize.heatmap(explainer, explanation, target=0)
 
 
 def test_bar(model_data_explainer):

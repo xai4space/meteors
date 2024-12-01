@@ -399,7 +399,6 @@ def waterfall(
     target: int | None = None,
     observation_index: int | None = None,
     use_pyplot: bool = False,
-    title: str = "SHAP Waterfall Plot",
 ) -> Axes | None:
     """Create a waterfall chart for the passed SHAP explanation.
     The reference on this plot may be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.waterfall.html
@@ -410,7 +409,6 @@ def waterfall(
         target (int | None, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
         observation_index (int | None, optional): An index of observation that should be locally explained. In case the passed explanation object is already local and contains data about only a single observation, this value could be also set to None. Defaults to None.
         use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to False.
-        title (str | None, optional): The title of the plot. Defaults to "SHAP Waterfall Plot".
     Returns:
         Axes | None:
             If use_pyplot is False, returns the axes object.
@@ -428,7 +426,6 @@ def waterfall(
         explanations_values,
         show=use_pyplot,
     )
-    ax.set_title(title)
     return ax
 
 
@@ -660,7 +657,6 @@ def heatmap(
     explainer: HyperSHAP,
     explanation: SHAPExplanation,
     target: int | None = None,
-    observation_index: int | None = None,
     use_pyplot: bool = False,
     ax: Axes | None = None,
     **kwargs,
@@ -668,12 +664,12 @@ def heatmap(
     """Create a heatmap plot of a set of SHAP values.
     The function utilizes the `shap.plots.heatmap` function,
     which reference might be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.heatmap.html
+    This plot supports only global explanations.
 
     Args:
         explainer (HyperSHAP): A HyperSHAP explainer object used to generate the explanation.
         explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package. This object contains the explanations for the model. It can contain both the local and global explanations.
         target (int | None, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
-        observation_index (int | None, optional): An index of observation that should be locally explained. This plot supports also global explanations, so this value is not necessary and can be set to None.
         In case the passed explanation object is already local and contains data about only a single observation, this value could be also set to None. Defaults to None.
         use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to False.
         ax (matplotlib.axes.Axes, optional): If provided, the plot will be displayed on the passed axes.
@@ -689,8 +685,8 @@ def heatmap(
     explanation_values = explanation.explanations
     if target is not None:
         explanation_values = explanation_values[..., target]
-    if observation_index is not None:
-        explanation_values = explanation_values[observation_index]
+    if explanation.is_local_explanation:
+        raise ValueError("The heatmap plot does not support local explanations.")
 
     ax = shap.plots.heatmap(explanation_values, show=use_pyplot, ax=ax, **kwargs)
     return ax
