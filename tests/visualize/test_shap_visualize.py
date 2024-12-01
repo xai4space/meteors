@@ -219,7 +219,8 @@ def test_beeswarm(model_data_explainer):
 
     shap_visualize.beeswarm(explainer, explanation, target=1, use_pyplot=False)
 
-    shap_visualize.beeswarm(explainer, explanation, target=1, observation_index=0, use_pyplot=False)
+    with pytest.raises(ValueError):
+        shap_visualize.beeswarm(explainer, explanation, target=1, observation_index=0, use_pyplot=False)
 
 
 def test_waterfall(model_data_explainer):
@@ -378,6 +379,10 @@ def test_dependence(model_data_explainer, monkeypatch):
     local_explanation = explainer.explain(X_test[0:1])
     with pytest.raises(ValueError, match="The dependence plot requires a global explanation"):
         shap_visualize.dependence_plot(feature=0, explainer=explainer, explanation=local_explanation, target=0)
+
+    # TEST CASE 13: Missing target
+    with pytest.raises(ValueError):
+        shap_visualize.dependence_plot(feature=0, explainer=explainer, explanation=local_explanation)
 
 
 def test_wavelengths_bar(model_data_explainer):

@@ -260,13 +260,13 @@ def beeswarm(
     """
     validate_explanations_and_explainer_type(explainer, explanation)
     target = validate_target(target, explanation, require_single_target=True, plot_type="beeswarm")
-    observation_index = validate_observation_index(None, explanation, require_local_explanation=False)
+    observation_index = validate_observation_index(observation_index, explanation, require_local_explanation=False)
 
     explanations = explanation.explanations
     if target is not None:
         explanations = explanations[..., target]
-    if observation_index is not None:
-        explanations = explanations[observation_index]
+    if observation_index is not None or explanation.is_local_explanation:
+        raise ValueError("The beeswarm plot does not support local explanations.")
 
     # fig = shap.plots.beeswarm(explanations, ax=ax, show=use_pyplot)
     # Current release of SHAP does not support passing ax parameter to the beeswarm plot, even though it is present in the documentation.
@@ -341,9 +341,6 @@ def dependence_plot(
     explanation_values = explanation.explanations.values
     if target is not None:
         explanation_values = explanation_values[..., target]
-
-    if explanation_values.ndim == 2 and target is None and not explanation.is_local_explanation:
-        raise ValueError("The dependence plot requires a single target value.")
 
     if explanation.is_local_explanation:
         raise ValueError("The dependence plot requires a global explanation.")
