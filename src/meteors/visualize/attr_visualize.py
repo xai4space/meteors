@@ -184,7 +184,7 @@ def visualize_spatial_attributes(
     use_ax = True
     if ax is None:
         use_ax = False
-        fig, ax = plt.subplots(1, 3 if mask_enabled else 2, figsize=(15, 5))
+        fig, ax = plt.subplots(1, 3 if mask_enabled else 2, figsize=(15, 5) if mask_enabled else (10, 5))
 
     if not hasattr(ax, "shape"):
         raise ValueError("Provided as is one axes object, but it should be a list of axes objects")
