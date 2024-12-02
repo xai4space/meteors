@@ -240,7 +240,6 @@ def test__merge_band_names_segments():
         "band4,segment2": 3,
         "band5,segment2": 4,
     }
-    print(merged_band_names, expected_merged_band_names)
     assert merged_band_names == expected_merged_band_names
 
 
