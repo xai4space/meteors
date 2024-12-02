@@ -67,7 +67,7 @@ def validate_and_convert_attributes(value: np.ndarray | torch.Tensor) -> torch.T
     Raises:
         TypeError: If the input is neither a NumPy array nor a PyTorch tensor.
     """
-    return ensure_torch_tensor(value, "Attributes").detach()
+    return ensure_torch_tensor(value, "Attributes")
 
 
 def validate_and_convert_mask(value: np.ndarray | torch.Tensor | None) -> torch.Tensor | None:

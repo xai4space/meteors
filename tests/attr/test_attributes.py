@@ -136,12 +136,6 @@ def test_validate_and_convert_attributes():
     with pytest.raises(TypeError):
         mt_attr.attributes.validate_and_convert_attributes(123)
 
-    # Test with gradient
-    attributes_torch = torch.ones((3, 4), requires_grad=True)
-    attributes_torch_validated = mt_attr.attributes.validate_and_convert_attributes(attributes_torch)
-    assert isinstance(attributes_torch_validated, torch.Tensor)
-    assert not attributes_torch_validated.requires_grad
-
 
 def test_validate_and_convert_mask():
     # Test case 1: Valid mask (numpy array)

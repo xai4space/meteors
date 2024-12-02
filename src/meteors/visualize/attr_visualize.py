@@ -199,7 +199,7 @@ def visualize_spatial_attributes(
     spatial_attributes = spatial_attributes.change_orientation("HWC", inplace=False)
 
     if mask_enabled:
-        mask = spatial_attributes.segmentation_mask.cpu()
+        mask = spatial_attributes.segmentation_mask.detach().cpu()
 
         group_names = mask.unique().tolist()
         colors = sns.color_palette("hsv", len(group_names))
@@ -217,12 +217,12 @@ def visualize_spatial_attributes(
         ax[2].grid(False)
         ax[2].axis("off")
 
-    ax[0].imshow(spatial_attributes.hsi.get_rgb_image(output_channel_axis=2).cpu())
+    ax[0].imshow(spatial_attributes.hsi.get_rgb_image(output_channel_axis=2).detach().cpu())
     ax[0].set_title("Original image")
     ax[0].grid(False)
     ax[0].axis("off")
 
-    attrs = spatial_attributes.attributes.cpu().numpy()
+    attrs = spatial_attributes.attributes.detach().cpu().numpy()
     if np.all(attrs == 0):
         logger.warning("All spatial attributes are zero.")
         cmap = LinearSegmentedColormap.from_list("RdWhGn", ["red", "white", "green"])
@@ -446,8 +446,8 @@ def visualize_spectral_attributes_by_waveband(
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
-    band_mask = spectral_attributes[0].band_mask.cpu()
-    attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
+    band_mask = spectral_attributes[0].band_mask.detach().cpu()
+    attribution_map = torch.stack([attr.flattened_attributes.detach().cpu() for attr in spectral_attributes])
 
     for idx, (band_name, segment_id) in enumerate(band_names.items()):
         current_wavelengths = wavelengths[band_mask == segment_id]
@@ -561,8 +561,8 @@ def visualize_spectral_attributes_by_magnitude(
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
-    band_mask = spectral_attributes[0].band_mask.cpu()
-    attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
+    band_mask = spectral_attributes[0].band_mask.detach().cpu()
+    attribution_map = torch.stack([attr.flattened_attributes.detach().cpu() for attr in spectral_attributes])
     avg_magnitudes = calculate_average_magnitudes(band_names, band_mask, attribution_map)
 
     if aggregate_results:
