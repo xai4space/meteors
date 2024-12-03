@@ -64,6 +64,12 @@ def test_integrated_gradients(explainable_toy_model):
 
     attributions = ig.attribute(image, return_convergence_delta=True)
     assert attributions.score is not None
+    assert not attributions.attributes.requires_grad
+
+    # Test keeping gradient
+    attributions = ig.attribute(image, keep_gradient=True)
+    assert attributions.attributes.shape == image.image.shape
+    assert attributions.attributes.requires_grad
 
     # Test multiple images
     attributions = ig.attribute([image, image], return_convergence_delta=True)
@@ -176,6 +182,12 @@ def test_input_x_gradient(explainable_toy_model):
     assert attributions.attributes.shape == image.image.shape
 
     assert not input_x_gradient.has_convergence_delta()
+    assert not attributions.attributes.requires_grad
+
+    # Test keeping gradient
+    attributions = input_x_gradient.attribute(image, keep_gradient=True)
+    assert attributions.attributes.shape == image.image.shape
+    assert attributions.attributes.requires_grad
 
     # Test multiple images
     attributions = input_x_gradient.attribute([image, image])
