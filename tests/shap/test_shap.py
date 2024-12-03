@@ -82,22 +82,27 @@ def test_hyper_shap_init():
     linear = sklearn.linear_model.LogisticRegression()
     linear.fit(X_train, Y_train)
     explainable_model = mt.models.ExplainableModel(linear, "classification")
-    mt.shap.HyperSHAP(explainable_model, np.random.rand(10, 10), explainer_type="Linear")
+    mt.shap.HyperSHAP(explainable_model, X_train, explainer_type="Linear")
 
     # invalid model
     invalid_model = "invalid"
     with pytest.raises(TypeError):
-        mt.shap.HyperSHAP(invalid_model, np.random.rand(10, 10), explainer_type="Linear")
+        mt.shap.HyperSHAP(invalid_model, X_train, explainer_type="Linear")
 
     # model as callable, but not ExplainableModel
     with pytest.raises(TypeError):
-        mt.shap.HyperSHAP(linear, np.random.rand(10, 10), explainer_type="Linear")
+        mt.shap.HyperSHAP(linear, X_train, explainer_type="Linear")
 
     # not initialized explainer
     explainable_model = mt.models.ExplainableModel(sklearn.linear_model.LogisticRegression(), "classification")
 
     with pytest.raises(ValueError):
-        mt.shap.HyperSHAP(explainable_model, np.random.rand(10, 10), explainer_type="Invalid")
+        mt.shap.HyperSHAP(explainable_model, X_train, explainer_type="Invalid")
+
+    # incorrect data shape
+    explainable_model = mt.models.ExplainableModel(linear, "classification")
+    with pytest.raises(ValueError):
+        mt.shap.HyperSHAP(explainable_model, np.random.rand(10, 10), explainer_type="Linear", init=False)
 
 
 def test_shap_explain():

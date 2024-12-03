@@ -135,7 +135,11 @@ def test_validate_target(model_data_explainer):
     explanation.explanations = explanation.explanations[..., 0]
 
     target = validate_target(None, explanation, require_single_target=True)
-    assert target == 0
+    assert target is None
+
+    # test case 9 - single target required with only one target available
+    target = validate_target(0, explanation)
+    assert target is None
 
 
 def test_validate_mapping_dict():
@@ -512,6 +516,44 @@ def test_wavelengths_bar(model_data_explainer):
 
     # Case 12: Use pyplot to display the plot
     # This test ensures no errors occur during plotting but does not verify visual correctness
+    shap_visualize.wavelengths_bar(
+        explainer, explanation, target=0, wavelengths_mapping=wavelengths_mapping, use_pyplot=False
+    )
+    plt.close(plt.gca().figure)
+
+    # Case 13: Empty transformations mapping
+    with pytest.raises(ValueError):
+        shap_visualize.wavelengths_bar(
+            explainer,
+            explanation,
+            target=0,
+            wavelengths_mapping=wavelengths_mapping,
+            transformations_mapping={},
+            use_pyplot=False,
+        )
+
+    # Case 14: One target, one class to predict
+    X_train = np.random.rand(10, 5)
+    Y_train = X_train[:, 0] + X_train[:, 1] + np.random.rand(10) * 0.1
+
+    X_test = np.random.rand(10, 5)
+
+    linear = sklearn.linear_model.LinearRegression()
+    linear.fit(X_train, Y_train)
+
+    explainable_model = mt.models.ExplainableModel(linear, "regression")
+    explainer = HyperSHAP(explainable_model, X_train, explainer_type="Linear")
+    explanation = explainer.explain(X_test)
+
+    wavelengths_mapping = {400: [0, 1, 2], 500: [3, 4]}
+
+    shap_visualize.wavelengths_bar(
+        explainer, explanation, target=None, wavelengths_mapping=wavelengths_mapping, use_pyplot=False
+    )
+
+    plt.close(plt.gca().figure)
+
+    # different target specification
     shap_visualize.wavelengths_bar(
         explainer, explanation, target=0, wavelengths_mapping=wavelengths_mapping, use_pyplot=False
     )

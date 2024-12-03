@@ -12,6 +12,8 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 
+from loguru import logger
+
 
 def validate_observation_index(
     observation_index: int | None, explanation: SHAPExplanation, require_local_explanation: bool = False, plot_type=None
@@ -88,13 +90,18 @@ def validate_target(
     if target is not None and (target < 0 or target >= explanation.num_target_outputs):
         raise ValueError(f"Target index out of bounds: {target}")
 
+    if target == 0 and explanation.num_target_outputs == 1:
+        if len(explanation.explanations.shape) == 2:
+            logger.debug(
+                "Detected explanation for a single target based on the explanation shape validation. Coercing the target to None."
+            )
+            target = None
+
     if require_single_target:
         if target is None and explanation.num_target_outputs > 1:
             raise ValueError(
                 f"The plot of type {plot_type} requires a single target value. \nPassed explanation contains multiple targets and no target index specified."
             )
-        if target is None:
-            target = 0
 
     return target
 
