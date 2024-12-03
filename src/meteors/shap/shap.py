@@ -47,20 +47,24 @@ class HyperSHAP:
             raise ValueError(f"Could not initialize the explainer: {e}")
 
     def explain(self, data: np.ndarray | pd.DataFrame | torch.tensor) -> SHAPExplanation:
-        if isinstance(data, pd.DataFrame):
-            data = data.to_numpy()
-        elif isinstance(data, pd.Series):
-            data = data.to_numpy().reshape(1, -1)
+        if isinstance(data, pd.Series):
+            data = data.to_frame().T
         elif isinstance(data, torch.Tensor):
             data = data.numpy()
 
-        if not isinstance(data, np.ndarray):
-            raise TypeError(f"Expected np.ndarray as data, but got {type(data)}")
+        if isinstance(data, pd.DataFrame):
+            data = data.to_numpy()
+
+        if not isinstance(data, np.ndarray) and np.issubdtype(data.dtype, np.number):
+            raise TypeError(f"Expected numeric np.ndarray, pd.DataFrame or torch.Tensor as data, but got {type(data)}")
 
         if not self._explainer:
             raise ValueError("The explainer has not been initialized")
 
-        shap_values = self._explainer(data)
+        try:
+            shap_values = self._explainer(data)
+        except ValueError as e:
+            raise ValueError(f"Could not generate SHAP explanations: {e}")
 
         explanations = SHAPExplanation(data=data, explanations=shap_values, explanation_method=self.explainer_type)
 

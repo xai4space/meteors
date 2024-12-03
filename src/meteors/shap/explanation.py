@@ -19,9 +19,9 @@ import shap
 ###################################################################
 
 
-def ensure_data_type(data: np.ndarray | torch.Tensor | pd.DataFrame) -> np.ndarray:
+def ensure_data_type_and_reshape(data: np.ndarray | torch.Tensor | pd.DataFrame) -> np.ndarray:
     """
-    Ensures that the input data is converted to a NumPy ndarray.
+    Ensures that the input data is converted to a NumPy ndarray. If the input is one dimensional, it reshapes it to a two-dimensional array.
 
     Args:
         data (np.ndarray | torch.Tensor | pd.DataFrame): The input data which can be a NumPy ndarray,
@@ -47,7 +47,20 @@ def ensure_data_type(data: np.ndarray | torch.Tensor | pd.DataFrame) -> np.ndarr
             ) from e
     if not np.issubdtype(converted_data.dtype, np.number):
         raise TypeError(f"Expected numeric data, but got {converted_data.dtype}")
+
+    # reshaping the data if it is one-dimensional
+    converted_data = np.reshape(converted_data, (1, -1)) if len(converted_data.shape) == 1 else converted_data
     return converted_data
+
+
+def add_dimension_to_local_explanation(explanation: shap.Explanation) -> shap.Explanation:
+    """
+    Adds a new axis to the SHAP explanation for a local explanation
+    """
+    explanation.values = np.expand_dims(explanation.values, axis=0)
+    explanation.base_values = np.expand_dims(explanation.base_values, axis=0)
+    explanation.data = np.expand_dims(explanation.data, axis=0)
+    return explanation
 
 
 ###################################################################
@@ -70,7 +83,7 @@ class SHAPExplanation(BaseModel):
 
     data: Annotated[
         np.ndarray,
-        BeforeValidator(ensure_data_type),
+        BeforeValidator(ensure_data_type_and_reshape),
         Field(
             description="A numpy array containing the input data.",
         ),
@@ -95,23 +108,42 @@ class SHAPExplanation(BaseModel):
         Validates that the shape of the explanations matches the shape of the input data.
 
         This method checks if the shape of `self.explanations` matches the shape of `self.data`.
-        If the shapes do not match, it raises a `ShapeMismatchError` unless the mismatch is only
-        in the last dimension, in which case it logs a debug message indicating that the explanations
-        are for multiple targets.
-
+        If the shapes do not match, it checks if the explanation is multitarget - the last dimension of the explanation will not match the data shape.
+        In case the explanation is local - the explanation is one axis shorter, it unsquezees it - adds a new axis in the beginning of the explanation.
+        Otherwise, it raises a `ShapeMismatchError`
         Raises:
-            ShapeMismatchError: If the shape of the explanations does not match the shape of the input data
-                                and the mismatch is not only in the last dimension.
+            ShapeMismatchError: If the shape of the explanations does not match the shape of the input data, the mismatch is not only in the last dimension and cannot unsqueeze the data, in case the explanation is local.
         """
         data_shape = self.data.shape
-        if self.explanations.shape != data_shape:
-            # only the last dimension differs
-            if self.explanations.shape[:-1] == data_shape:
+        explanation_shape = self.explanations.shape
+        if explanation_shape == data_shape:
+            return  # no need to validate
+
+        if len(explanation_shape) == len(data_shape) + 1:
+            # the explanation has one more dimension than the data - the multitarget explanation, no local explanation
+            if explanation_shape[:-1] == data_shape:
                 logger.debug("Detected explanation for multiple targets based on the explanation shape validation.")
+                return
             else:
                 raise ShapeMismatchError(
                     f"Shape of the explanations does not match the shape of the input data. Expected {data_shape}, but got {self.explanations.shape}"
                 )
+        elif len(explanation_shape) == len(data_shape):
+            if explanation_shape[-2] == data_shape[-1] and data_shape[0] == 1:
+                logger.debug("Detected explanation for multiple targets based on the explanation shape validation.")
+                logger.debug("This is a local explanation for multiple targets. Adding a new axis to the explanation.")
+                self.explanations = add_dimension_to_local_explanation(self.explanations)
+                if self.explanations.shape[:-1] == data_shape:
+                    return
+        elif len(explanation_shape) == len(data_shape) - 1:
+            logger.debug("Detected local explanation for a single target. Removing the last axis from the explanation.")
+            self.explanations = add_dimension_to_local_explanation(self.explanations)
+            if self.explanations.shape == data_shape:
+                return
+
+        raise ShapeMismatchError(
+            f"Shape of the explanations does not match the shape of the input data. Expected {data_shape}, but got {explanation_shape}"
+        )
 
     @model_validator(mode="after")
     def validate_explanations(self) -> Self:

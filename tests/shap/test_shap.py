@@ -6,6 +6,8 @@ import pytest
 import shap
 
 import meteors as mt
+import torch
+import numpy as np
 
 
 def test_explainer_types():
@@ -73,6 +75,31 @@ def test_explainer_types():
         mt.shap.HyperSHAP(explainable_model, X_train, explainer_type="Linear")
 
 
+def test_hyper_shap_init():
+    # proper initialization
+    X_train, _, Y_train, _ = train_test_split(*shap.datasets.iris(), test_size=0.2, random_state=0)
+
+    linear = sklearn.linear_model.LogisticRegression()
+    linear.fit(X_train, Y_train)
+    explainable_model = mt.models.ExplainableModel(linear, "classification")
+    mt.shap.HyperSHAP(explainable_model, np.random.rand(10, 10), explainer_type="Linear")
+
+    # invalid model
+    invalid_model = "invalid"
+    with pytest.raises(TypeError):
+        mt.shap.HyperSHAP(invalid_model, np.random.rand(10, 10), explainer_type="Linear")
+
+    # model as callable, but not ExplainableModel
+    with pytest.raises(TypeError):
+        mt.shap.HyperSHAP(linear, np.random.rand(10, 10), explainer_type="Linear")
+
+    # not initialized explainer
+    explainable_model = mt.models.ExplainableModel(sklearn.linear_model.LogisticRegression(), "classification")
+
+    with pytest.raises(ValueError):
+        mt.shap.HyperSHAP(explainable_model, np.random.rand(10, 10), explainer_type="Invalid")
+
+
 def test_shap_explain():
     X_train, X_test, Y_train, _ = train_test_split(*shap.datasets.iris(), test_size=0.2, random_state=0)
 
@@ -90,3 +117,7 @@ def test_shap_explain():
     # incorrect data type
     with pytest.raises(TypeError):
         explainer.explain("invalid")
+
+    # torch tensor input
+    X_test_tensor = torch.tensor(X_test.to_numpy())
+    explanations = explainer.explain(X_test_tensor)
