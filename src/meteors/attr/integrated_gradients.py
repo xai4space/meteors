@@ -49,6 +49,7 @@ class IntegratedGradients(Explainer):
         target: list[int] | int | None = None,
         additional_forward_args: Any = None,
         n_steps: int = 50,
+        internal_batch_size: int | None = None,
         method: Literal[
             "riemann_right", "riemann_left", "riemann_middle", "riemann_trapezoid", "gausslegendre"
         ] = "gausslegendre",
@@ -81,6 +82,12 @@ class IntegratedGradients(Explainer):
                 These arguments are provided to forward_func in order following the arguments in inputs.
                 Note that attributions are not computed with respect to these arguments. Default: None
             n_steps (int, optional): The number of steps to approximate the integral. Default: 50.
+            internal_batch_size (int, optional): Divides total #steps * #examples data points into chunks of size at
+                most internal_batch_size, which are computed (forward / backward passes) sequentially.
+                internal_batch_size must be at least equal to #examples. For DataParallel models, each batch is split
+                among the available devices, so evaluations on each available device contain
+                internal_batch_size / num_devices examples. If internal_batch_size is None, then all evaluations
+                are processed in one batch. Default: None
             method (Literal["riemann_right", "riemann_left", "riemann_middle", "riemann_trapezoid", "gausslegendre"],
                 optional): Method for approximating the integral, one of riemann_right, riemann_left, riemann_middle,
                 riemann_trapezoid or gausslegendre. Default: gausslegendre if no method is provided.
@@ -136,6 +143,7 @@ class IntegratedGradients(Explainer):
             baselines=baseline,
             target=target,
             n_steps=n_steps,
+            internal_batch_size=internal_batch_size,
             additional_forward_args=additional_forward_args,
             method=method,
             return_convergence_delta=return_convergence_delta,
