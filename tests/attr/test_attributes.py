@@ -551,12 +551,12 @@ def test_spatial_attributes():
 
     # no segmentation mask passed
     with pytest.raises(HSIAttributesError):
-        attributes = HSISpatialAttributes(
+        HSISpatialAttributes(
             hsi=image,
             attributes=attributes,
             device=device,
-        )
-        attributes.segmentation_mask
+            mask=None,
+        ).segmentation_mask
 
     # test to method
     spatial_attributes.to("cpu")
@@ -575,7 +575,7 @@ def test_spatial_attributes():
             attributes=attributes,
             mask=None,
             device=device,
-        )
+        ).segmentation_mask
 
     with pytest.raises(HSIAttributesError):
         attributes_with_no_mask = HSISpatialAttributes(

@@ -25,7 +25,6 @@ class ToyModel(nn.Module):
 
     def forward(self, input):
         self.number_of_passes = max(input.shape[0], self.number_of_passes)
-        print(self.number_of_passes)
         return torch.sum(F.relu(input), dim=(1, 2, 3))
 
 

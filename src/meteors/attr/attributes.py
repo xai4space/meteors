@@ -457,8 +457,6 @@ class HSISpatialAttributes(HSIAttributes):
             HSIAttributesError: If the segmentation mask is not provided in the attributes object.
         """
         super()._validate_hsi_attributions_and_mask()
-        if self.mask is None:
-            raise HSIAttributesError("Segmentation mask is not provided in the attributes object")
 
 
 class HSISpectralAttributes(HSIAttributes):

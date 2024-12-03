@@ -70,7 +70,6 @@ def test_linear_model_forward():
     X = torch.rand(10, 10)
     y = torch.bernoulli(X)
     data_loader = torch.utils.data.DataLoader(dataset=[X, y], batch_size=10)
-    print(next(iter(data_loader)))
 
     model.fit(data_loader)
 
