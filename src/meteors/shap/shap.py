@@ -55,13 +55,14 @@ class HyperSHAP:
         if isinstance(data, pd.DataFrame):
             data = data.to_numpy()
 
-        if not isinstance(data, np.ndarray):
-            raise TypeError(f"Expected np.ndarray, pd.DataFrame or torch.Tensor as data, but got {type(data)}")
-
         try:
+            data = np.array(data)
             data.astype(np.float32)
         except Exception as e:
-            raise ValueError(f"Failed to parse the data to the numeric data type: {e}")
+            raise TypeError(
+                f"Failed to parse the data of type {type(data)} into the numeric np.ndarray, pd.DataFrame or torch.Tensor: {e}"
+            )
+        data = np.array(data)
 
         if not self._explainer:
             raise ValueError("The explainer has not been initialized")

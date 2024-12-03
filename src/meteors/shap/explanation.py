@@ -186,6 +186,4 @@ class SHAPExplanation(BaseModel):
         Returns:
             list[str] | pd.Index | None: list of feature names.
         """
-        if self.explanations is not None:
-            return self.explanations.feature_names
-        return None
+        return self.explanations.feature_names

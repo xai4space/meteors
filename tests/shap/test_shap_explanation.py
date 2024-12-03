@@ -135,6 +135,47 @@ def test_feature_names():
     assert shap_explanation.feature_names == feature_names
 
 
+def test_is_local_explanation():
+    # case 1: no multitarget explanation
+    data = np.random.rand(10, 10)
+    explanations = shap.Explanation(np.random.rand(10, 10))
+
+    shap_explanation = mt_shap_explanation.SHAPExplanation(
+        data=data, explanations=explanations, explanation_method="kernel"
+    )
+
+    assert not shap_explanation.is_local_explanation
+
+    # case 2: multitarget explanation
+    data = np.random.rand(10, 10)
+    explanations = shap.Explanation(np.random.rand(10, 10, 2))
+    explanations = mt_shap_explanation.SHAPExplanation(
+        data=data, explanations=explanations, explanation_method="kernel"
+    )
+
+    assert not explanations.is_local_explanation
+
+    # case 3: local single-target explanation
+    data = np.random.rand(10)
+    explanations = shap.Explanation(np.random.rand(10))
+
+    shap_explanation = mt_shap_explanation.SHAPExplanation(
+        data=data, explanations=explanations, explanation_method="kernel"
+    )
+
+    assert shap_explanation.is_local_explanation
+
+    # case 4: local multitarget explanation
+    data = np.random.rand(10)
+    explanations = shap.Explanation(np.random.rand(10, 2))
+
+    shap_explanation = mt_shap_explanation.SHAPExplanation(
+        data=data, explanations=explanations, explanation_method="kernel"
+    )
+
+    assert shap_explanation.is_local_explanation
+
+
 def test___validate_shapes():
     # not testing the function itself, but the cases that it covers
 

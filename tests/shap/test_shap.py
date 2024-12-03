@@ -126,3 +126,7 @@ def test_shap_explain():
     # torch tensor input
     X_test_tensor = torch.tensor(X_test.to_numpy())
     explanations = explainer.explain(X_test_tensor)
+
+    # explanation with incorrect shape
+    with pytest.raises(ValueError):
+        explainer.explain(X_train.iloc[1:3, 0])
