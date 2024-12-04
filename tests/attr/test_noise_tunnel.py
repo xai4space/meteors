@@ -149,6 +149,7 @@ def test_noise_attribute(explainable_toy_model):
 
     assert attributes is not None
     assert attributes.attributes.shape == (5, 5, 5)
+    assert not attributes.attributes.requires_grad
 
     attributes = noise_tunnel.attribute(image, n_samples=1, method="smoothgrad_sq")
 
@@ -169,6 +170,9 @@ def test_noise_attribute(explainable_toy_model):
 
     assert attributes is not None
     assert attributes.attributes.shape == (5, 5, 5)
+
+    attributes = noise_tunnel.attribute(image, n_samples=1, keep_gradient=True)
+    assert attributes.attributes.requires_grad
 
     # test changing the image orientation
     image.orientation = ("W", "C", "H")
@@ -254,6 +258,7 @@ def test_hyper_attribute(explainable_toy_model):
 
     assert attributes is not None
     assert attributes.attributes.shape == (5, 5, 5)
+    assert not attributes.attributes.requires_grad
 
     attributes = hyper_noise_tunnel.attribute(image, n_samples=1, method="smoothgrad_sq")
 
@@ -264,6 +269,9 @@ def test_hyper_attribute(explainable_toy_model):
 
     assert attributes is not None
     assert attributes.attributes.shape == (5, 5, 5)
+
+    attributes = hyper_noise_tunnel.attribute(image, n_samples=1, keep_gradient=True)
+    assert attributes.attributes.requires_grad
 
     # test changing the image orientation
     image.orientation = ("W", "C", "H")

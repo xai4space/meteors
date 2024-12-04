@@ -72,6 +72,8 @@ class BaseNoiseTunnel(Explainer, ABC):
         sig = inspect.signature(self.chained_explainer.attribute)
         if "abs" in sig.parameters:
             self.chained_explainer.attribute = partial(self.chained_explainer.attribute, abs=False)  # type: ignore
+        if "keep_gradient" in sig.parameters:
+            self.chained_explainer.attribute = partial(self.chained_explainer.attribute, keep_gradient=True)  # type: ignore
 
     @staticmethod
     @abstractmethod
@@ -214,6 +216,7 @@ class NoiseTunnel(BaseNoiseTunnel):
         perturbation_axis: None | tuple[int | slice] = None,
         stdevs: float | tuple[float, ...] = 1.0,
         method: Literal["smoothgrad", "smoothgrad_sq", "vargrad"] = "smoothgrad",
+        keep_gradient: bool = False,
     ) -> HSIAttributes | list[HSIAttributes]:
         """
         Method for generating attributions using the Noise Tunnel method.
@@ -254,6 +257,10 @@ class NoiseTunnel(BaseNoiseTunnel):
                 each value in the tuple is used for the corresponding input. Default: 1.0
             method (Literal["smoothgrad", "smoothgrad_sq", "vargrad"], optional): Smoothing type of the attributions.
                 smoothgrad, smoothgrad_sq or vargrad Default: smoothgrad if type is not provided.
+            keep_gradient (bool, optional): Indicates whether to keep the gradient tensors in memory. By the default,
+                the gradient tensors are removed from the computation graph after the attributions are computed, due
+                to memory efficiency. If the gradient tensors are needed for further processing, this parameter should
+                be set to True. Default: False
 
         Returns:
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
@@ -306,7 +313,11 @@ class NoiseTunnel(BaseNoiseTunnel):
 
         try:
             attributes = [
-                HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
+                HSIAttributes(
+                    hsi=hsi_image,
+                    attributes=attribution if keep_gradient else attribution.detach(),
+                    attribution_method=self.get_name(),
+                )
                 for hsi_image, attribution in zip(hsi, nt_attributes)
             ]
         except Exception as e:
@@ -415,6 +426,7 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
         perturbation_prob: float = 0.5,
         num_perturbed_bands: int | None = None,
         method: Literal["smoothgrad", "smoothgrad_sq", "vargrad"] = "smoothgrad",
+        keep_gradient: bool = False,
     ) -> HSIAttributes | list[HSIAttributes]:
         """
         Method for generating attributions using the Hyper Noise Tunnel method.
@@ -453,6 +465,10 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
                 If set to None, the bands are perturbed with probability `perturbation_prob` each. Defaults to None.
             method (Literal["smoothgrad", "smoothgrad_sq", "vargrad"], optional): Smoothing type of the attributions.
                 smoothgrad, smoothgrad_sq or vargrad Default: smoothgrad if type is not provided.
+            keep_gradient (bool, optional): Indicates whether to keep the gradient tensors in memory. By the default,
+                the gradient tensors are removed from the computation graph after the attributions are computed, due
+                to memory efficiency. If the gradient tensors are needed for further processing, this parameter should
+                be set to True. Default: False
 
         Returns:
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
@@ -511,7 +527,11 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
 
         try:
             attributes = [
-                HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
+                HSIAttributes(
+                    hsi=hsi_image,
+                    attributes=attribution if keep_gradient else attribution.detach(),
+                    attribution_method=self.get_name(),
+                )
                 for hsi_image, attribution in zip(hsi, hnt_attributes)
             ]
         except Exception as e:

@@ -8,6 +8,7 @@ from .attr_visualize import (
     visualize_spectral_attributes_by_magnitude,
     visualize_spectral_attributes,
     visualize_spatial_attributes,
+    visualize_bands_spatial_attributes,
 )
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "visualize_spectral_aggregated_attributes",
     "visualize_aggregated_attributes",
     "visualize_hsi",
+    "visualize_bands_spatial_attributes",
 ]
