@@ -10,11 +10,10 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from meteors.attr import Explainer, HSIAttributes
-from meteors.attr.explainer import validate_and_transform_baseline
+from .attributes import HSIAttributes
+from .explainer import Explainer, validate_and_transform_baseline
 from meteors import HSI
 from meteors.models import ExplainableModel
-
 from meteors.exceptions import HSIAttributesError, ShapeMismatchError
 
 
