@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 import meteors as mt
-import meteors.shap.explanation as mt_shap_explanation
+import meteors.shap.explainer as mt_shap_explanation
 
 import pandas as pd
 
@@ -114,7 +114,6 @@ def test_shap_explanation():
 
 def test_feature_names():
     # case 1: no feature names
-
     data = np.random.rand(10, 10)
     explanations = shap.Explanation(np.random.rand(10, 10))
 

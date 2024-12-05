@@ -1,4 +1,4 @@
-from .explanation import SHAPExplanation
+from .explainer import SHAPExplanation
 from .shap import HyperSHAP
 
 
