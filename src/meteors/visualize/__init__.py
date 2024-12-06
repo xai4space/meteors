@@ -10,8 +10,17 @@ from .attr_visualize import (
     visualize_spatial_attributes,
     visualize_bands_spatial_attributes,
 )
+from .shap_visualize import force, beeswarm, dependence_plot, waterfall, heatmap, bar, wavelengths_bar
+
 
 __all__ = [
+    "force",
+    "beeswarm",
+    "dependence_plot",
+    "waterfall",
+    "heatmap",
+    "bar",
+    "wavelengths_bar",
     "visualize_spectral_attributes_by_waveband",
     "visualize_spectral_attributes_by_magnitude",
     "visualize_spectral_attributes",
