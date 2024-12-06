@@ -154,6 +154,11 @@ def test_visualize_ig_attributes(ig_model):
     assert ax[1, 1].get_xlabel() == "Wavelength"
     assert ax[1, 1].get_ylabel() == "Attribution Absolute Value"
 
+    # test with title
+    fig, ax = plt.subplots(2, 2, figsize=(9, 7))
+    ax = visualize.visualize_attributes(image_attributes, ax=ax, title="Test Title")
+    assert fig.texts[0].get_text() == "Test Title"
+
     # test with incorrect ax shape
     fig, ax = plt.subplots(2, 3, figsize=(9, 7))
     ax = visualize.visualize_attributes(image_attributes, ax=ax)
@@ -191,7 +196,7 @@ def test_incorrect_orientation(ig_model):
     assert isinstance(ax, np.ndarray)
     assert ax.shape == (2, 2)
     assert all([isinstance(a, Axes) for a in ax.ravel()])
-    assert fig.texts[0].get_text() == "HSI Attributes of: Integrated Gradients"
+    assert fig.get_suptitle() == "HSI Attributes of: Integrated Gradients"
     assert ax[0, 0].get_title() == "Attribution Heatmap"
     assert ax[0, 1].get_title() == "Attribution Module Values"
     assert ax[1, 0].get_title() == "Spectral Attribution"
@@ -235,7 +240,6 @@ def test__merge_band_names_segments():
         "band4,segment2": 3,
         "band5,segment2": 4,
     }
-    print(merged_band_names, expected_merged_band_names)
     assert merged_band_names == expected_merged_band_names
 
 
@@ -276,6 +280,11 @@ def test_visualize_spatial_attributes():
     assert ax[2].get_title() == "Mask"
     plt.close(fig)
     del ax, fig
+
+    # test with title
+    fig, ax = plt.subplots(1, 3, figsize=(9, 7))
+    ax = visualize.visualize_spatial_attributes(hsi_attributes_spatial, ax=ax, title="Test Title")
+    assert fig._suptitle.get_text() == "Test Title"
 
     # test with incorrect ax shape
     fig, ax = plt.subplots(1, 4, figsize=(9, 7))
@@ -821,6 +830,14 @@ def test_visualize_spectral_attributes():
     plt.close(fig)
     del ax, fig
 
+    # test with title
+    fig, ax = plt.subplots(1, 2, figsize=(9, 7))
+    ax = visualize.visualize_spectral_attributes(spectral_attributes, ax=ax, title="Test Title")
+    assert fig.get_suptitle() == "Test Title"
+    # cleanup
+    plt.close("all")
+    del ax, fig
+
     # test with incorrect ax shape
     fig, ax = plt.subplots(1, 3, figsize=(9, 7))
     ax = visualize.visualize_spectral_attributes(spectral_attributes, ax=ax)
@@ -1065,6 +1082,16 @@ def test_visualize_spatial_aggregated_attributes():
     plt.close(fig)
     del ax, fig
 
+    # test with title
+    fig, ax = plt.subplots(1, 3, figsize=(9, 7))
+    ax = visualize.visualize_spatial_aggregated_attributes(
+        hsi_attributes_spatial, new_segmentation_mask, ax=ax, title="Test Title"
+    )
+    assert fig.get_suptitle() == "Test Title"
+    # cleanup
+    plt.close("all")
+    del ax, fig
+
     # test with incorrect ax shape
     fig, ax = plt.subplots(1, 4, figsize=(9, 7))
     ax = visualize.visualize_spatial_aggregated_attributes(hsi_attributes_spatial, new_segmentation_mask, ax=ax)
@@ -1257,6 +1284,16 @@ def test_visualize_spectral_aggregated_attributes():
     plt.close(fig)
     del ax, fig
 
+    # test with title
+    fig, ax = plt.subplots(1, 3, figsize=(9, 7))
+    ax = visualize.visualize_spectral_aggregated_attributes(
+        [spectral_attributes, spectral_attributes_new], band_names, new_band_mask, ax=ax, title="Test Title"
+    )
+    assert fig.get_suptitle() == "Test Title"
+    # cleanup
+    plt.close("all")
+    del ax, fig
+
     # test with incorrect ax shape
     fig, ax = plt.subplots(1, 4, figsize=(9, 7))
     ax = visualize.visualize_spectral_aggregated_attributes(
@@ -1400,3 +1437,106 @@ def test_visualize_aggregated_attributes():
         visualize.visualize_aggregated_attributes(spectral_attributes, new_band_mask, band_names, ax=ax)
     plt.close(fig)
     del ax, fig
+
+
+def test_visualize_bands_spatial_attributes():
+    """Test the visualization of spatial attributes for specific spectral bands."""
+    # Create test data
+    tensor_image = torch.rand((len(wavelengths_main), 240, 230))
+    hsi = HSI(image=tensor_image, wavelengths=wavelengths_main, orientation="CHW")
+    attributes = torch.ones_like(hsi.image)
+
+    hsi_attributes = HSIAttributes(hsi=hsi, attributes=attributes, score=0.5, attribution_method="Lime")
+
+    # Test 1: Basic functionality with spectral indexes
+    spectral_indexes = [0, 1, 2]
+    fig, ax = visualize.visualize_bands_spatial_attributes(hsi_attributes, spectral_indexes=spectral_indexes)
+
+    # Check return types and basic plot properties
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
+    assert ax[0].get_title() == "Original image"
+    assert ax[1].get_title() == "Attribution Map"
+
+    plt.close(fig)
+    del ax, fig
+
+    # Test 2: Basic functionality with one spectral indexes
+    spectral_indexes = [0]
+    fig, ax = visualize.visualize_bands_spatial_attributes(hsi_attributes, spectral_indexes=spectral_indexes)
+
+    # Check return types and basic plot properties
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
+    assert ax[0].get_title() == "Original image"
+    assert ax[1].get_title() == "Attribution Map"
+
+    plt.close(fig)
+    del ax, fig
+
+    # Test 3: Using wavelengths instead of indexes
+    spectral_wavelengths = [wavelengths_main[0], wavelengths_main[1], wavelengths_main[2]]
+    fig, ax = visualize.visualize_bands_spatial_attributes(hsi_attributes, spectral_wavelengths=spectral_wavelengths)
+
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
+
+    plt.close(fig)
+    del ax, fig
+
+    # Test 4: No indexes or wavelengths provided (should use all bands)
+    fig, ax = visualize.visualize_bands_spatial_attributes(
+        hsi_attributes,
+    )
+
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
+
+    plt.close(fig)
+    del ax, fig
+
+    # Test 5: Test with provided axes
+    fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+    returned_ax = visualize.visualize_bands_spatial_attributes(
+        hsi_attributes, spectral_indexes=[0, 1, 2], spectral_wavelengths=None, ax=ax
+    )
+
+    assert isinstance(returned_ax, np.ndarray)
+    assert returned_ax.shape == (3,)
+    assert all([isinstance(a, Axes) for a in returned_ax.ravel()])
+
+    plt.close(fig)
+    del ax, fig
+
+    # Test 6: Test with incorrect axes shape
+    fig, ax = plt.subplots(2, 2, figsize=(9, 7))
+    with pytest.raises(ValueError):
+        visualize.visualize_bands_spatial_attributes(hsi_attributes, spectral_indexes=[0, 1, 2], ax=ax)
+    plt.close(fig)
+    del ax, fig
+
+    # Test 7: Test with both spectral_indexes and spectral_wavelengths (should prioritize indexes)
+    fig, ax = visualize.visualize_bands_spatial_attributes(
+        hsi_attributes,
+        spectral_indexes=[0, 1, 2],
+        spectral_wavelengths=[wavelengths_main[3], wavelengths_main[4], wavelengths_main[5]],
+    )
+
+    assert isinstance(fig, plt.Figure)
+    assert len(ax) == 2
+    assert isinstance(ax[0], Axes)
+
+    plt.close(fig)
+    del ax, fig
+
+    # Test 8: incorrect spectral indexes
+    with pytest.raises(IndexError):
+        visualize.visualize_bands_spatial_attributes(hsi_attributes, spectral_indexes=[len(wavelengths_main) + 1])
+
+    # Test 9: incorrect spectral wavelengths
+    with pytest.raises(ValueError):
+        visualize.visualize_bands_spatial_attributes(hsi_attributes, spectral_wavelengths=[wavelengths_main[-1] + 1])

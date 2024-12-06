@@ -20,7 +20,7 @@ from meteors.attr.attributes import align_band_names_with_mask
 
 
 def visualize_attributes(
-    image_attributes: HSIAttributes, ax: Axes | None = None, use_pyplot: bool = False
+    image_attributes: HSIAttributes, ax: Axes | None = None, use_pyplot: bool = False, title: str | None = None
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the attributes of an image on the given axes.
 
@@ -29,6 +29,7 @@ def visualize_attributes(
         ax (Axes | None): The axes to visualize the image on. If None, creates a new figure and axes.
         use_pyplot (bool): If True, uses pyplot to display the image. If False, returns the figure and axes objects.
             if ax is not None, use_pyplot is ignored.
+        title (str): The title of the chart. If it equals to None, will be replaced with title "HSI Attributes of {method used for explanations}". Defaults to None
 
     Returns:
         matplotlib.figure.Figure | matplotlib.axes.Axes | None: The figure and axes objects.
@@ -65,13 +66,16 @@ def visualize_attributes(
     elif len(ax.shape) != 2 or ax.shape[0] < 2 or ax.shape[1] < 2:
         raise ValueError("The axes should have at least 2 rows and 2 columns.")
     else:
-        fig = ax[0, 0].get_figure()
+        fig = ax.ravel()[0].get_figure()
 
     ax[0, 0].set_title("Attribution Heatmap")
     ax[0, 0].grid(False)
     ax[0, 0].axis("off")
 
-    fig.suptitle(f"HSI Attributes of: {rotated_attributes_dataclass.attribution_method}")
+    if title is None:
+        title = f"HSI Attributes of: {rotated_attributes_dataclass.attribution_method}"
+
+    fig.suptitle(title)
 
     _ = viz.visualize_image_attr(
         rotated_attributes,
@@ -148,7 +152,10 @@ def _merge_band_names_segments(band_names: dict[str | tuple[str, ...], int]) -> 
 
 
 def visualize_spatial_attributes(
-    spatial_attributes: HSISpatialAttributes, ax: Axes | None = None, use_pyplot: bool = False
+    spatial_attributes: HSISpatialAttributes,
+    ax: Axes | None = None,
+    use_pyplot: bool = False,
+    title: str | None = None,
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the spatial attributes of an hsi using Lime attribution.
 
@@ -159,6 +166,7 @@ def visualize_spatial_attributes(
             The axes object to plot the visualization on. If None, a new axes will be created.
         use_pyplot (bool, optional):
             Whether to use pyplot for visualization. Defaults to False.
+        title (str, optional): The title of the plot. If None will be set to "Spatial Attributes Visualization", Defaults to None.
 
     Returns:
         tuple[matplotlib.figure.Figure, matplotlib.axes.Axes] | matplotlib.axes.Axes | None:
@@ -167,27 +175,37 @@ def visualize_spatial_attributes(
             If use_pyplot is False, returns the figure and axes objects.
 
     Raises:
-        ValueError: If the axes have less 3 rows or 3 columns
+        ValueError: If the axes have less 3 rows or 3 columns with mask
+        ValueError: If the axes have less 2 rows or 2 columns without mask
+        ValueError: If the axes is a 2d object not 1d
         ValueError: If the axes object is not a list of axes objects
     """
-    mask_enabled = spatial_attributes.segmentation_mask is not None
+    mask_enabled = True if spatial_attributes.mask is not None else False
     use_ax = True
     if ax is None:
         use_ax = False
-        fig, ax = plt.subplots(1, 3 if mask_enabled else 2, figsize=(15, 5))
-        fig.suptitle("Spatial Attributes Visualization")
+        fig, ax = plt.subplots(1, 3 if mask_enabled else 2, figsize=(15, 5) if mask_enabled else (10, 4))
 
     if not hasattr(ax, "shape"):
         raise ValueError("Provided as is one axes object, but it should be a list of axes objects")
-    elif len(ax.shape) != 1 or ax.shape[0] < 3:
-        raise ValueError("The axes should have at least 3 rows or 3 columns")
-    else:
+    elif len(ax.shape) == 1:
+        if mask_enabled and ax.shape[0] < 3:
+            raise ValueError("The axes should have at least 3 rows or 3 columns")
+        elif not mask_enabled and ax.shape[0] < 2:
+            raise ValueError("The axes should have at least 2 rows or 2 columns")
         fig = ax[0].get_figure()
+    elif len(ax.shape) != 1:
+        raise ValueError("The axes are 2d please provide 1d axes")
+
+    if title is None:
+        title = "Spatial Attributes Visualization"
+
+    fig.suptitle(title)
 
     spatial_attributes = spatial_attributes.change_orientation("HWC", inplace=False)
 
     if mask_enabled:
-        mask = spatial_attributes.segmentation_mask.cpu()
+        mask = spatial_attributes.segmentation_mask.detach().cpu()
 
         group_names = mask.unique().tolist()
         colors = sns.color_palette("hsv", len(group_names))
@@ -205,12 +223,12 @@ def visualize_spatial_attributes(
         ax[2].grid(False)
         ax[2].axis("off")
 
-    ax[0].imshow(spatial_attributes.hsi.get_rgb_image(output_channel_axis=2).cpu())
+    ax[0].imshow(spatial_attributes.hsi.get_rgb_image(output_channel_axis=2).detach().cpu())
     ax[0].set_title("Original image")
     ax[0].grid(False)
     ax[0].axis("off")
 
-    attrs = spatial_attributes.attributes.cpu().numpy()
+    attrs = spatial_attributes.flattened_attributes.detach().cpu().unsqueeze(-1).numpy()
     if np.all(attrs == 0):
         logger.warning("All spatial attributes are zero.")
         cmap = LinearSegmentedColormap.from_list("RdWhGn", ["red", "white", "green"])
@@ -247,6 +265,7 @@ def visualize_spectral_attributes(
     use_pyplot: bool = False,
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
+    title: str | None = None,
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the spectral attributes of an hsi object or a list of hsi objects.
 
@@ -267,6 +286,7 @@ def visualize_spectral_attributes(
             If True, includes the spectral bands that are not included in the visualization.
             If False, only includes the spectral bands that are included in the visualization.
             Defaults to True.
+        title (str, optional): The title of the plot. If None, the title will be set to "Spectral Attributes Visualization". Defaults to None.
 
     Returns:
         tuple[matplotlib.figure.Figure, matplotlib.axes.Axes] | matplotlib.axes.Axes | None:
@@ -282,13 +302,21 @@ def visualize_spectral_attributes(
     agg = True if isinstance(spectral_attributes, list) else False
     band_names = spectral_attributes[0].band_names if agg else spectral_attributes.band_names  # type: ignore
 
+    if title is None:
+        title = "Spectral Attributes Visualization"
+
     color_palette = color_palette or sns.color_palette("hsv", len(band_names.keys()))
 
     use_ax = True
     if ax is None:
         use_ax = False
         fig, ax = plt.subplots(1, 3 if agg else 2, figsize=(15, 5))
-        fig.suptitle("Spectral Attributes Visualization")
+    else:
+        if isinstance(ax, np.ndarray):
+            fig = ax.ravel()[0].get_figure()
+        else:
+            fig = ax.get_figure()
+    fig.suptitle(title)
 
     if not hasattr(ax, "shape"):
         raise ValueError("Provided as is one axes object, but it should be a list of axes objects")
@@ -424,8 +452,8 @@ def visualize_spectral_attributes_by_waveband(
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
-    band_mask = spectral_attributes[0].band_mask.cpu()
-    attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
+    band_mask = spectral_attributes[0].band_mask.detach().cpu()
+    attribution_map = torch.stack([attr.flattened_attributes.detach().cpu() for attr in spectral_attributes])
 
     for idx, (band_name, segment_id) in enumerate(band_names.items()):
         current_wavelengths = wavelengths[band_mask == segment_id]
@@ -539,8 +567,8 @@ def visualize_spectral_attributes_by_magnitude(
     if color_palette is None:
         color_palette = sns.color_palette("hsv", len(band_names.keys()))
 
-    band_mask = spectral_attributes[0].band_mask.cpu()
-    attribution_map = torch.stack([attr.flattened_attributes.cpu() for attr in spectral_attributes])
+    band_mask = spectral_attributes[0].band_mask.detach().cpu()
+    attribution_map = torch.stack([attr.flattened_attributes.detach().cpu() for attr in spectral_attributes])
     avg_magnitudes = calculate_average_magnitudes(band_names, band_mask, attribution_map)
 
     if aggregate_results:
@@ -570,6 +598,7 @@ def visualize_spatial_aggregated_attributes(
     ax: Axes | None = None,
     use_pyplot: bool = False,
     aggregate_func: Callable[[torch.Tensor], torch.Tensor] = torch.mean,
+    title: str | None = None,
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the spatial attributes of an hsi object aggregated by a custom mask.
 
@@ -583,6 +612,7 @@ def visualize_spatial_aggregated_attributes(
         aggregate_func (Callable[[torch.Tensor], torch.Tensor], optional): The aggregation function to be applied.
             The function should take a tensor as input and return a tensor as output.
             We recommend using torch functions. Defaults to torch.mean.
+        title (str, optional): The title of the plot. If None will be replaced with "Spatial Attributes Visualization Aggregated". Defaults to None.
 
     Raises:
         ShapeMismatchError: If the shape of the aggregated mask does not match the shape of the spatial attributes.
@@ -597,6 +627,9 @@ def visualize_spatial_aggregated_attributes(
     if aggregated_mask.shape != attributes.hsi.image.shape:
         aggregated_mask = aggregated_mask.expand_as(attributes.attributes)
 
+    if title is None:
+        title = "Spatial Attributes Visualization Aggregated"
+
     new_attrs = aggregate_by_mask(attributes.attributes, aggregated_mask, aggregate_func)
 
     new_spatial_attributes = HSISpatialAttributes(
@@ -606,12 +639,12 @@ def visualize_spatial_aggregated_attributes(
         score=attributes.score,
     )
 
-    out = visualize_spatial_attributes(new_spatial_attributes, ax=ax, use_pyplot=False)
+    out = visualize_spatial_attributes(new_spatial_attributes, ax=ax, use_pyplot=False, title=title)  # type: ignore
     if ax is not None:
         return out
 
     fig, ax = out  # type: ignore
-    fig.suptitle("Spatial Attributes Visualization Aggregated")
+    fig.suptitle(title)
 
     if use_pyplot:
         plt.show()  # pragma: no cover
@@ -629,6 +662,7 @@ def visualize_spectral_aggregated_attributes(
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
     aggregate_func: Callable[[torch.Tensor], torch.Tensor] = torch.mean,
+    title: str | None = None,
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the spectral attributes of an hsi object aggregated by a custom band mask.
 
@@ -646,6 +680,7 @@ def visualize_spectral_aggregated_attributes(
         aggregate_func (Callable[[torch.Tensor], torch.Tensor], optional): The aggregation function to be applied.
             The function should take a tensor as input and return a tensor as output.
             We recommend using torch functions. Defaults to torch.mean.
+        title (str, optional): The title of the plot. If None, "Spectral Attributes Visualization" will be used. Defaults to None.
 
     Raises:
         ShapeMismatchError: If the shape of the band mask does not match the shape of the spectral attributes.
@@ -692,6 +727,7 @@ def visualize_spectral_aggregated_attributes(
         use_pyplot=False,
         color_palette=color_palette,
         show_not_included=show_not_included,
+        title=title,
     )  # type: ignore
     if ax is not None:
         return out
@@ -712,6 +748,7 @@ def visualize_aggregated_attributes(
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
     aggregate_func: Callable[[torch.Tensor], torch.Tensor] = torch.mean,
+    title: str | None = None,
 ) -> tuple[Figure, Axes] | Axes | None:
     """Visualizes the aggregated attributes of an hsi object.
 
@@ -730,6 +767,7 @@ def visualize_aggregated_attributes(
         aggregate_func (Callable[[torch.Tensor], torch.Tensor], optional): The aggregation function to be applied.
             The function should take a tensor as input and return a tensor as output.
             We recommend using torch functions. Defaults to torch.mean.
+        title (str, optional): The title of the plot. If None the default of the underlying figure will be used. Defaults to None.
 
     Raises:
         ValueError: If the shape of the mask does not match the shape of the attributes.
@@ -743,9 +781,75 @@ def visualize_aggregated_attributes(
     if band_names is None:
         logger.info("Band names not provided. Using Spatial Analysis.")
         assert not agg, "In Spatial Analysis, attributes must be a single HSIAttributes object."
-        return visualize_spatial_aggregated_attributes(attributes, mask, ax, use_pyplot, aggregate_func)  # type: ignore
+        return visualize_spatial_aggregated_attributes(attributes, mask, ax, use_pyplot, aggregate_func, title=title)  # type: ignore
     else:
         logger.info("Band names provided. Using Spectral Analysis.")
         return visualize_spectral_aggregated_attributes(
-            attributes, band_names, mask, ax, use_pyplot, color_palette, show_not_included, aggregate_func
+            attributes, band_names, mask, ax, use_pyplot, color_palette, show_not_included, aggregate_func, title=title
         )
+
+
+def visualize_bands_spatial_attributes(
+    attributes: HSIAttributes,
+    spectral_indexes: list[int] | None = None,
+    spectral_wavelengths: list[float] | None = None,
+    ax: Axes | None = None,
+    use_pyplot: bool = False,
+) -> tuple[Figure, Axes] | Axes | None:
+    """
+    Visualizes the spatial attributes for specific spectral bands, identified either by their indexes
+    or wavelengths.
+
+    Args:
+        attributes (HSIAttributes): The HSI attributes object containing the spatial attributes to visualize.
+        spectral_indexes (list[int] | None, optional): List of spectral band/wavelengths indexes to visualize.
+            Takes precedence over spectral_wavelengths if both are provided. Defaults to None.
+        spectral_wavelengths (list[float] | None, optional): List of band/wavelengths values to visualize.
+            Only used if spectral_indexes is None. Wavelengths must match those in the HSI object.
+            Defaults to None.
+        ax (Axes | None, optional): Matplotlib axes for plotting. If None, creates new axes.
+            Defaults to None.
+        use_pyplot (bool, optional): Whether to display the plot using pyplot.
+            Ignored if ax is provided. Defaults to False.
+
+    Returns:
+        tuple[Figure, Axes] | Axes | None:
+            - If ax is provided: returns the modified axes
+            - If ax is None and use_pyplot is False: returns (figure, axes)
+            - If ax is None and use_pyplot is True: returns None and displays the plot
+
+    Raises:
+        ValueError: If some of the provided wavelengths are not present in the HSI object.
+    """
+    if spectral_indexes is None and spectral_wavelengths is None:
+        spectral_indexes = list(range(attributes.hsi.image.shape[attributes.hsi.spectral_axis]))
+    elif spectral_indexes is None and spectral_wavelengths is not None:
+        try:
+            spectral_indexes = [
+                (attributes.hsi.wavelengths == w).nonzero(as_tuple=True)[0].item() for w in spectral_wavelengths
+            ]
+        except RuntimeError as e:
+            if "a Tensor with 0 elements cannot be converted to Scalar" in str(e):
+                raise ValueError("Some of the provided wavelengths are not present in the HSI object.") from e
+            else:
+                raise e
+
+    spatial_attributes = attributes.attributes.index_select(
+        dim=attributes.hsi.spectral_axis, index=torch.tensor(spectral_indexes)
+    ).mean(dim=attributes.hsi.spectral_axis, keepdim=True)
+    spatial_attributes_expanded = spatial_attributes.expand_as(attributes.hsi.image)
+    assert spatial_attributes_expanded.shape == attributes.hsi.image.shape
+    assert torch.equal(
+        spatial_attributes_expanded.index_select(dim=attributes.hsi.spectral_axis, index=torch.tensor(0)),
+        spatial_attributes,
+    )
+
+    spatial_attributes_object = HSISpatialAttributes(
+        hsi=attributes.hsi,
+        attributes=spatial_attributes_expanded,
+        mask=None,
+        score=attributes.score,
+        attribution_method=attributes.attribution_method,
+    )
+
+    return visualize_spatial_attributes(spatial_attributes_object, ax=ax, use_pyplot=use_pyplot)

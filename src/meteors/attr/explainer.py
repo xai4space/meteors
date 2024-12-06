@@ -87,12 +87,12 @@ class Explainer(ABC):
                 raise ValueError("Cannot chain Explainer with another Explainer. The maximum depth of chaining is 1")
             self.chained_explainer = callable
             self.explainable_model: ExplainableModel = callable.explainable_model
-            logger.info(
+            logger.debug(
                 f"Initializing {self.__class__.__name__} explainer on model {callable.explainable_model} chained with {callable.__class__.__name__}"
             )
         else:
             self.explainable_model = callable
-            logger.info(f"Initializing {self.__class__.__name__} explainer on model {callable}")
+            logger.debug(f"Initializing {self.__class__.__name__} explainer on model {callable}")
 
         self.forward_func = self.explainable_model.forward_func
 

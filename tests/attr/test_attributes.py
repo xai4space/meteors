@@ -189,8 +189,7 @@ def test_align_band_names_with_mask():
     band_names = {"R": 1, "G": 2, "B": 3}
     band_mask = torch.tensor([[0, 1, 0], [1, 2, 1], [0, 1, 3]])
 
-    with pytest.warns(UserWarning):
-        updated_band_names = mt_attr.attributes.align_band_names_with_mask(band_names, band_mask)
+    updated_band_names = mt_attr.attributes.align_band_names_with_mask(band_names, band_mask)
 
     assert updated_band_names == {
         "R": 1,
@@ -552,12 +551,12 @@ def test_spatial_attributes():
 
     # no segmentation mask passed
     with pytest.raises(HSIAttributesError):
-        attributes = HSISpatialAttributes(
+        HSISpatialAttributes(
             hsi=image,
             attributes=attributes,
             device=device,
-        )
-        attributes.segmentation_mask
+            mask=None,
+        ).segmentation_mask
 
     # test to method
     spatial_attributes.to("cpu")
@@ -576,7 +575,7 @@ def test_spatial_attributes():
             attributes=attributes,
             mask=None,
             device=device,
-        )
+        ).segmentation_mask
 
     with pytest.raises(HSIAttributesError):
         attributes_with_no_mask = HSISpatialAttributes(

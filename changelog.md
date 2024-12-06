@@ -1,5 +1,46 @@
 # Changelog
 
+## v0.1.2 (2024-11-21)
+
+### 🛎️ Chores
+
+- update the package version ([#142](https://github.com/xai4space/meteors/pull/142))
+
+### 🩺 Bug Fixes
+
+- documentation version alias update fixed ([#139](https://github.com/xai4space/meteors/pull/139))
+
+### 📚 Documentation
+
+- tutorials fixes ([#129](https://github.com/xai4space/meteors/pull/129))
+- fixed documentation versioning ([#135](https://github.com/xai4space/meteors/pull/135))
+- Documentation template update ([#134](https://github.com/xai4space/meteors/pull/134))
+- fix reference docs for visualizer modules ([#133](https://github.com/xai4space/meteors/pull/133))
+- fix navbar for new tutorials ([#132](https://github.com/xai4space/meteors/pull/132))
+- update changelog.md for v0.1.1 [skip ci] ([#131](https://github.com/xai4space/meteors/pull/131))
+
+### 🔨 Features
+
+- Added Hyperlinks to the PR in changelog ([#136](https://github.com/xai4space/meteors/pull/136))
+
+## v0.1.1 (2024-11-18)
+
+### 📚 Documentation
+
+- refine the tutorial for lime and add tutorial for attributions methods (#128)
+- refine the example for segmentation problem type (#124)
+
+### 🩺 Bug Fixes
+
+- Moved the postprocessing to the ExplainableModel (#123)
+- Corrected visualisers (#118)
+- Corrected Attributes Functionalities (#117)
+- changelog.md and release notes do not contain all commits due to the commit processor not parsing multi-line commit messages. (#116)
+
+### 🔨 Features
+
+- Updated release and docs GitHub actions to trigger when GitHub tag is pushed (#119)
+
 ## v0.1.0 (2024-10-29)
 
 ### 🛎️ Chores

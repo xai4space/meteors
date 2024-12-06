@@ -1,6 +1,6 @@
 [project]
 name = "meteors"
-version = "0.1.0"
+version = "0.1.2"
 authors = [
   { name="Tymoteusz Kwiecinski", email="tymoteuszkwiecinski@gmail.com" },
 ]
@@ -58,6 +58,7 @@ dev-dependencies = [
     "ipykernel>=6.29.5",
     "torchvision>=0.17.2",
     "gitpython>=3.1.43",
+    "segmentation_models_pytorch>=0.0.3",
 ]
 
 [tool.mypy]
