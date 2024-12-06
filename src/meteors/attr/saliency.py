@@ -5,10 +5,10 @@ from typing import Any
 import torch
 from captum.attr import Saliency as CaptumSaliency
 
-from meteors.models import ExplainableModel
+from .attributes import HSIAttributes
+from .explainer import Explainer
 from meteors import HSI
-from meteors.attr import HSIAttributes, Explainer
-
+from meteors.models import ExplainableModel
 from meteors.exceptions import HSIAttributesError
 
 ## VALIDATORS
