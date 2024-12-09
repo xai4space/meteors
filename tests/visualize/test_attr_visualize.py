@@ -8,7 +8,7 @@ from matplotlib.axes import Axes
 
 
 from meteors import HSI
-from meteors.attr import HSISpatialAttributes, HSISpectralAttributes, HSIAttributes, IntegratedGradients
+from meteors.attr import HSIAttributesSpatial, HSIAttributesSpectral, HSIAttributes, IntegratedGradients
 from meteors.visualize import attr_visualize as visualize
 from meteors.models import ExplainableModel
 
@@ -244,11 +244,11 @@ def test__merge_band_names_segments():
 
 
 def test_visualize_spatial_attributes():
-    # Create an HSISpatialAttributes object
+    # Create an HSIAttributesSpatial object
     hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
     attributes = torch.ones_like(hsi.image)
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    hsi_attributes_spatial = HSISpatialAttributes(hsi=hsi, mask=segmentation_mask, attributes=attributes)
+    hsi_attributes_spatial = HSIAttributesSpatial(hsi=hsi, mask=segmentation_mask, attributes=attributes)
 
     # Call the visualize_spatial_attributes function
     fig, ax = visualize.visualize_spatial_attributes(hsi_attributes_spatial)
@@ -312,11 +312,11 @@ def test_visualize_spatial_attributes():
 
 
 def test_visualize_empty_spatial_attributes():
-    # Create an HSISpatialAttributes object
+    # Create an HSIAttributesSpatial object
     hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
     attributes = torch.zeros_like(hsi.image)
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    hsi_attributes_spatial = HSISpatialAttributes(hsi=hsi, mask=segmentation_mask, attributes=attributes)
+    hsi_attributes_spatial = HSIAttributesSpatial(hsi=hsi, mask=segmentation_mask, attributes=attributes)
 
     # Call the visualize_spatial_attributes function
     fig, ax = visualize.visualize_spatial_attributes(hsi_attributes_spatial)
@@ -347,8 +347,8 @@ def test_validate_consistent_band_and_wavelengths():
     band_mask[1] = 2
 
     spectral_attributes = [
-        HSISpectralAttributes(hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask),
-        HSISpectralAttributes(hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask),
+        HSIAttributesSpectral(hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask),
+        HSIAttributesSpectral(hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask),
     ]
 
     # No exception should be raised
@@ -357,8 +357,8 @@ def test_validate_consistent_band_and_wavelengths():
     # Test case 2: Inconsistent band names
     inconsistent_band_names = {"R": 0, "B": 1, "G": 2}
     spectral_attributes = [
-        HSISpectralAttributes(hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask),
-        HSISpectralAttributes(hsi=hsi, attributes=attributes, band_names=inconsistent_band_names, mask=band_mask),
+        HSIAttributesSpectral(hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask),
+        HSIAttributesSpectral(hsi=hsi, attributes=attributes, band_names=inconsistent_band_names, mask=band_mask),
     ]
 
     # ValueError should be raised for inconsistent band names
@@ -374,8 +374,8 @@ def test_validate_consistent_band_and_wavelengths():
     inconsistent_mask[0] = 1
     inconsistent_mask[1] = 2
     spectral_attributes = [
-        HSISpectralAttributes(hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask),
-        HSISpectralAttributes(
+        HSIAttributesSpectral(hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask),
+        HSIAttributesSpectral(
             hsi=HSI(image=inconsistent_hsi, wavelengths=inconsistent_wavelengths),  # noqa: E501
             attributes=torch.ones_like(inconsistent_hsi),
             band_names=band_names,
@@ -427,7 +427,7 @@ def test_visualize_spectral_attributes_by_waveband():
     band_mask[0] = 1
     band_mask[1] = 2
 
-    spectral_attributes = HSISpectralAttributes(
+    spectral_attributes = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         band_names=band_names,
@@ -462,13 +462,13 @@ def test_visualize_spectral_attributes_by_waveband():
 
     # Test multiple spectral attributes
     spectral_attributes = [
-        HSISpectralAttributes(
+        HSIAttributesSpectral(
             hsi=HSI(image=image, wavelengths=wavelengths_main),
             attributes=attribution_map,
             band_names=band_names,
             mask=band_mask,
         ),
-        HSISpectralAttributes(
+        HSIAttributesSpectral(
             hsi=HSI(image=image, wavelengths=wavelengths_main),
             attributes=attribution_map,
             band_names=band_names,
@@ -506,7 +506,7 @@ def test_visualize_spectral_attributes_by_waveband():
     with_not_included_band_names = {"not_included": 0, "R": 1, "G": 2, "B": 3}
     with_not_included_band_mask = band_mask.clone()
     with_not_included_band_mask[3] = 3
-    spectral_attributes = HSISpectralAttributes(
+    spectral_attributes = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         band_names=with_not_included_band_names,
@@ -603,7 +603,7 @@ def test_visualize_spectral_attributes_by_magnitude():
     band_mask[0] = 1
     band_mask[1] = 2
 
-    spectral_attributes = HSISpectralAttributes(
+    spectral_attributes = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         band_names=band_names,
@@ -653,13 +653,13 @@ def test_visualize_spectral_attributes_by_magnitude():
 
     # Test multiple spectral attributes
     spectral_attributes = [
-        HSISpectralAttributes(
+        HSIAttributesSpectral(
             hsi=HSI(image=image, wavelengths=wavelengths_main),
             attributes=attribution_map,
             band_names=band_names,
             mask=band_mask,
         ),
-        HSISpectralAttributes(
+        HSIAttributesSpectral(
             hsi=HSI(image=image, wavelengths=wavelengths_main),
             attributes=attribution_map,
             band_names=band_names,
@@ -711,7 +711,7 @@ def test_visualize_spectral_attributes_by_magnitude():
     # Test show_not_included True
     with_not_included_band_names = {"not_included": 0, "R": 1, "G": 2, "B": 3}
     band_mask[3] = 3
-    spectral_attributes = HSISpectralAttributes(
+    spectral_attributes = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         band_names=with_not_included_band_names,
@@ -729,7 +729,7 @@ def test_visualize_spectral_attributes_by_magnitude():
     with_not_included_band_names = {"R": 0, "G": 1, "B": 2, "not_included": 3}
     with_not_included_band_mask = band_mask.clone()
     with_not_included_band_mask[3] = 3
-    spectral_attributes = HSISpectralAttributes(
+    spectral_attributes = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         band_names=with_not_included_band_names,
@@ -759,7 +759,7 @@ def test_visualize_spectral_attributes():
     band_mask[0] = 1
     band_mask[1] = 2
 
-    spectral_attributes = HSISpectralAttributes(
+    spectral_attributes = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         band_names=band_names,
@@ -791,7 +791,7 @@ def test_visualize_spectral_attributes():
 
     band_names = {("R", "T"): 0, "G": 1, "B": 2}
 
-    spectral_attributes = HSISpectralAttributes(
+    spectral_attributes = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         score=0.2,
@@ -873,7 +873,7 @@ def test_visualize_spectral_attributes_global():
     band_mask[0] = 1
     band_mask[1] = 2
 
-    spectral_attributes_1 = HSISpectralAttributes(
+    spectral_attributes_1 = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         score=score,
@@ -881,7 +881,7 @@ def test_visualize_spectral_attributes_global():
         mask=band_mask,
     )
 
-    spectral_attributes_2 = HSISpectralAttributes(
+    spectral_attributes_2 = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         score=score,
@@ -968,7 +968,7 @@ def test_visualize_spectral_empty_attributes():
     band_mask[0] = 1
     band_mask[1] = 2
 
-    spectral_attributes = HSISpectralAttributes(
+    spectral_attributes = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         band_names=band_names,
@@ -1002,12 +1002,12 @@ def test_visualize_spectral_empty_attributes():
 
 
 def test_visualize_spatial_aggregated_attributes():
-    # Create an HSISpatialAttributes object
+    # Create an HSIAttributesSpatial object
     hsi = HSI(image=torch.ones((len(wavelengths_main), 240, 240)), wavelengths=wavelengths_main)
     attributes = torch.ones_like(hsi.image)
     score = 0.5
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    hsi_attributes_spatial = HSISpatialAttributes(hsi=hsi, mask=segmentation_mask, attributes=attributes, score=score)
+    hsi_attributes_spatial = HSIAttributesSpatial(hsi=hsi, mask=segmentation_mask, attributes=attributes, score=score)
     new_segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
     new_segmentation_mask[0, 0, 0] = 0
 
@@ -1128,7 +1128,7 @@ def test_visualize_spectral_aggregated_attributes():
     band_mask[0] = 1
     band_mask[1] = 2
 
-    spectral_attributes = HSISpectralAttributes(
+    spectral_attributes = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         score=score,
@@ -1229,7 +1229,7 @@ def test_visualize_spectral_aggregated_attributes():
     del ax, fig
 
     # Test multiple spectral attributes
-    spectral_attributes_new = HSISpectralAttributes(
+    spectral_attributes_new = HSIAttributesSpectral(
         hsi=HSI(image=image, wavelengths=wavelengths_main),
         attributes=attribution_map,
         score=score,
