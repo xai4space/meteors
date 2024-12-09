@@ -15,7 +15,7 @@ with warnings.catch_warnings():
     import spyndex
 
 
-from .attributes import HSISpatialAttributes, HSISpectralAttributes, ensure_torch_tensor
+from .attributes import HSIAttributesSpatial, HSIAttributesSpectral, ensure_torch_tensor
 from .explainer import Explainer
 from .lime_base import Lime as LimeBase
 from meteors import HSI
@@ -973,7 +973,7 @@ class Lime(Explainer):
         attribution_type: Literal["spatial", "spectral"] | None = None,
         additional_forward_args: Any = None,
         **kwargs: Any,
-    ) -> HSISpatialAttributes | HSISpectralAttributes | list[HSISpatialAttributes] | list[HSISpectralAttributes]:
+    ) -> HSIAttributesSpatial | HSIAttributesSpectral | list[HSIAttributesSpatial] | list[HSIAttributesSpectral]:
         """A wrapper function to attribute the image using the LIME method. It executes either the
         `get_spatial_attributes` or `get_spectral_attributes` method based on the provided `attribution_type`. For more
         detailed description of the methods, please refer to the respective method documentation.
@@ -981,7 +981,7 @@ class Lime(Explainer):
         Args:
             hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
                 If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
-                The output will be a list of HSISpatialAttributes or HSISpectralAttributes objects.
+                The output will be a list of HSIAttributesSpatial or HSIAttributesSpectral objects.
             target (list[int] | int | None, optional): target class index for computing the attributions. If None,
                 methods assume that the output has only one class. If the output has multiple classes, the target index
                 must be provided. For multiple input images, a list of target indices can be provided, one for each
@@ -998,7 +998,7 @@ class Lime(Explainer):
             kwargs (Any): Additional keyword arguments for the LIME method.
 
         Returns:
-            HSISpectralAttributes | HSISpatialAttributes | list[HSISpectralAttributes | HSISpatialAttributes]:
+            HSIAttributesSpectral | HSIAttributesSpatial | list[HSIAttributesSpectral | HSIAttributesSpatial]:
                 The computed attributions Spectral or Spatial for the input hyperspectral image(s).
                 if a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
 
@@ -1045,7 +1045,7 @@ class Lime(Explainer):
         segmentation_method: Literal["slic", "patch"] = "slic",
         additional_forward_args: Any = None,
         **segmentation_method_params: Any,
-    ) -> list[HSISpatialAttributes] | HSISpatialAttributes:
+    ) -> list[HSIAttributesSpatial] | HSIAttributesSpatial:
         """
         Get spatial attributes of an hsi image using the LIME method. Based on the provided hsi and segmentation mask
         LIME method attributes the `superpixels` provided by the segmentation mask. Please refer to the original paper
@@ -1053,13 +1053,13 @@ class Lime(Explainer):
         `https://christophm.github.io/interpretable-ml-book/lime.html`.
 
         This function attributes the hyperspectral image using the LIME (Local Interpretable Model-Agnostic Explanations)
-        method for spatial data. It returns an `HSISpatialAttributes` object that contains the hyperspectral image,,
+        method for spatial data. It returns an `HSIAttributesSpatial` object that contains the hyperspectral image,,
         the attributions, the segmentation mask, and the score of the interpretable model used for the explanation.
 
         Args:
             hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
                 If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
-                The output will be a list of HSISpatialAttributes objects.
+                The output will be a list of HSIAttributesSpatial objects.
             segmentation_mask (np.ndarray | torch.Tensor | list[np.ndarray | torch.Tensor] | None, optional):
                 A segmentation mask according to which the attribution should be performed.
                 The segmentation mask should have a 2D or 3D shape, which can be broadcastable to the shape of the
@@ -1089,7 +1089,7 @@ class Lime(Explainer):
             **segmentation_method_params (Any): Additional parameters for the segmentation method.
 
         Returns:
-            HSISpatialAttributes | list[HSISpatialAttributes]: An object containing the image, the attributions,
+            HSIAttributesSpatial | list[HSIAttributesSpatial]: An object containing the image, the attributions,
                 the segmentation mask, and the score of the interpretable model used for the explanation.
 
         Raises:
@@ -1175,7 +1175,7 @@ class Lime(Explainer):
 
         try:
             spatial_attribution = [
-                HSISpatialAttributes(
+                HSIAttributesSpatial(
                     hsi=hsi_img,
                     attributes=lime_attr,
                     mask=segmentation_mask[idx].expand_as(hsi_img.image),
@@ -1199,20 +1199,20 @@ class Lime(Explainer):
         verbose: bool = False,
         additional_forward_args: Any = None,
         band_names: list[str | list[str]] | dict[tuple[str, ...] | str, int] | None = None,
-    ) -> HSISpectralAttributes | list[HSISpectralAttributes]:
+    ) -> HSIAttributesSpectral | list[HSIAttributesSpectral]:
         """
         Attributes the hsi image using LIME method for spectral data. Based on the provided hsi and band mask, the LIME
         method attributes the hsi based on `superbands` (clustered bands) provided by the band mask.
         Please refer to the original paper `https://arxiv.org/abs/1602.04938` for more details or to
         Christoph Molnar's book `https://christophm.github.io/interpretable-ml-book/lime.html`.
 
-        The function returns a HSISpectralAttributes object that contains the image, the attributions, the band mask,
+        The function returns a HSIAttributesSpectral object that contains the image, the attributions, the band mask,
         the band names, and the score of the interpretable model used for the explanation.
 
         Args:
             hsi (list[HSI] | HSI): Input hyperspectral image(s) for which the attributions are to be computed.
                 If a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
-                The output will be a list of HSISpatialAttributes objects.
+                The output will be a list of HSIAttributesSpatial objects.
             band_mask (np.ndarray | torch.Tensor | list[np.ndarray | torch.Tensor] | None, optional): Band mask that
                 is used for the spectral attribution. The band mask should have a 1D or 3D shape, which can be
                 broadcastable to the shape of the input image. The only dimensions on which the image and the mask shapes
@@ -1240,7 +1240,7 @@ class Lime(Explainer):
             band_names (list[str] | dict[str | tuple[str, ...], int] | None, optional): Band names. Defaults to None.
 
         Returns:
-            HSISpectralAttributes | list[HSISpectralAttributes]: An object containing the image, the attributions,
+            HSIAttributesSpectral | list[HSIAttributesSpectral]: An object containing the image, the attributions,
                 the band mask, the band names, and the score of the interpretable model used for the explanation.
 
         Raises:
@@ -1338,7 +1338,7 @@ class Lime(Explainer):
 
         try:
             spectral_attribution = [
-                HSISpectralAttributes(
+                HSIAttributesSpectral(
                     hsi=hsi_img,
                     attributes=lime_attr,
                     mask=band_mask[idx].expand_as(hsi_img.image),

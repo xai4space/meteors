@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
 from meteors import HSI
-from meteors.attr import HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
+from meteors.attr import HSIAttributes, HSIAttributesSpatial, HSIAttributesSpectral
 import meteors.visualize as visualize
 
 # Temporary solution for wavelengths
@@ -141,9 +141,9 @@ def test_visualize_hsi_with_hsi_attributes_object():
     # Check if the axes object is returned
     assert isinstance(ax, Axes)
 
-    # Create an HSISpatialAttributes object
+    # Create an HSIAttributesSpatial object
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    hsi_attributes_spatial = HSISpatialAttributes(
+    hsi_attributes_spatial = HSIAttributesSpatial(
         hsi=hsi, mask=segmentation_mask, attributes=attributes, score=score, attribution_method="Lime"
     )
     # Call the visualize_image function
@@ -152,12 +152,12 @@ def test_visualize_hsi_with_hsi_attributes_object():
     # Check if the axes object is returned
     assert isinstance(ax, Axes)
 
-    # Create an HSISpectralAttributes object
+    # Create an HSIAttributesSpectral object
     band_names = {"R": 0, "G": 1, "B": 2}
     band_mask = torch.zeros_like(hsi.image)
     band_mask[0] = 1
     band_mask[1] = 2
-    hsi_attributes_spectral = HSISpectralAttributes(
+    hsi_attributes_spectral = HSIAttributesSpectral(
         hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask
     )
 
@@ -197,21 +197,21 @@ def test_visualize_hsi_with_hsi_attributes_object_and_ax():
     # Check if the same axes object is returned
     assert returned_ax is ax
 
-    # Create an HSISpatialAttributes object
+    # Create an HSIAttributesSpatial object
     segmentation_mask = torch.ones((len(wavelengths_main), 240, 240))
-    hsi_attributes_spatial = HSISpatialAttributes(hsi=hsi, mask=segmentation_mask, attributes=attributes)
+    hsi_attributes_spatial = HSIAttributesSpatial(hsi=hsi, mask=segmentation_mask, attributes=attributes)
     # Call the visualize_image function
     returned_ax = visualize.visualize_hsi(hsi_attributes_spatial, ax)
 
     # Check if the same axes object is returned
     assert returned_ax is ax
 
-    # Create an HSISpectralAttributes object
+    # Create an HSIAttributesSpectral object
     band_names = {"R": 0, "G": 1, "B": 2}
     band_mask = torch.zeros_like(hsi.image)
     band_mask[0] = 1
     band_mask[1] = 2
-    hsi_attributes_spectral = HSISpectralAttributes(
+    hsi_attributes_spectral = HSIAttributesSpectral(
         hsi=hsi, attributes=attributes, band_names=band_names, mask=band_mask
     )
     # Call the visualize_hsi function

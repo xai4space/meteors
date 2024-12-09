@@ -59,14 +59,14 @@ The architecture of the package can be seen on the UML diagram:
         - change_orientation
         - to
 
-::: src.meteors.attr.attributes.HSISpatialAttributes
+::: src.meteors.attr.attributes.HSIAttributesSpatial
     options:
       heading_level: 3
       show_bases: true
       show_root_heading: true
       show_root_full_path: false
 
-::: src.meteors.attr.attributes.HSISpectralAttributes
+::: src.meteors.attr.attributes.HSIAttributesSpectral
     options:
       heading_level: 3
       show_bases: true

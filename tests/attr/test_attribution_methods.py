@@ -12,8 +12,8 @@ from meteors.attr import (
     Saliency,
     InputXGradient,
     Occlusion,
-    HSISpatialAttributes,
-    HSISpectralAttributes,
+    HSIAttributesSpatial,
+    HSIAttributesSpectral,
 )
 from meteors import HSI
 
@@ -288,7 +288,7 @@ def test_occlusion(explainable_toy_model):
 
     attributions = occlusion.get_spatial_attributes(image, sliding_window_shapes=(2, 2), strides=(2, 2))
     assert attributions.attributes.shape == image.image.shape
-    assert isinstance(attributions, HSISpatialAttributes)
+    assert isinstance(attributions, HSIAttributesSpatial)
 
     attributions = occlusion.get_spatial_attributes(image, sliding_window_shapes=2, strides=2)
     assert attributions.attributes.shape == image.image.shape
@@ -337,7 +337,7 @@ def test_occlusion(explainable_toy_model):
 
     attributions = occlusion.get_spectral_attributes(image, sliding_window_shapes=1, strides=1)
     assert attributions.attributes.shape == image.image.shape
-    assert isinstance(attributions, HSISpectralAttributes)
+    assert isinstance(attributions, HSIAttributesSpectral)
 
     attributions = occlusion.get_spectral_attributes(image, sliding_window_shapes=(1,), strides=(1,))
     assert attributions.attributes.shape == image.image.shape
