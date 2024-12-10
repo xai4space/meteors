@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from .explanation import SHAPExplanation
+from .explanation import SHAPExplanation, ensure_data_type_and_reshape
 
 from meteors.models import ExplainableModel
 
@@ -47,22 +47,7 @@ class HyperSHAP:
             raise ValueError(f"Could not initialize the explainer: {e}")
 
     def explain(self, data: np.ndarray | pd.DataFrame | torch.tensor) -> SHAPExplanation:
-        if isinstance(data, pd.Series):
-            data = data.to_frame().T
-        elif isinstance(data, torch.Tensor):
-            data = data.numpy()
-
-        if isinstance(data, pd.DataFrame):
-            data = data.to_numpy()
-
-        try:
-            data = np.array(data)
-            data.astype(np.float32)
-        except Exception as e:
-            raise TypeError(
-                f"Failed to parse the data of type {type(data)} into the numeric np.ndarray, pd.DataFrame or torch.Tensor: {e}"
-            )
-        data = np.array(data)
+        data = ensure_data_type_and_reshape(data)
 
         if not self._explainer:
             raise ValueError("The explainer has not been initialized")
