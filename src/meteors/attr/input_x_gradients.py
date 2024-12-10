@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-
 import torch
 from captum.attr import InputXGradient as CaptumInputXGradient
-from meteors.models import ExplainableModel
+
+from .attributes import HSIAttributes
+from .explainer import Explainer
 from meteors import HSI
-from meteors.attr import HSIAttributes, Explainer
+from meteors.models import ExplainableModel
 from meteors.exceptions import HSIAttributesError
 
 
@@ -34,6 +35,7 @@ class InputXGradient(Explainer):
         hsi: list[HSI] | HSI,
         target: list[int] | int | None = None,
         additional_forward_args: Any = None,
+        keep_gradient: bool = False,
     ) -> HSIAttributes | list[HSIAttributes]:
         """
         Method for generating attributions using the InputXGradient method.
@@ -52,6 +54,10 @@ class InputXGradient(Explainer):
                 containing multiple additional arguments including tensors or any arbitrary python types.
                 These arguments are provided to forward_func in order following the arguments in inputs.
                 Note that attributions are not computed with respect to these arguments. Default: None
+            keep_gradient (bool, optional): Indicates whether to keep the gradient tensors in memory. By the default,
+                the gradient tensors are removed from the computation graph after the attributions are computed, due
+                to memory efficiency. If the gradient tensors are needed for further processing, this parameter should
+                be set to True. Default: False
 
         Returns:
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
@@ -88,7 +94,11 @@ class InputXGradient(Explainer):
 
         try:
             attributes = [
-                HSIAttributes(hsi=hsi_image, attributes=attribution, attribution_method=self.get_name())
+                HSIAttributes(
+                    hsi=hsi_image,
+                    attributes=attribution if keep_gradient else attribution.detach(),
+                    attribution_method=self.get_name(),
+                )
                 for hsi_image, attribution in zip(hsi, gradient_attribution)
             ]
         except Exception as e:

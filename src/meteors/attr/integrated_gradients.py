@@ -5,12 +5,10 @@ from typing import Literal, Any
 import torch
 from captum.attr import IntegratedGradients as CaptumIntegratedGradients
 
-from meteors.models import ExplainableModel
+from .attributes import HSIAttributes
+from .explainer import Explainer, validate_and_transform_baseline
 from meteors import HSI
-from meteors.attr import HSIAttributes, Explainer
-
-from meteors.attr.explainer import validate_and_transform_baseline
-
+from meteors.models import ExplainableModel
 from meteors.exceptions import HSIAttributesError
 
 
@@ -54,6 +52,7 @@ class IntegratedGradients(Explainer):
             "riemann_right", "riemann_left", "riemann_middle", "riemann_trapezoid", "gausslegendre"
         ] = "gausslegendre",
         return_convergence_delta: bool = False,
+        keep_gradient: bool = False,
     ) -> HSIAttributes | list[HSIAttributes]:
         """
         Method for generating attributions using the Integrated Gradients method.
@@ -94,6 +93,10 @@ class IntegratedGradients(Explainer):
             return_convergence_delta (bool, optional): Indicates whether to return convergence delta or not.
                 If return_convergence_delta is set to True convergence delta will be returned in a tuple following
                 attributions. Default: False
+            keep_gradient (bool, optional): Indicates whether to keep the gradient tensors in memory. By the default,
+                the gradient tensors are removed from the computation graph after the attributions are computed, due
+                to memory efficiency. If the gradient tensors are needed for further processing, this parameter should
+                be set to True. Default: False
 
         Returns:
             HSIAttributes | list[HSIAttributes]: The computed attributions for the input hyperspectral image(s).
@@ -156,7 +159,12 @@ class IntegratedGradients(Explainer):
 
         try:
             attributes = [
-                HSIAttributes(hsi=hsi_image, attributes=attribution, score=error, attribution_method=self.get_name())
+                HSIAttributes(
+                    hsi=hsi_image,
+                    attributes=attribution if keep_gradient else attribution.detach(),
+                    score=error,
+                    attribution_method=self.get_name(),
+                )
                 for hsi_image, attribution, error in zip(hsi, attributions, approximation_error)
             ]
         except Exception as e:

@@ -5,14 +5,12 @@ from abc import ABC
 from loguru import logger
 from functools import cached_property
 
+import torch
 from captum.attr import Attribution
 
-
-import torch
-
-from meteors.models import ExplainableModel
+from .attributes import HSIAttributes
 from meteors import HSI
-from meteors.attr import HSIAttributes
+from meteors.models import ExplainableModel
 from meteors.exceptions import ShapeMismatchError
 
 

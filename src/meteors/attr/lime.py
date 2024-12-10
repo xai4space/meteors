@@ -15,13 +15,12 @@ with warnings.catch_warnings():
     import spyndex
 
 
+from .attributes import HSISpatialAttributes, HSISpectralAttributes, ensure_torch_tensor
+from .explainer import Explainer
+from .lime_base import Lime as LimeBase
 from meteors import HSI
-from meteors.attr.lime_base import Lime as LimeBase
 from meteors.models import ExplainableModel, InterpretableModel, SkLearnLasso
 from meteors.utils import torch_dtype_to_python_dtype, change_dtype_of_list, expand_spectral_mask
-from meteors.attr import Explainer
-from meteors.attr import HSISpatialAttributes, HSISpectralAttributes
-from meteors.attr.attributes import ensure_torch_tensor
 from meteors.exceptions import (
     ShapeMismatchError,
     BandSelectionError,
