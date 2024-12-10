@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from .explanation import SHAPExplanation, ensure_data_type_and_reshape
-
+from .explainer import SHAPExplanation, ensure_data_type_and_reshape
 from meteors.models import ExplainableModel
 
 from typing import Literal
@@ -15,6 +14,16 @@ AVAILABLE_SHAP_EXPLAINERS = ["exact", "tree", "kernel", "linear"]
 
 
 class HyperSHAP:
+    """
+    HyperSHAP is a class that provides [SHAP (SHapley Additive exPlanations)](https://arxiv.org/abs/1705.07874)
+    explanations for a given model, based on [shap package](https://github.com/shap/shap?tab=readme-ov-file)
+
+    Attributes:
+        explainable_model (ExplainableModel): The model to be explained.
+        explainer_type (str): The type of SHAP explainer to use. Options are "exact", "tree", "kernel", "linear".
+        _explainer: The SHAP explainer instance.
+    """
+
     def __init__(
         self,
         callable: ExplainableModel,
@@ -47,6 +56,20 @@ class HyperSHAP:
             raise ValueError(f"Could not initialize the explainer: {e}")
 
     def explain(self, data: np.ndarray | pd.DataFrame | torch.tensor) -> SHAPExplanation:
+        """
+        Generate SHAP explanations for the given data.
+
+        Args:
+            data (np.ndarray | pd.DataFrame | torch.Tensor): The input data for which SHAP explanations
+            are to be generated. It can be a NumPy array, a pandas DataFrame, or a PyTorch tensor.
+
+        Raises:
+            TypeError: If the input data cannot be converted to a numeric NumPy array.
+            ValueError: If the explainer has not been initialized or if SHAP explanations could not be generated.
+
+        Returns:
+            SHAPExplanation: An object containing the SHAP explanations for the input data.
+        """
         data = ensure_data_type_and_reshape(data)
 
         if not self._explainer:

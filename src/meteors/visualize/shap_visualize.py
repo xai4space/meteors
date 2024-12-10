@@ -18,22 +18,27 @@ from loguru import logger
 def validate_observation_index(
     observation_index: int | None, explanation: SHAPExplanation, require_local_explanation: bool = False, plot_type=None
 ) -> int | None:
-    """function validates the observation index for the explanation.
+    """Function validates the observation index for the explanation.
     It checks if the observation index is an integer or None and within the bounds of the explanation.
-    In case the single observation is required (local explanation), the function checks if the selected observation can be determined (the input explanation is also local).
+    In case the single observation is required (local explanation), the function checks if the selected observation can
+    be determined (the input explanation is also local).
 
-    In case the single observation is not required (global explanation), the function allows for None as the observation index, which means that the explanation is for all observations.
+    In case the single observation is not required (global explanation), the function allows for None as the observation
+    index, which means that the explanation is for all observations.
 
     Args:
         observation_index (int | None): a selected observation index. Defaults to None.
         explanation (SHAPExplanation): An explanation object, from which the observations will be selected.
-        require_local_explanation (bool, optional): A flag that determines whether the plot function accepts global explanations. Defaults to False.
-        plot_type (str, optional): The type of the plot. Defaults to None. Used to print the customized ValueError message.
+        require_local_explanation (bool, optional): A flag that determines whether the plot function accepts global
+            explanations. Defaults to False.
+        plot_type (str, optional): The type of the plot.
+            Defaults to None. Used to print the customized ValueError message.
 
     Raises:
         TypeError: In case the observation index is not an integer or None.
         ValueError: Whether the integer observation index is out of bounds.
-        ValueError: if the observation index is not specified, but explanation contains multiple observations and the plot supports only local explanations.
+        ValueError: if the observation index is not specified,
+            but explanation contains multiple observations and the plot supports only local explanations.
 
     Returns:
         int | None: parsed observation index.
@@ -66,20 +71,23 @@ def validate_observation_index(
 def validate_target(
     target: int | None, explanation: SHAPExplanation, require_single_target: bool = False, plot_type: str | None = None
 ) -> int | None:
-    """function validates the target value for the explanation.
+    """Function validates the target value for the explanation.
     It checks if the target is an integer or None and within the bounds of the explanation.
-    In case the plot requires a single target value, the function checks if the target is specified and if the explanation contains multiple targets.
+    In case the plot requires a single target value, the function checks if the target is specified and
+    if the explanation contains multiple targets.
 
     Args:
         target (int | None): a target value index. Defaults to None.
         explanation (SHAPExplanation): explanation object, from which the target value will be selected.
-        require_single_target (bool, optional): If the plot requires single target output from the model. Defaults to False.
+        require_single_target (bool, optional): If the plot requires single target output from the model.
+            Defaults to False.
         plot_type (str, optional): A type of the plot. Defaults to None.
 
     Raises:
         TypeError: If the target is not an integer or None.
         ValueError: If the target index is out of bounds.
-        ValueError: If target value is not passed, the model outputs multiple values and the plot requires a single target value.
+        ValueError: If target value is not passed,
+            the model outputs multiple values and the plot requires a single target value.
 
     Returns:
         int | None: the preprocessed target index
@@ -107,7 +115,7 @@ def validate_target(
 
 
 def validate_explanations_and_explainer_type(explainer: HyperSHAP, explanation: SHAPExplanation) -> None:
-    """a simple function that validates the explainer and explanation types.
+    """A simple function that validates the explainer and explanation types.
 
     Args:
         explainer (HyperSHAP): an explainer object (HyperSHAP).
@@ -126,16 +134,20 @@ def validate_explanations_and_explainer_type(explainer: HyperSHAP, explanation: 
 def validate_mapping_dict(
     mapping: dict[float | int | str, list[int] | int], explanation_values: np.ndarray, wavelengths: bool = True
 ) -> dict[float | str, list[int]]:
-    """validates the mapping dictionary. The function checks if the fields of the dictionary are in the correct format, coercing it to the correct types if possible.
-    Later, it checks if all the features are used in the mapping, and returns the parsed dictionary.
+    """
+    Validates the mapping dictionary. The function checks if the fields of the dictionary are in the correct format,
+    coercing it to the correct types if possible. Later, it checks if all the features are used in the mapping,
+    and returns the parsed dictionary.
 
 
     Args:
-        mapping (dict[float | int | str, list[int] | int]): Wavelengths mapping and transformation mapping should be in a format: {band_wavelength | transformation_function_name: [feature_index, ...] | single_feature_index, ...}.
-        Transformation function name should be a string.
+        mapping (dict[float | int | str, list[int] | int]): Transformation function name should be a string.
+            Wavelengths mapping and transformation mapping should be in a format:
+            {band_wavelength | transformation_function_name: [feature_index, ...] | single_feature_index, ...}.
         In case the wavelength is a string, there will be an attempt to convert it to a float.
         explanation_values (np.ndarray): explanation values for the model from the shap.Explanations object.
-        wavelengths (bool, optional): If True, the function will proceed with the check for wavelengths mapping. Otherwise it will perform check for feature aggregation. Defaults to True.
+        wavelengths (bool, optional): If True, the function will proceed with the check for wavelengths mapping.
+            Otherwise it will perform check for feature aggregation. Defaults to True.
 
     Raises:
         TypeError: Raised if mappings or explanation values are not in the correct format.
@@ -200,15 +212,21 @@ def force(
     use_pyplot: bool = False,
     **kwargs,
 ) -> Figure | None:
-    """Visualize the given SHAP explanation using the force plot. The function utilizes the `shap.plots.force` function, which reference might be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.force.html
+    """Visualize the given SHAP explanation using the force plot. The function utilizes the `shap.plots.force` function,
+    which reference might be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.force.html
     Force plot works for local explanations.
 
     Args:
         explainer (HyperSHAP): A HyperSHAP explainer object used to generate the explanation.
-        explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package. This object contains the explanations for the model. It can contain both the local and global explanations.
-        target (int | None, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
-        observation_index (int | None, optional): An index of observation that should be locally explained. In case the passed explanation object is already local and contains data about only a single observation, this value could be also set to None. Defaults to None.
-        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to False.
+        explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package.
+            This object contains the explanations for the model. It can contain both the local and global explanations.
+        target (int | None, optional): In case the explained model outputs multiple values,
+            this field specifies which of the outputs we want to explain. Defaults to None.
+        observation_index (int | None, optional): An index of observation that should be locally explained.
+            In case the passed explanation object is already local and contains data about only a single observation,
+            this value could be also set to None. Defaults to None.
+        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user.
+            If False, returns the figure and axes objects. Defaults to False.
 
 
     Returns:
@@ -248,16 +266,22 @@ def beeswarm(
     use_pyplot: bool = False,
     ax: Axes | None = None,
 ) -> Axes | None:
-    """Create a beeswarm plot for the given explanation. A reference for the plot might be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.beeswarm.html
+    """Create a beeswarm plot for the given explanation.
+    A reference for the plot might be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.beeswarm.html
 
 
     Args:
         explainer (HyperSHAP): A HyperSHAP explainer object used to generate the explanation.
-        explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package. This object contains the explanations for the model. It can contain both the local and global explanations.
-        target (int | None, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
-        observation_index (int | None, optional): An index of observation that should be locally explained. This plot supports also global explanations, so this value is not necessary and can be set to None.
-        In case the passed explanation object is already local and contains data about only a single observation, this value could be also set to None. Defaults to None.
-        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to False.
+        explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package.
+            This object contains the explanations for the model. It can contain both the local and global explanations.
+        target (int | None, optional): In case the explained model outputs multiple values,
+            this field specifies which of the outputs we want to explain. Defaults to None.
+        observation_index (int | None, optional): An index of observation that should be locally explained.
+            This plot supports also global explanations, so this value is not necessary and can be set to None.
+        In case the passed explanation object is already local and contains data about only a single observation,
+            this value could be also set to None. Defaults to None.
+        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user.
+            If False, returns the figure and axes objects. Defaults to False.
         ax (matplotlib.axes.Axes, optional): If provided, the plot will be displayed on the passed axes.
 
     Returns:
@@ -275,7 +299,6 @@ def beeswarm(
     if observation_index is not None or explanation.is_local_explanation:
         raise ValueError("The beeswarm plot does not support local explanations.")
 
-    # fig = shap.plots.beeswarm(explanations, ax=ax, show=use_pyplot)
     # Current release of SHAP does not support passing ax parameter to the beeswarm plot, even though it is present in the documentation.
     return shap.plots.beeswarm(explanations, show=use_pyplot)
 
@@ -313,25 +336,49 @@ def dependence_plot(
     points where the feature's value was NaN.
 
     Args:
-        feature (int | str): A selected feature to be plotted. If this is an int it is the index of the feature to plot in the data provided. In case the string is provided, it could be either the name of the feature to plot, or it can have the form `rank(int)`, where `int` is the rank of the feature in the feature importance ranking.
+        feature (int | str): A selected feature to be plotted.
+            If this is an int it is the index of the feature to plot in the data provided.
+            In case the string is provided, it could be either the name of the feature to plot,
+            or it can have the form `rank(int)`, where `int` is the rank of the feature in the feature importance ranking.
         explainer (HyperSHAP): a HyperSHAP explainer object used to generate the explanation.
-        explanation (SHAPExplanation): an explanation object coming from the meteors package. This object contains the explanations for the model. It should contain the global explanation for the plot to make sense.
-        target (int, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
-        interaction_index (str, optional): The feature name or index of the feature to color by. Defaults to "auto", which means that the feature with the highest interaction value will be selected. If None, the plot will not be colored by any other feature importance. In case a feature index is provided, the interactions of the selected feature with the main feature will be calculated.
-        display_features (np.ndarray, pd.DataFrame, optional): An object used to decode the feature names in a more human-readable form. Defaults to None.
-        color (str, optional): The color of the dots on the plot used in case `interaction_index` is None. Defaults to "#1E88E5".
-        axis_color (str, optional): The color of the axis and labels. It makes the plot a little more readable. Defaults to "#333333".
-        cmap (str | matplotlib.colors.Colormap, optional): The name of the colormap or the matplotlib colormap to use. Defaults to None, which means that the default colormap will be used - matplotlib.colors.red_blue
+        explanation (SHAPExplanation): an explanation object coming from the meteors package.
+            This object contains the explanations for the model.
+            It should contain the global explanation for the plot to make sense.
+        target (int, optional): In case the explained model outputs multiple values,
+            this field specifies which of the outputs we want to explain. Defaults to None.
+        interaction_index (str, optional): The feature name or index of the feature to color by.
+            Defaults to "auto", which means that the feature with the highest interaction value will be selected.
+            If None, the plot will not be colored by any other feature importance. In case a feature index is provided,
+            the interactions of the selected feature with the main feature will be calculated.
+        display_features (np.ndarray, pd.DataFrame, optional): An object used to decode
+            the feature names in a more human-readable form. Defaults to None.
+        color (str, optional): The color of the dots on the plot used in case `interaction_index` is None.
+            Defaults to "#1E88E5".
+        axis_color (str, optional): The color of the axis and labels. It makes the plot a little more readable.
+            Defaults to "#333333".
+        cmap (str | matplotlib.colors.Colormap, optional): The name of the colormap or the matplotlib colormap to use.
+            Defaults to None, which means that the default colormap will be used - matplotlib.colors.red_blue
         dot_size (int, optional): The size of the dots on the plot. Defaults to 16.
-        x_jitter (float, optional): Adds random jitter to feature values. Should be in a (0, 1) range, where 0 means no jitter. Could improve plot's readability in case the selected feature is discrete. Defaults to 0.
+        x_jitter (float, optional): Adds random jitter to feature values. Should be in a (0, 1) range,
+            where 0 means no jitter. Could improve plot's readability in case the selected feature is discrete.
+            Defaults to 0.
         alpha (float, optional): The transparency of the dots on the plot. Defaults to 1.
         title (str, optional): The title of the plot. Defaults to None.
-        xmin (float | str, optional): Represents the lower bound of the plot's x-axis. It can also be a string of the format `percentile(float)` that percentile of the feature's value used on the x-axis. Defaults to None, which means that the minimum value of the feature will be used.
-        xmax (float | str, optional): Represents the upper bound of the plot's x-axis. It can also be a string of the format `percentile(float)` that percentile of the feature's value used on the x-axis. Defaults to None, which means that the maximum value of the feature will be used.
-        ymin (float | str, optional): Represents the lower bound of the plot's y-axis. It can also be a string of the format `percentile(float)` that percentile of the feature's value used on the y-axis. Defaults to None, which means that the minimum value of the feature will be used.
-        ymax (float | str, optional): Represents the upper bound of the plot's y-axis. It can also be a string of the format `percentile(float)` that percentile of the feature's value used on the y-axis. Defaults to None, which means that the maximum value of the feature will be used.
+        xmin (float | str, optional): Represents the lower bound of the plot's x-axis. It can also be a string of the
+            format `percentile(float)` that percentile of the feature's value used on the x-axis. Defaults to None,
+            which means that the minimum value of the feature will be used.
+        xmax (float | str, optional): Represents the upper bound of the plot's x-axis. It can also be a string of the
+            format `percentile(float)` that percentile of the feature's value used on the x-axis. Defaults to None,
+            which means that the maximum value of the feature will be used.
+        ymin (float | str, optional): Represents the lower bound of the plot's y-axis. It can also be a string of the
+            format `percentile(float)` that percentile of the feature's value used on the y-axis. Defaults to None,
+            which means that the minimum value of the feature will be used.
+        ymax (float | str, optional): Represents the upper bound of the plot's y-axis. It can also be a string of the
+            format `percentile(float)` that percentile of the feature's value used on the y-axis. Defaults to None,
+            which means that the maximum value of the feature will be used.
         ax (matplotlib.axes.Axes, optional): If provided, the plot will be displayed on the passed axes. Defaults to None.
-        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to False.
+        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user.
+            If False, returns the figure and axes objects. Defaults to False.
 
     Raises:
         ValueError: Raised in case the explanation is not global or is multitarget, and no target to explain is specified.
@@ -409,10 +456,15 @@ def waterfall(
 
     Args:
         explainer (HyperSHAP): A HyperSHAP explainer object used to generate the explanation.
-        explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package. This object contains the explanations for the model. It can contain both the local and global explanations.
-        target (int | None, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
-        observation_index (int | None, optional): An index of observation that should be locally explained. In case the passed explanation object is already local and contains data about only a single observation, this value could be also set to None. Defaults to None.
-        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to False.
+        explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package.
+            This object contains the explanations for the model. It can contain both the local and global explanations.
+        target (int | None, optional): In case the explained model outputs multiple values,
+            this field specifies which of the outputs we want to explain. Defaults to None.
+        observation_index (int | None, optional): An index of observation that should be locally explained.
+            In case the passed explanation object is already local and contains data about only a single observation,
+            this value could be also set to None. Defaults to None.
+        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user.
+            If False, returns the figure and axes objects. Defaults to False.
     Returns:
         Axes | None:
             If use_pyplot is False, returns the axes object.
@@ -446,14 +498,15 @@ def wavelengths_bar(
     ax: Axes | None = None,
 ):
     """
-    Creates the aggregated bar plot of SHAP values, grouped by the wavelengths and additionally by the transformation functions
+    Creates the aggregated bar plot of SHAP values, grouped by the wavelengths and additionally by the transformation functions.
     The function aggregates the values of the features by the wavelengths and creates a bar plot for the aggregated values.
 
     Args:
         explainer (HyperSHAP):
             A HyperSHAP explainer object used to generate the explanation.
         explanation (SHAPExplanation):
-            A SHAPExplanation coming from the meteors package. This object contains the explanations for the model. It can contain both the local and global explanations.
+            A SHAPExplanation coming from the meteors package. This object contains the explanations for the model.
+            It can contain both the local and global explanations.
         target (int | None, optional):
             Specifies which output to explain if the model has multiple outputs. Defaults to None.
         wavelengths_mapping (dict[str, list[int]] | None, optional):
@@ -461,15 +514,22 @@ def wavelengths_bar(
             `{"band_wavelength": [feature_index, ...], ...}`. Must be provided. Defaults to None.
         transformations_mapping (dict[str, list[int]] | None, optional):
             Maps transformation names to feature indices in the format:
-            `{"transformation_name": [feature_index, ...], ...}`. Can be used to more deeply analyze the model's behaviour by inspecting which transformations are the most important. Defaults to None.
+            `{"transformation_name": [feature_index, ...], ...}`. Can be used to more deeply analyze the model's behavior
+            by inspecting which transformations are the most important. Defaults to None.
         separate_features (bool, optional):
-            If True, includes dashed lines in the plot to separate contributions of different features within the same band. Defaults to True.
+            If True, includes dashed lines in the plot to separate contributions of different features within the same band.
+            Defaults to True.
         average_the_same_bands (bool, optional):
-            If True, averages the SHAP values of the features within the same band or the same transformation/band group if the transformation mapping is provided. Defaults to False.
+            If True, averages the SHAP values of the features within the same band or the same transformation/band group
+            if the transformation mapping is provided. Defaults to False.
         cmap (str | Colormap, optional):
-            The name of the colormap or the matplotlib colormap to use. Defaults to "tab20". Should be a valid matplotlib colormap name or a matplotlib colormap object, that allows for iteration over the colors. Number of colors should be no less than the number of transformations. Defaults to "tab20".
+            The name of the colormap or the matplotlib colormap to use. Defaults to "tab20".
+            Should be a valid matplotlib colormap name or a matplotlib colormap object,
+            that allows for iteration over the colors. Number of colors should be no less than the
+            number of transformations. Defaults to "tab20".
         use_pyplot (bool, optional):
-            If True, displays the plot immediately using `matplotlib.pyplot.show`. If the plot is shown, the function does not return the Axes object. Defaults to False.
+            If True, displays the plot immediately using `matplotlib.pyplot.show`.
+            If the plot is shown, the function does not return the Axes object. Defaults to False.
         ax (matplotlib.axes.Axes, optional):
             If provided, the plot is drawn on the specified axes. If None, a new axes is created. Defaults to None.
 
@@ -628,15 +688,21 @@ def bar(
     ax: Axes | None = None,
     **kwargs,
 ):
-    """Creates a bar plot for the given SHAP explanation. The function utilizes the `shap.plots.bar` function, which reference might be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.bar.html
+    """Creates a bar plot for the given SHAP explanation. The function utilizes the `shap.plots.bar` function,
+    which reference might be found here: https://shap.readthedocs.io/en/latest/generated/shap.plots.bar.html
 
     Args:
         explainer (HyperSHAP): A HyperSHAP explainer object used to generate the explanation.
-        explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package. This object contains the explanations for the model. It can contain both the local and global explanations.
-        target (int | None, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
-        observation_index (int | None, optional): An index of observation that should be locally explained. This plot supports also global explanations, so this value is not necessary and can be set to None.
-        In case the passed explanation object is already local and contains data about only a single observation, this value could be also set to None. Defaults to None.
-        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to False.
+        explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package.
+            This object contains the explanations for the model. It can contain both the local and global explanations.
+        target (int | None, optional): In case the explained model outputs multiple values,
+            this field specifies which of the outputs we want to explain. Defaults to None.
+        observation_index (int | None, optional): An index of observation that should be locally explained.
+            This plot supports also global explanations, so this value is not necessary and can be set to None.
+        In case the passed explanation object is already local and contains data about only a single observation,
+            this value could be also set to None. Defaults to None.
+        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user.
+            If False, returns the figure and axes objects. Defaults to False.
         ax (matplotlib.axes.Axes, optional): If provided, the plot will be displayed on the passed axes.
 
     Returns:
@@ -672,10 +738,14 @@ def heatmap(
 
     Args:
         explainer (HyperSHAP): A HyperSHAP explainer object used to generate the explanation.
-        explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package. This object contains the explanations for the model. It can contain both the local and global explanations.
-        target (int | None, optional): In case the explained model outputs multiple values, this field specifies which of the outputs we want to explain. Defaults to None.
-        In case the passed explanation object is already local and contains data about only a single observation, this value could be also set to None. Defaults to None.
-        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user. If False, returns the figure and axes objects. Defaults to False.
+        explanation (SHAPExplanation): A SHAPExplanation coming from the meteors package.
+            This object contains the explanations for the model. It can contain both the local and global explanations.
+        target (int | None, optional): In case the explained model outputs multiple values,
+            this field specifies which of the outputs we want to explain. Defaults to None.
+        In case the passed explanation object is already local and contains data about only a single observation,
+            this value could be also set to None. Defaults to None.
+        use_pyplot (bool, optional): If True, uses pyplot to display the image and shows it to the user.
+            If False, returns the figure and axes objects. Defaults to False.
         ax (matplotlib.axes.Axes, optional): If provided, the plot will be displayed on the passed axes.
 
     Returns:

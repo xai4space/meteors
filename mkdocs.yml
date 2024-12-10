@@ -51,6 +51,9 @@ extra:
     provider: mike
     default: latest
 
+markdown_extensions:
+  - pymdownx.details
+
 extra_css:
   - stylesheets/extra.css
 

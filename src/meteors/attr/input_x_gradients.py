@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-
 import torch
 from captum.attr import InputXGradient as CaptumInputXGradient
-from meteors.models import ExplainableModel
+
+from .attributes import HSIAttributes
+from .explainer import Explainer
 from meteors import HSI
-from meteors.attr import HSIAttributes, Explainer
+from meteors.models import ExplainableModel
 from meteors.exceptions import HSIAttributesError
 
 

@@ -11,7 +11,7 @@ from loguru import logger
 
 from meteors.exceptions import ShapeMismatchError
 
-import shap
+import shap as base_shap
 
 
 ###################################################################
@@ -21,11 +21,12 @@ import shap
 
 def ensure_data_type_and_reshape(data: np.ndarray | torch.Tensor | pd.DataFrame) -> np.ndarray:
     """
-    Ensures that the input data is converted to a NumPy ndarray. If the input is one dimensional, it reshapes it to a two-dimensional array.
+    Ensures that the input data is converted to a NumPy ndarray.
+    If the input is one dimensional, it reshapes it to a two-dimensional array.
 
     Args:
         data (np.ndarray | torch.Tensor | pd.DataFrame): The input data which can be a NumPy ndarray,
-                                                     a PyTorch tensor, or a Pandas DataFrame/Series. The data type should be numeric
+            a PyTorch tensor, or a Pandas DataFrame/Series. The data type should be numeric
 
     Returns:
         np.ndarray: The input data converted to a NumPy ndarray.
@@ -53,7 +54,7 @@ def ensure_data_type_and_reshape(data: np.ndarray | torch.Tensor | pd.DataFrame)
     return converted_data
 
 
-def add_dimension_to_local_explanation(explanation: shap.Explanation) -> shap.Explanation:
+def add_dimension_to_local_explanation(explanation: base_shap.Explanation) -> base_shap.Explanation:
     """
     Adds a new axis to the SHAP explanation for a local explanation
     """
@@ -75,7 +76,8 @@ class SHAPExplanation(BaseModel):
         data (np.ndarray): a numpy array containing the input data.
         explanations (np.ndarray): a numpy array containing the SHAP explanations.
         If the model outputs a single value, the shape of the array should be equal to the shape of the input data.
-        In case the model outputs multiple values, the last dimension of the array should be equal to the number of outputs and the rest of the dimensions should be equal to the input data.
+        In case the model outputs multiple values, the last dimension of the array should be equal to the number of
+        outputs and the rest of the dimensions should be equal to the input data.
         explanation_method (str): the method used to generate the explanation.
         feature_names (list[str]): a list of feature names.
         aggregations (list[list[str]] | list[str]): a list of feature aggregations.
@@ -89,7 +91,7 @@ class SHAPExplanation(BaseModel):
         ),
     ]
     explanations: Annotated[
-        shap.Explanation,
+        base_shap.Explanation,
         Field(
             description="A numpy array containing the SHAP explanations.",
         ),
@@ -108,11 +110,14 @@ class SHAPExplanation(BaseModel):
         Validates that the shape of the explanations matches the shape of the input data.
 
         This method checks if the shape of `self.explanations` matches the shape of `self.data`.
-        If the shapes do not match, it checks if the explanation is multitarget - the last dimension of the explanation will not match the data shape.
-        In case the explanation is local - the explanation is one axis shorter, it unsquezees it - adds a new axis in the beginning of the explanation.
+        If the shapes do not match, it checks if the explanation is multitarget - the last dimension of the
+        explanation will not match the data shape. In case the explanation is local - the explanation is one
+        axis shorter, it unsquezees it - adds a new axis in the beginning of the explanation.
         Otherwise, it raises a `ShapeMismatchError`
         Raises:
-            ShapeMismatchError: If the shape of the explanations does not match the shape of the input data, the mismatch is not only in the last dimension and cannot unsqueeze the data, in case the explanation is local.
+            ShapeMismatchError: If the shape of the explanations does not match the shape of the input data,
+                the mismatch is not only in the last dimension and cannot unsqueeze the data,
+                in case the explanation is local.
         """
         data_shape = self.data.shape
         explanation_shape = self.explanations.shape
@@ -158,8 +163,9 @@ class SHAPExplanation(BaseModel):
 
     @property
     def num_target_outputs(self) -> int:
-        """number of target dimensions in the explanations. It is equal to the number of outputs of the model.
-        For instance, in scope of the HYPERVIEW Challenge, the EAGLEEYES model has 4 outputs - it predicts 4 different soil parameters.
+        """
+        Number of target dimensions in the explanations. It is equal to the number of outputs of the model. For instance,
+        in scope of the HYPERVIEW Challenge, the EAGLEEYES model has 4 outputs - it predicts 4 different soil parameters.
         For explanations of this model, the `num_target_outputs` property will equal to 4.
         Returns:
             int: number of target dimensions in the explanations.
@@ -182,7 +188,8 @@ class SHAPExplanation(BaseModel):
 
     @property
     def feature_names(self) -> list[str] | pd.Index | None:
-        """list of feature names.
+        """List of feature names.
+
         Returns:
             list[str] | pd.Index | None: list of feature names.
         """
