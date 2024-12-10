@@ -299,7 +299,6 @@ def beeswarm(
     if observation_index is not None or explanation.is_local_explanation:
         raise ValueError("The beeswarm plot does not support local explanations.")
 
-    # fig = shap.plots.beeswarm(explanations, ax=ax, show=use_pyplot)
     # Current release of SHAP does not support passing ax parameter to the beeswarm plot, even though it is present in the documentation.
     return shap.plots.beeswarm(explanations, show=use_pyplot)
 
