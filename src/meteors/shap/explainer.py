@@ -180,8 +180,6 @@ class SHAPExplanation(BaseModel):
         Returns:
             bool: True if the explanation is for a single observation, False otherwise.
         """
-        if len(self.data.shape) == 1:
-            return True
         if len(self.data.shape) == 2 and self.data.shape[0] == 1:
             return True
         return False
