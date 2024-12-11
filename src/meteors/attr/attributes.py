@@ -404,7 +404,7 @@ class HSIAttributes(BaseModel):
         return attrs
 
 
-class HSISpatialAttributes(HSIAttributes):
+class HSIAttributesSpatial(HSIAttributes):
     """Represents spatial attributes of an hsi used for explanation.
 
     Attributes:
@@ -440,7 +440,7 @@ class HSISpatialAttributes(HSIAttributes):
 
         Examples:
             >>> segmentation_mask = torch.zeros((3, 2, 2))
-            >>> attrs = HSISpatialAttributes(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
+            >>> attrs = HSIAttributesSpatial(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
             >>> attrs.flattened_attributes
                 tensor([[0., 0.],
                         [0., 0.]])
@@ -459,7 +459,7 @@ class HSISpatialAttributes(HSIAttributes):
         super()._validate_hsi_attributions_and_mask()
 
 
-class HSISpectralAttributes(HSIAttributes):
+class HSIAttributesSpectral(HSIAttributes):
     """Represents an hsi with spectral attributes used for explanation.
 
     Attributes:
@@ -495,7 +495,7 @@ class HSISpectralAttributes(HSIAttributes):
 
         Examples:
             >>> band_names = {"R": 0, "G": 1, "B": 2}
-            >>> attrs = HSISpectralAttributes(hsi, attributes, score=0.5, mask=band_mask)
+            >>> attrs = HSIAttributesSpectral(hsi, attributes, score=0.5, mask=band_mask)
             >>> attrs.flattened_band_mask
             torch.tensor([0, 1, 2])
         """
