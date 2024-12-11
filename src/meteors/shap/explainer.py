@@ -131,7 +131,8 @@ class SHAPExplanation(BaseModel):
                 return
             else:
                 raise ShapeMismatchError(
-                    f"Shape of the explanations does not match the shape of the input data. Expected {data_shape}, but got {self.explanations.shape}"
+                    "Shape of the explanations does not match the shape of the input data. "
+                    f"Expected {data_shape}, but got {self.explanations.shape}"
                 )
         elif len(explanation_shape) == len(data_shape):
             if explanation_shape[-2] == data_shape[-1] and data_shape[0] == 1:
@@ -147,7 +148,8 @@ class SHAPExplanation(BaseModel):
                 return
 
         raise ShapeMismatchError(
-            f"Shape of the explanations does not match the shape of the input data. Expected {data_shape}, but got {explanation_shape}"
+            "Shape of the explanations does not match the shape of the input data. "
+            f"Expected {data_shape}, but got {explanation_shape}"
         )
 
     @model_validator(mode="after")

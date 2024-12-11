@@ -54,13 +54,15 @@ def validate_observation_index(
             observation_index < 0 or observation_index >= explanation.data.shape[0]
         ):
             raise ValueError(
-                f"Observation index out of bounds: {observation_index}. The explanation contains {explanation.explanations.values.shape[0]} observations"
+                f"Observation index out of bounds: {observation_index}. "
+                f"The explanation contains {explanation.explanations.values.shape[0]} observations"
             )
 
     if require_local_explanation:
         if observation_index is None and not explanation.is_local_explanation:
             raise ValueError(
-                f"The plot of type {plot_type} only supports local explanations. \nPassed explanation contains multiple observations and no observation index specified."
+                f"The plot of type {plot_type} only supports local explanations. \n"
+                "Passed explanation contains multiple observations and no observation index specified."
             )
         if observation_index is None:
             observation_index = 0
@@ -108,7 +110,8 @@ def validate_target(
     if require_single_target:
         if target is None and explanation.num_target_outputs > 1:
             raise ValueError(
-                f"The plot of type {plot_type} requires a single target value. \nPassed explanation contains multiple targets and no target index specified."
+                f"The plot of type {plot_type} requires a single target value. \n"
+                "Passed explanation contains multiple targets and no target index specified."
             )
 
     return target
@@ -198,7 +201,8 @@ def validate_mapping_dict(
 
     if len(used_indices) != ncols:
         raise ValueError(
-            f"Not all features are used in the mapping. There are {ncols} features, but only {len(used_indices)} are used in the mapping."
+            f"Not all features are used in the mapping. There are {ncols} features, "
+            f"but only {len(used_indices)} are used in the mapping."
         )
 
     return parsed_mapping
@@ -498,8 +502,10 @@ def wavelengths_bar(
     ax: Axes | None = None,
 ):
     """
-    Creates the aggregated bar plot of SHAP values, grouped by the wavelengths and additionally by the transformation functions.
-    The function aggregates the values of the features by the wavelengths and creates a bar plot for the aggregated values.
+    Creates the aggregated bar plot of SHAP values,
+    grouped by the wavelengths and additionally by the transformation functions.
+    The function aggregates the values of the features by the wavelengths and
+    creates a bar plot for the aggregated values.
 
     Args:
         explainer (HyperSHAP):
@@ -614,7 +620,8 @@ def wavelengths_bar(
 
     if len(transformations_list) > cmap.N:
         raise ValueError(
-            f"Number of transformations ({len(transformations_list)}) is greater than the number of colors in the colormap ({cmap.N}). Please provide a colormap with more colors."
+            f"Number of transformations ({len(transformations_list)}) is greater than the number of "
+            f"colors in the colormap ({cmap.N}). Please provide a colormap with more colors."
         )
 
     # the bottoms of the current bars
