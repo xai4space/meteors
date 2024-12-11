@@ -6,7 +6,7 @@ import itertools
 import torch
 from captum.attr import Occlusion as CaptumOcclusion
 
-from .attributes import HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
+from .attributes import HSIAttributes, HSIAttributesSpatial, HSIAttributesSpectral
 from .explainer import Explainer, validate_and_transform_baseline
 from meteors import HSI
 from meteors.models import ExplainableModel
@@ -214,7 +214,7 @@ class Occlusion(Explainer):
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-    ) -> HSISpatialAttributes | list[HSISpatialAttributes]:
+    ) -> HSIAttributesSpatial | list[HSIAttributesSpatial]:
         """Compute spatial attributions for the input HSI using the Occlusion method. In this case, the sliding window
         is applied to the spatial dimensions only.
 
@@ -256,7 +256,7 @@ class Occlusion(Explainer):
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
 
         Returns:
-            HSISpatialAttributes | list[HSISpatialAttributes]: The computed attributions for the input hyperspectral image(s).
+            HSIAttributesSpatial | list[HSIAttributesSpatial]: The computed attributions for the input hyperspectral image(s).
                 if a list of HSI objects is provided, the attributions are computed for each HSI object in the list.
 
         Raises:
@@ -334,7 +334,7 @@ class Occlusion(Explainer):
 
         try:
             spatial_attributes = [
-                HSISpatialAttributes(
+                HSIAttributesSpatial(
                     hsi=hsi_image, attributes=attribution, attribution_method=self.get_name(), mask=mask
                 )
                 for hsi_image, attribution, mask in zip(hsi, occlusion_attributions, segment_mask)
@@ -354,7 +354,7 @@ class Occlusion(Explainer):
         additional_forward_args: Any = None,
         perturbations_per_eval: int = 1,
         show_progress: bool = False,
-    ) -> HSISpectralAttributes | list[HSISpectralAttributes]:
+    ) -> HSIAttributesSpectral | list[HSIAttributesSpectral]:
         """Compute spectral attributions for the input HSI using the Occlusion method. In this case, the sliding window
         is applied to the spectral dimension only.
 
@@ -396,7 +396,7 @@ class Occlusion(Explainer):
             show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
 
         Returns:
-            HSISpectralAttributes | list[HSISpectralAttributes]: The computed attributions for the input hyperspectral
+            HSIAttributesSpectral | list[HSIAttributesSpectral]: The computed attributions for the input hyperspectral
                 image(s). if a list of HSI objects is provided, the attributions are computed for each HSI object in
                 the list.
 
@@ -484,7 +484,7 @@ class Occlusion(Explainer):
 
         try:
             spectral_attributes = [
-                HSISpectralAttributes(
+                HSIAttributesSpectral(
                     hsi=hsi_image,
                     attributes=attribution,
                     attribution_method=self.get_name(),

@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 from captum.attr import visualization as viz
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from meteors.attr import HSISpatialAttributes, HSISpectralAttributes, HSIAttributes
+from meteors.attr import HSIAttributesSpatial, HSIAttributesSpectral, HSIAttributes
 from meteors.utils import expand_spectral_mask, aggregate_by_mask
 
 from meteors.attr.attributes import align_band_names_with_mask
@@ -152,7 +152,7 @@ def _merge_band_names_segments(band_names: dict[str | tuple[str, ...], int]) -> 
 
 
 def visualize_spatial_attributes(
-    spatial_attributes: HSISpatialAttributes,
+    spatial_attributes: HSIAttributesSpatial,
     ax: Axes | None = None,
     use_pyplot: bool = False,
     title: str | None = None,
@@ -160,7 +160,7 @@ def visualize_spatial_attributes(
     """Visualizes the spatial attributes of an hsi using Lime attribution.
 
     Args:
-        spatial_attributes (HSISpatialAttributes):
+        spatial_attributes (HSIAttributesSpatial):
             The spatial attributes of the image object to visualize.
         ax (Axes | None, optional):
             The axes object to plot the visualization on. If None, a new axes will be created.
@@ -260,7 +260,7 @@ def visualize_spatial_attributes(
 
 
 def visualize_spectral_attributes(
-    spectral_attributes: HSISpectralAttributes | list[HSISpectralAttributes],
+    spectral_attributes: HSIAttributesSpectral | list[HSIAttributesSpectral],
     ax: Axes | None = None,
     use_pyplot: bool = False,
     color_palette: list[str] | None = None,
@@ -270,7 +270,7 @@ def visualize_spectral_attributes(
     """Visualizes the spectral attributes of an hsi object or a list of hsi objects.
 
     Args:
-        spectral_attributes (HSISpectralAttributes | list[HSISpectralAttributes]):
+        spectral_attributes (HSIAttributesSpectral | list[HSIAttributesSpectral]):
             The spectral attributes of the image object to visualize.
         ax (Axes | None, optional):
             The axes object to plot the visualization on. If None, a new axes will be created.
@@ -363,14 +363,14 @@ def visualize_spectral_attributes(
 def validate_consistent_band_and_wavelengths(
     band_names: dict[str | tuple[str, ...], int],
     wavelengths: torch.Tensor,
-    spectral_attributes: list[HSISpectralAttributes],
+    spectral_attributes: list[HSIAttributesSpectral],
 ) -> None:
     """Validates that all spectral attributes have consistent band names and wavelengths.
 
     Args:
         band_names (dict[str | tuple[str, ...], int]): A dictionary mapping band names to their indices.
         wavelengths (torch.Tensor): A tensor containing the wavelengths of the hsi.
-        spectral_attributes (list[HSISpectralAttributes]): A list of spectral attributes.
+        spectral_attributes (list[HSIAttributesSpectral]): A list of spectral attributes.
 
     Raises:
         ValueError: If the band names or wavelengths of any spectral attribute are inconsistent.
@@ -403,7 +403,7 @@ def setup_visualization(ax: Axes | None, title: str, xlabel: str, ylabel: str) -
 
 
 def visualize_spectral_attributes_by_waveband(
-    spectral_attributes: HSISpectralAttributes | list[HSISpectralAttributes],
+    spectral_attributes: HSIAttributesSpectral | list[HSIAttributesSpectral],
     ax: Axes | None,
     color_palette: list[str] | None = None,
     show_not_included: bool = True,
@@ -412,7 +412,7 @@ def visualize_spectral_attributes_by_waveband(
     """Visualizes spectral attributes by waveband.
 
     Args:
-        spectral_attributes (HSISpectralAttributes | list[HSISpectralAttributes]):
+        spectral_attributes (HSIAttributesSpectral | list[HSIAttributesSpectral]):
             The spectral attributes to visualize.
         ax (Axes | None): The matplotlib axes to plot the visualization on.
             If None, a new axes will be created.
@@ -425,16 +425,16 @@ def visualize_spectral_attributes_by_waveband(
     Returns:
         Axes: The matplotlib axes object containing the visualization.
     Raises:
-        TypeError: If the spectral attributes are not an HSISpectralAttributes object or a list of HSISpectralAttributes objects.
+        TypeError: If the spectral attributes are not an HSIAttributesSpectral object or a list of HSIAttributesSpectral objects.
     """
-    if isinstance(spectral_attributes, HSISpectralAttributes):
+    if isinstance(spectral_attributes, HSIAttributesSpectral):
         spectral_attributes = [spectral_attributes]
     if not (
         isinstance(spectral_attributes, list)
-        and all(isinstance(attr, HSISpectralAttributes) for attr in spectral_attributes)
+        and all(isinstance(attr, HSIAttributesSpectral) for attr in spectral_attributes)
     ):
         raise TypeError(
-            "spectral_attributes parameter must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
+            "spectral_attributes parameter must be an HSIAttributesSpectral object or a list of HSIAttributesSpectral objects."
         )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
@@ -514,7 +514,7 @@ def calculate_average_magnitudes(
 
 
 def visualize_spectral_attributes_by_magnitude(
-    spectral_attributes: HSISpectralAttributes | list[HSISpectralAttributes],
+    spectral_attributes: HSIAttributesSpectral | list[HSIAttributesSpectral],
     ax: Axes | None,
     color_palette: list[str] | None = None,
     annotate_bars: bool = True,
@@ -523,7 +523,7 @@ def visualize_spectral_attributes_by_magnitude(
     """Visualizes the spectral attributes by magnitude.
 
     Args:
-        spectral_attributes (HSISpectralAttributes | list[HSISpectralAttributes]):
+        spectral_attributes (HSIAttributesSpectral | list[HSIAttributesSpectral]):
             The spectral attributes to visualize.
         ax (Axes | None): The matplotlib Axes object to plot the visualization on.
             If None, a new Axes object will be created.
@@ -537,16 +537,16 @@ def visualize_spectral_attributes_by_magnitude(
     Returns:
         Axes: The matplotlib Axes object containing the visualization.
     Raises:
-        TypeError: If the spectral attributes are not an HSISpectralAttributes object or a list of HSISpectralAttributes objects.
+        TypeError: If the spectral attributes are not an HSIAttributesSpectral object or a list of HSIAttributesSpectral objects.
     """
-    if isinstance(spectral_attributes, HSISpectralAttributes):
+    if isinstance(spectral_attributes, HSIAttributesSpectral):
         spectral_attributes = [spectral_attributes]
     if not (
         isinstance(spectral_attributes, list)
-        and all(isinstance(attr, HSISpectralAttributes) for attr in spectral_attributes)
+        and all(isinstance(attr, HSIAttributesSpectral) for attr in spectral_attributes)
     ):
         raise TypeError(
-            "spectral_attributes parameter must be an HSISpectralAttributes object or a list of HSISpectralAttributes objects."
+            "spectral_attributes parameter must be an HSIAttributesSpectral object or a list of HSIAttributesSpectral objects."
         )
 
     aggregate_results = False if len(spectral_attributes) == 1 else True
@@ -632,7 +632,7 @@ def visualize_spatial_aggregated_attributes(
 
     new_attrs = aggregate_by_mask(attributes.attributes, aggregated_mask, aggregate_func)
 
-    new_spatial_attributes = HSISpatialAttributes(
+    new_spatial_attributes = HSIAttributesSpatial(
         hsi=attributes.hsi,
         attributes=new_attrs,
         mask=aggregated_mask,
@@ -700,9 +700,9 @@ def visualize_spectral_aggregated_attributes(
 
     new_attrs = aggregate_by_mask(attributes_example.attributes, band_mask, aggregate_func)
 
-    new_spectral_attributes: HSISpectralAttributes | list[HSISpectralAttributes]
+    new_spectral_attributes: HSIAttributesSpectral | list[HSIAttributesSpectral]
     if isinstance(attributes, HSIAttributes):
-        new_spectral_attributes = HSISpectralAttributes(
+        new_spectral_attributes = HSIAttributesSpectral(
             hsi=attributes.hsi,
             attributes=new_attrs,
             mask=band_mask,
@@ -711,7 +711,7 @@ def visualize_spectral_aggregated_attributes(
         )
     else:
         new_spectral_attributes = [
-            HSISpectralAttributes(
+            HSIAttributesSpectral(
                 hsi=attr.hsi,
                 attributes=new_attrs,
                 mask=band_mask,
@@ -844,7 +844,7 @@ def visualize_bands_spatial_attributes(
         spatial_attributes,
     )
 
-    spatial_attributes_object = HSISpatialAttributes(
+    spatial_attributes_object = HSIAttributesSpatial(
         hsi=attributes.hsi,
         attributes=spatial_attributes_expanded,
         mask=None,
