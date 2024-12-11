@@ -1,0 +1,1281 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://xai4space.github.io/meteors/0.2.0/changelog/">
+      
+      
+        <link rel="prev" href="../reference/">
+      
+      
+        <link rel="next" href="../how-to-guides/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.48">
+    
+    
+      
+        <title>📝 Changelog - Meteors</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Meteors" class="md-header__button md-logo" aria-label="Meteors" data-md-component="logo">
+      
+  <img src="../assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Meteors
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              📝 Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/xai4space/meteors" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    xai4space/meteors
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Meteors" class="md-nav__button md-logo" aria-label="Meteors" data-md-component="logo">
+      
+  <img src="../assets/logo.png" alt="logo">
+
+    </a>
+    Meteors
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/xai4space/meteors" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    xai4space/meteors
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🏠 Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🚀 Quickstart
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    📚 Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            📚 Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🎓 Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/lime/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LIME
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/attr_showcase/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Attribution Methods `attr`
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/segmentation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Segmentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    📖 API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    📝 Changelog
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    📝 Changelog
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v020-2024-12-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.2.0 (2024-12-11)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.2.0 (2024-12-11)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chores" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛎️ Chores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔨 Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      📚 Documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v012-2024-11-21" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.1.2 (2024-11-21)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.1.2 (2024-11-21)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chores_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛎️ Chores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      📚 Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔨 Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v011-2024-11-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.1.1 (2024-11-18)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.1.1 (2024-11-18)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#documentation_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      📚 Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔨 Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v010-2024-10-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.1.0 (2024-10-29)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.1.0 (2024-10-29)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chores_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛎️ Chores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔨 Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      📚 Documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v004-2024-09-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.0.4 (2024-09-25)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.0.4 (2024-09-25)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔨 Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v003-2024-09-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.0.3 (2024-09-23)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.0.3 (2024-09-23)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#meteors-002-2024-08-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      meteors 0.0.2 (2024-08-11)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#meteors-001-2024-06-02" class="md-nav__link">
+    <span class="md-ellipsis">
+      meteors 0.0.1 (2024-06-02)
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to-guides/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    🤝 How to Contribute
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v020-2024-12-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.2.0 (2024-12-11)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.2.0 (2024-12-11)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chores" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛎️ Chores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔨 Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      📚 Documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v012-2024-11-21" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.1.2 (2024-11-21)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.1.2 (2024-11-21)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chores_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛎️ Chores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      📚 Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔨 Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v011-2024-11-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.1.1 (2024-11-18)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.1.1 (2024-11-18)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#documentation_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      📚 Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔨 Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v010-2024-10-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.1.0 (2024-10-29)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.1.0 (2024-10-29)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chores_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      🛎️ Chores
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔨 Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      📚 Documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v004-2024-09-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.0.4 (2024-09-25)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.0.4 (2024-09-25)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔨 Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v003-2024-09-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.0.3 (2024-09-23)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v0.0.3 (2024-09-23)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      🩺 Bug Fixes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#meteors-002-2024-08-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      meteors 0.0.2 (2024-08-11)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#meteors-001-2024-06-02" class="md-nav__link">
+    <span class="md-ellipsis">
+      meteors 0.0.1 (2024-06-02)
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="changelog">Changelog</h1>
+<h2 id="v020-2024-12-11">v0.2.0 (2024-12-11)</h2>
+<h3 id="chores">🛎️ Chores</h3>
+<ul>
+<li>bump up the package version (<a href="https://github.com/xai4space/meteors/pull/158">#158</a>)</li>
+</ul>
+<h3 id="bug-fixes">🩺 Bug Fixes</h3>
+<ul>
+<li>Consistency of terminology for Attributes (<a href="https://github.com/xai4space/meteors/pull/157">#157</a>)</li>
+<li>Set the keep_gradient argument to False in methods that can store the gradient in the final results (<a href="https://github.com/xai4space/meteors/pull/151">#151</a>)</li>
+</ul>
+<h3 id="features">🔨 Features</h3>
+<ul>
+<li>standardize relative imports across codebase (<a href="https://github.com/xai4space/meteors/pull/155">#155</a>)</li>
+<li>Added band specific spatial attribution visualisation (<a href="https://github.com/xai4space/meteors/pull/146">#146</a>)</li>
+<li>Added internal batch size to Integrated Gradients (<a href="https://github.com/xai4space/meteors/pull/148">#148</a>)</li>
+<li>added option for title in the charts (<a href="https://github.com/xai4space/meteors/pull/138">#138</a>)</li>
+<li>Updating Rye and preparing for shifting to uv (<a href="https://github.com/xai4space/meteors/pull/145">#145</a>)</li>
+</ul>
+<h3 id="documentation">📚 Documentation</h3>
+<ul>
+<li>added citation file (<a href="https://github.com/xai4space/meteors/pull/127">#127</a>)</li>
+<li>changes to the HYPERVIEW tutorial (LIME) (<a href="https://github.com/xai4space/meteors/pull/152">#152</a>)</li>
+<li>fixing a minor typo in readme (<a href="https://github.com/xai4space/meteors/pull/154">#154</a>)</li>
+<li>changes to the segmentation tutorial (<a href="https://github.com/xai4space/meteors/pull/153">#153</a>)</li>
+<li>changes to the HYPERVIEW tutorial (<a href="https://github.com/xai4space/meteors/pull/149">#149</a>)</li>
+<li>update changelog.md for v0.1.2 [skip ci] (<a href="https://github.com/xai4space/meteors/pull/143">#143</a>)</li>
+</ul>
+<h2 id="v012-2024-11-21">v0.1.2 (2024-11-21)</h2>
+<h3 id="chores_1">🛎️ Chores</h3>
+<ul>
+<li>update the package version (<a href="https://github.com/xai4space/meteors/pull/142">#142</a>)</li>
+</ul>
+<h3 id="bug-fixes_1">🩺 Bug Fixes</h3>
+<ul>
+<li>documentation version alias update fixed (<a href="https://github.com/xai4space/meteors/pull/139">#139</a>)</li>
+</ul>
+<h3 id="documentation_1">📚 Documentation</h3>
+<ul>
+<li>tutorials fixes (<a href="https://github.com/xai4space/meteors/pull/129">#129</a>)</li>
+<li>fixed documentation versioning (<a href="https://github.com/xai4space/meteors/pull/135">#135</a>)</li>
+<li>Documentation template update (<a href="https://github.com/xai4space/meteors/pull/134">#134</a>)</li>
+<li>fix reference docs for visualizer modules (<a href="https://github.com/xai4space/meteors/pull/133">#133</a>)</li>
+<li>fix navbar for new tutorials (<a href="https://github.com/xai4space/meteors/pull/132">#132</a>)</li>
+<li>update changelog.md for v0.1.1 [skip ci] (<a href="https://github.com/xai4space/meteors/pull/131">#131</a>)</li>
+</ul>
+<h3 id="features_1">🔨 Features</h3>
+<ul>
+<li>Added Hyperlinks to the PR in changelog (<a href="https://github.com/xai4space/meteors/pull/136">#136</a>)</li>
+</ul>
+<h2 id="v011-2024-11-18">v0.1.1 (2024-11-18)</h2>
+<h3 id="documentation_2">📚 Documentation</h3>
+<ul>
+<li>refine the tutorial for lime and add tutorial for attributions methods (#128)</li>
+<li>refine the example for segmentation problem type (#124)</li>
+</ul>
+<h3 id="bug-fixes_2">🩺 Bug Fixes</h3>
+<ul>
+<li>Moved the postprocessing to the ExplainableModel (#123)</li>
+<li>Corrected visualisers (#118)</li>
+<li>Corrected Attributes Functionalities (#117)</li>
+<li>changelog.md and release notes do not contain all commits due to the commit processor not parsing multi-line commit messages. (#116)</li>
+</ul>
+<h3 id="features_2">🔨 Features</h3>
+<ul>
+<li>Updated release and docs GitHub actions to trigger when GitHub tag is pushed (#119)</li>
+</ul>
+<h2 id="v010-2024-10-29">v0.1.0 (2024-10-29)</h2>
+<h3 id="chores_2">🛎️ Chores</h3>
+<ul>
+<li>update the project version (#112)</li>
+<li>reduced coverage threshold (#94)</li>
+</ul>
+<h3 id="features_3">🔨 Features</h3>
+<ul>
+<li>96 feat segmentation support for attribution methods (#103)</li>
+<li>refactored the package structure (#111)</li>
+<li>Custom errors (#101)</li>
+</ul>
+<h3 id="bug-fixes_3">🩺 Bug Fixes</h3>
+<ul>
+<li>corrected visualizations (#106)</li>
+<li>Updated occlusion (#93)</li>
+<li>91 docs the lime illustration image is missing in the docs (#92)</li>
+</ul>
+<h3 id="documentation_3">📚 Documentation</h3>
+<ul>
+<li>update changelog.md for 0.0.4 [skip ci] (#90)</li>
+</ul>
+<h2 id="v004-2024-09-25">v0.0.4 (2024-09-25)</h2>
+<h3 id="bug-fixes_4">🩺 Bug Fixes</h3>
+<ul>
+<li>infinite loop in segmentation (#87)</li>
+</ul>
+<h3 id="features_4">🔨 Features</h3>
+<ul>
+<li>HyperNoiseTunnel and captum attribution methods (#51)</li>
+</ul>
+<h2 id="v003-2024-09-23">v0.0.3 (2024-09-23)</h2>
+<h3 id="bug-fixes_5">🩺 Bug Fixes</h3>
+<ul>
+<li>github action release workflow to pypi (#83)</li>
+</ul>
+<h2 id="meteors-002-2024-08-11">meteors 0.0.2 (2024-08-11)</h2>
+<ul>
+<li>No release</li>
+<li>Refined package structure - simple modules for models and visualisation, installation using toml file</li>
+<li>Spectral attributions using LIME</li>
+<li>CUDA compatibility of LIME</li>
+</ul>
+<h2 id="meteors-001-2024-06-02">meteors 0.0.1 (2024-06-02)</h2>
+<ul>
+<li>No release</li>
+<li>Prepared a simple draft of package along with some ideas and sample files for implementation of LIME for hyperspectral images.</li>
+<li>Segmentation mask for LIME using slic</li>
+<li>Spatial attributions using LIME</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tracking", "navigation.path", "navigation.top"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>
