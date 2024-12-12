@@ -144,11 +144,13 @@ def align_band_names_with_mask(
         if value not in band_name_values:
             if "not_included" in band_names:
                 raise MaskCreationError(
-                    "Band names should not contain 'not_included' if some unique ids are present in the mask and not in band names"
+                    "Band names should not contain 'not_included' if some unique ids "
+                    "are present in the mask and not in band names"
                 )
             else:
                 logger.info(
-                    f"Adding 'not_included' to band names because {value} ids is present in the mask and not in band names"
+                    f"Adding 'not_included' to band names because {value} ids "
+                    "is present in the mask and not in band names"
                 )
                 band_names["not_included"] = value
                 band_name_values.add(value)
@@ -436,7 +438,8 @@ class HSIAttributesSpatial(HSIAttributes):
     def flattened_attributes(self) -> torch.Tensor:
         """Returns a flattened tensor of attributes, with removed repeated dimensions.
 
-        In the case of spatial attributes, the flattened attributes are 2D spatial attributes of shape (rows, columns) and the spectral dimension is removed.
+        In the case of spatial attributes, the flattened attributes are 2D spatial attributes of shape (rows, columns)
+        and the spectral dimension is removed.
 
         Examples:
             >>> segmentation_mask = torch.zeros((3, 2, 2))
@@ -508,7 +511,8 @@ class HSIAttributesSpectral(HSIAttributes):
     def flattened_attributes(self) -> torch.Tensor:
         """Returns a flattened tensor of attributes with removed repeated dimensions.
 
-        In the case of spectral attributes, the flattened attributes are 1D tensor of shape (num_bands, ), where num_bands is the number of bands in the hsi image.
+        In the case of spectral attributes, the flattened attributes are 1D tensor of shape (num_bands, ),
+        where num_bands is the number of bands in the hsi image.
 
         Returns:
             torch.Tensor: A flattened tensor of attributes.

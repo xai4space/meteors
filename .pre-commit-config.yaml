@@ -70,7 +70,7 @@ repos:
     rev: v1.13.0
     hooks:
       - id: mypy
-        args: ["--config-file", "pyproject.toml"]
+        args: ["--config-file", "pyproject.toml", "--explicit-package-bases"]
         additional_dependencies: [pydantic==2.7.1]
         exclude: |
           (?x)^(
