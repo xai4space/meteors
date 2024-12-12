@@ -3,13 +3,16 @@
 ## v0.2.0 (2024-12-11)
 
 ### 🛎️ Chores
+
 - bump up the package version ([#158](https://github.com/xai4space/meteors/pull/158))
 
 ### 🩺 Bug Fixes
+
 - Consistency of terminology for Attributes ([#157](https://github.com/xai4space/meteors/pull/157))
 - Set the keep_gradient argument to False in methods that can store the gradient in the final results ([#151](https://github.com/xai4space/meteors/pull/151))
 
 ### 🔨 Features
+
 - standardize relative imports across codebase ([#155](https://github.com/xai4space/meteors/pull/155))
 - Added band specific spatial attribution visualisation ([#146](https://github.com/xai4space/meteors/pull/146))
 - Added internal batch size to Integrated Gradients ([#148](https://github.com/xai4space/meteors/pull/148))
@@ -17,6 +20,7 @@
 - Updating Rye and preparing for shifting to uv ([#145](https://github.com/xai4space/meteors/pull/145))
 
 ### 📚 Documentation
+
 - added citation file ([#127](https://github.com/xai4space/meteors/pull/127))
 - changes to the HYPERVIEW tutorial (LIME) ([#152](https://github.com/xai4space/meteors/pull/152))
 - fixing a minor typo in readme ([#154](https://github.com/xai4space/meteors/pull/154))
