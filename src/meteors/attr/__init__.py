@@ -1,4 +1,4 @@
-from .attributes import HSIAttributes, HSISpatialAttributes, HSISpectralAttributes
+from .attributes import HSIAttributes, HSIAttributesSpatial, HSIAttributesSpectral
 from .explainer import Explainer
 
 from .lime import Lime
@@ -10,8 +10,8 @@ from .noise_tunnel import HyperNoiseTunnel, NoiseTunnel
 
 __all__ = [
     "HSIAttributes",
-    "HSISpatialAttributes",
-    "HSISpectralAttributes",
+    "HSIAttributesSpatial",
+    "HSIAttributesSpectral",
     "Explainer",
     "IntegratedGradients",
     "InputXGradient",

@@ -1,6 +1,6 @@
 [project]
 name = "meteors"
-version = "0.1.2"
+version = "0.2.0"
 authors = [
   { name="Tymoteusz Kwiecinski", email="tymoteuszkwiecinski@gmail.com" },
 ]
@@ -32,6 +32,7 @@ dependencies = [
     "scikit-learn",
     "importlib-resources; python_version < '3.10'",
     "setuptools>=60.0.0",
+    "shap>=0.46.0",
 ]
 
 [metadata]

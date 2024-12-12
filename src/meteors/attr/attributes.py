@@ -144,11 +144,13 @@ def align_band_names_with_mask(
         if value not in band_name_values:
             if "not_included" in band_names:
                 raise MaskCreationError(
-                    "Band names should not contain 'not_included' if some unique ids are present in the mask and not in band names"
+                    "Band names should not contain 'not_included' if some unique ids "
+                    "are present in the mask and not in band names"
                 )
             else:
                 logger.info(
-                    f"Adding 'not_included' to band names because {value} ids is present in the mask and not in band names"
+                    f"Adding 'not_included' to band names because {value} ids "
+                    "is present in the mask and not in band names"
                 )
                 band_names["not_included"] = value
                 band_name_values.add(value)
@@ -404,7 +406,7 @@ class HSIAttributes(BaseModel):
         return attrs
 
 
-class HSISpatialAttributes(HSIAttributes):
+class HSIAttributesSpatial(HSIAttributes):
     """Represents spatial attributes of an hsi used for explanation.
 
     Attributes:
@@ -436,11 +438,12 @@ class HSISpatialAttributes(HSIAttributes):
     def flattened_attributes(self) -> torch.Tensor:
         """Returns a flattened tensor of attributes, with removed repeated dimensions.
 
-        In the case of spatial attributes, the flattened attributes are 2D spatial attributes of shape (rows, columns) and the spectral dimension is removed.
+        In the case of spatial attributes, the flattened attributes are 2D spatial attributes of shape (rows, columns)
+        and the spectral dimension is removed.
 
         Examples:
             >>> segmentation_mask = torch.zeros((3, 2, 2))
-            >>> attrs = HSISpatialAttributes(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
+            >>> attrs = HSIAttributesSpatial(hsi, attributes, score=0.5, segmentation_mask=segmentation_mask)
             >>> attrs.flattened_attributes
                 tensor([[0., 0.],
                         [0., 0.]])
@@ -459,7 +462,7 @@ class HSISpatialAttributes(HSIAttributes):
         super()._validate_hsi_attributions_and_mask()
 
 
-class HSISpectralAttributes(HSIAttributes):
+class HSIAttributesSpectral(HSIAttributes):
     """Represents an hsi with spectral attributes used for explanation.
 
     Attributes:
@@ -495,7 +498,7 @@ class HSISpectralAttributes(HSIAttributes):
 
         Examples:
             >>> band_names = {"R": 0, "G": 1, "B": 2}
-            >>> attrs = HSISpectralAttributes(hsi, attributes, score=0.5, mask=band_mask)
+            >>> attrs = HSIAttributesSpectral(hsi, attributes, score=0.5, mask=band_mask)
             >>> attrs.flattened_band_mask
             torch.tensor([0, 1, 2])
         """
@@ -508,7 +511,8 @@ class HSISpectralAttributes(HSIAttributes):
     def flattened_attributes(self) -> torch.Tensor:
         """Returns a flattened tensor of attributes with removed repeated dimensions.
 
-        In the case of spectral attributes, the flattened attributes are 1D tensor of shape (num_bands, ), where num_bands is the number of bands in the hsi image.
+        In the case of spectral attributes, the flattened attributes are 1D tensor of shape (num_bands, ),
+        where num_bands is the number of bands in the hsi image.
 
         Returns:
             torch.Tensor: A flattened tensor of attributes.
