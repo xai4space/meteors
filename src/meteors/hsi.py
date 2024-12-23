@@ -112,7 +112,7 @@ def resolve_inference_device_hsi(device: str | torch.device | None, info: Valida
     if not isinstance(device, torch.device):
         raise TypeError("Device should be a string or torch device")
 
-    logger.debug(f"Device for inference: {device.type}")
+    logger.debug("Device for inference: {}".format(device.type))
     return device
 
 
@@ -158,7 +158,9 @@ def validate_shapes(wavelengths: torch.Tensor, image: torch.Tensor, spectral_axi
     """
     if wavelengths.shape[0] != image.shape[spectral_axis]:
         raise ShapeMismatchError(
-            f"Length of wavelengths must match the number of channels in the image. Passed {wavelengths.shape[0]} wavelengths for {image.shape[spectral_axis]} channels",
+            "Length of wavelengths must match the number of channels in the image. Passed {} wavelengths for {} channels".format(
+                wavelengths.shape[0], image.shape[spectral_axis]
+            ),
         )
 
 
@@ -224,7 +226,9 @@ def process_and_validate_binary_mask(
             binary_mask = binary_mask.expand_as(image)
         except RuntimeError:
             raise ShapeMismatchError(
-                f"Mismatch in shapes of binary mask and HSI. Passed shapes are respectively: {binary_mask.shape}, {image.shape}"
+                "Mismatch in shapes of binary mask and HSI. Passed shapes are respectively: {}, {}".format(
+                    binary_mask.shape, image.shape
+                )
             )
 
     return binary_mask

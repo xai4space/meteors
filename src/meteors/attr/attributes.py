@@ -44,7 +44,7 @@ def ensure_torch_tensor(value: np.ndarray | torch.Tensor, context: str) -> torch
         return value
 
     if isinstance(value, np.ndarray):
-        logger.debug(f"Converting {context} from NumPy array to PyTorch tensor")
+        logger.debug("Converting {} from NumPy array to PyTorch tensor".format(context))
         return torch.from_numpy(value)
 
     raise TypeError("{} must be a NumPy array or PyTorch tensor".format(context))
@@ -101,7 +101,7 @@ def validate_shapes(attributes: torch.Tensor, hsi: HSI) -> None:
     """
     if list(attributes.shape) != list(hsi.image.shape):
         raise ShapeMismatchError(
-            f"Attributes and HSI have different, unmatching shapes: {attributes.shape}, {hsi.image.shape}"
+            "Attributes and HSI have different, unmatching shapes: {}, {}".format(attributes.shape, hsi.image.shape)
         )
 
 
@@ -149,8 +149,8 @@ def align_band_names_with_mask(
                 )
             else:
                 logger.info(
-                    f"Adding 'not_included' to band names because {value} ids "
-                    "is present in the mask and not in band names"
+                    "Adding 'not_included' to band names because {} ids "
+                    "is present in the mask and not in band names".format(value)
                 )
                 band_names["not_included"] = value
                 band_name_values.add(value)
@@ -184,7 +184,9 @@ def validate_attribution_method(value: str | None) -> str | None:
     value = value.title()
     if value not in AVAILABLE_ATTRIBUTION_METHODS:
         logger.warning(
-            f"Unknown attribution method: {value}. The core implemented methods are {AVAILABLE_ATTRIBUTION_METHODS}"
+            "Unknown attribution method: {}. The core implemented methods are {}".format(
+                value, AVAILABLE_ATTRIBUTION_METHODS
+            )
         )
     return value
 
@@ -226,7 +228,7 @@ def resolve_inference_device_attributes(device: str | torch.device | None, info:
     if not isinstance(device, torch.device):
         raise TypeError("Device should be a string or torch device")
 
-    logger.debug(f"Device for inference: {device.type}")
+    logger.debug("Device for inference: {}".format(device.type))
     return device
 
 

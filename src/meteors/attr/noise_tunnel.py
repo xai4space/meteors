@@ -288,9 +288,10 @@ class NoiseTunnel(BaseNoiseTunnel):
         if isinstance(stdevs, tuple):
             if len(stdevs) != len(hsi):
                 raise ValueError(
-                    "The number of stdevs must match the number of input images, number of stdevs:"
-                    f"{len(stdevs)}, number of input images: {len(hsi)}"
+                    "The number of stdevs must match the number of input images, number of stdevs: {}, "
+                    "number of input images: {}".format(len(stdevs), len(hsi))
                 )
+
         else:
             stdevs = tuple([stdevs] * len(hsi))
 
@@ -401,7 +402,8 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
         else:
             if num_perturbed_bands < 0 or num_perturbed_bands > input.shape[0]:
                 raise ValueError(
-                    f"Cannot perturb {num_perturbed_bands} bands in the input with {input.shape[0]} channels. The number of perturbed bands must be in the range [0, {input.shape[0]}]"
+                    "Cannot perturb {} bands in the input with {} channels. The number of perturbed bands must be "
+                    "in the range [0, {}]".format(num_perturbed_bands, input.shape[0], input.shape[0])
                 )
 
             channels_to_be_perturbed = torch_random_choice(

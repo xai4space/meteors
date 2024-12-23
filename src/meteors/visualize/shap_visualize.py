@@ -627,8 +627,10 @@ def wavelengths_bar(
 
     if len(transformations_list) > cmap.N:
         raise ValueError(
-            f"Number of transformations ({len(transformations_list)}) is greater than the number of "
-            f"colors in the colormap ({cmap.N}). Please provide a colormap with more colors."
+            "Number of transformations ({}) is greater than the number of "
+            "colors in the colormap ({}). Please provide a colormap with more colors.".format(
+                len(transformations_list), cmap.N
+            )
         )
 
     # the bottoms of the current bars

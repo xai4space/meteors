@@ -138,9 +138,8 @@ def validate_band_format(bands: dict[str | tuple[str, ...], BandType], variable_
             continue
         raise TypeError(
             (
-                f"{variable_name} should be either a value, list of values, "
-                "tuple of two values or list of tuples of two values."
-            )
+                "{} should be either a value, list of values, " "tuple of two values or list of tuples of two values."
+            ).format(variable_name)
         )
 
 
@@ -180,9 +179,9 @@ def validate_segment_format(
     ):
         raise ValueError(
             (
-                f"Each segment range should be a tuple or list of two numbers of data type {dtype} (start, end). "
-                f"Where start < end. But got: {segment}"
-            )
+                "Each segment range should be a tuple or list of two numbers of data type {} (start, end). "
+                "Where start < end. But got: {}"
+            ).format(dtype, segment)
         )
     return segment
 
@@ -223,7 +222,7 @@ def adjust_and_validate_segment_ranges(
     for start, end in segment_ranges:
         if start < 0:
             if end > 0:
-                logger.debug(f"Adjusting segment start from {start} to 0")
+                logger.debug("Adjusting segment start from {} to 0".format(start))
                 start = 0
             else:
                 raise ValueError("Segment range {} is out of bounds".format((start, end)))
@@ -284,13 +283,13 @@ def validate_mask_shape(mask_type: Literal["segmentation", "band"], hsi: HSI, ma
 
     if mask_type == "segmentation" and ("H" in orientation_mismatches or "W" in orientation_mismatches):
         raise ValueError(
-            f"Image and mask orientation mismatch: {hsi.orientation} and {mask_shape}."
+            "Image and mask orientation mismatch: {} and {}.".format(hsi.orientation, mask_shape)
             + "Segmentation mask should differ only in the band dimension"
         )
 
     if mask_type == "band" and "C" in orientation_mismatches:
         raise ValueError(
-            f"Image and mask orientation mismatch: {hsi.orientation} and {mask_shape}."
+            "Image and mask orientation mismatch: {} and {}.".format(hsi.orientation, mask_shape)
             + "Band mask should differ only in the height and width dimensions"
         )
 
@@ -480,7 +479,9 @@ class Lime(Explainer):
                     ]
                     ignored_params_str = " and ".join(ignored_params)
                     logger.info(
-                        f"Only the band names will be used to create the band mask. The additional parameters {ignored_params_str} will be ignored."
+                        "Only the band names will be used to create the band mask. The additional parameters {} will be ignored.".format(
+                            ignored_params_str
+                        )
                     )
                 try:
                     validate_band_names(band_names)
@@ -503,7 +504,9 @@ class Lime(Explainer):
                     )
                 except Exception as e:
                     raise ValueError(
-                        f"Incorrect band ranges wavelengths provided, please check if provided wavelengths are correct: {e}"
+                        "Incorrect band ranges wavelengths provided, please check if provided wavelengths are correct: {}".format(
+                            e
+                        )
                     ) from e
             elif band_indices is not None:
                 logger.debug("Getting band mask from band groups given by ranges of indices")
@@ -512,7 +515,9 @@ class Lime(Explainer):
                     band_groups = Lime._get_band_indices_from_input_band_indices(hsi.wavelengths, band_indices)
                 except Exception as e:
                     raise ValueError(
-                        f"Incorrect band ranges indices provided, please check if provided indices are correct: {e}"
+                        "Incorrect band ranges indices provided, please check if provided indices are correct: {}".format(
+                            e
+                        )
                     ) from e
 
             return Lime._create_tensor_band_mask(
@@ -577,7 +582,9 @@ class Lime(Explainer):
                 band_names_segment.append(band_name)
             else:
                 raise BandSelectionError(
-                    f"Invalid band name {band_name}, band name must be either in `spyndex.indices` or `spyndex.bands`"
+                    "Invalid band name {}, band name must be either in `spyndex.indices` or `spyndex.bands`".format(
+                        band_name
+                    )
                 )
 
         return tuple(set(band_names_segment)) if len(band_names_segment) > 1 else band_names_segment[0]
@@ -654,9 +661,11 @@ class Lime(Explainer):
 
                 if min_wavelength > wavelengths.max() or max_wavelength < wavelengths.min():
                     logger.debug(
-                        f"Band {band_name} is not present in the given wavelengths. "
-                        f"Band ranges from {min_wavelength} nm to {max_wavelength} nm and the HSI wavelengths "
-                        f"range from {wavelengths.min():.2f} nm to {wavelengths.max():.2f} nm. The given band will be skipped"
+                        "Band {} is not present in the given wavelengths. "
+                        "Band ranges from {:.2f} nm to {:.2f} nm and the HSI wavelengths "
+                        "range from {:.2f} nm to {:.2f} nm. The given band will be skipped".format(
+                            band_name, min_wavelength, max_wavelength, wavelengths.min(), wavelengths.max()
+                        )
                     )
                 else:
                     segment_indices_ranges += Lime._convert_wavelengths_to_indices(
@@ -832,8 +841,9 @@ class Lime(Explainer):
             label_second_str = label_second if isinstance(label_second, str) else "/".join(label_second)
 
             logger.warning(
-                f"Segments {label_first_str} and {label_second_str} are overlapping,"
-                " overlapping wavelengths will be assigned to only one"
+                "Segments {} and {} are overlapping, overlapping wavelengths will be assigned to only one".format(
+                    label_first_str, label_second_str
+                )
             )
 
     @staticmethod
@@ -866,8 +876,9 @@ class Lime(Explainer):
         if len(dict_labels_to_segment_ids) != len(segment_labels):
             raise ValueError(
                 (
-                    f"Incorrect dict_labels_to_segment_ids - length mismatch. Expected: "
-                    f"{len(segment_labels)}, Actual: {len(dict_labels_to_segment_ids)}"
+                    "Incorrect dict_labels_to_segment_ids - length mismatch. Expected: {}, " "Actual: {}".format(
+                        len(segment_labels), len(dict_labels_to_segment_ids)
+                    )
                 )
             )
 
@@ -912,8 +923,8 @@ class Lime(Explainer):
             if not are_indices_valid:
                 raise ValueError(
                     (
-                        f"Indices for segment {segment_label} are out of bounds for the one-dimensional band mask"
-                        f"of shape {band_mask_single_dim.shape}"
+                        "Indices for segment {} are out of bounds for the one-dimensional band mask "
+                        "of shape {}".format(segment_label, band_mask_single_dim.shape)
                     )
                 )
             band_mask_single_dim[segment_indices] = segment_id
@@ -952,8 +963,7 @@ class Lime(Explainer):
             device = hsi.device
         segment_labels = list(dict_labels_to_indices.keys())
 
-        logger.debug(f"Creating a band mask on the device {device} using {len(segment_labels)} segments")
-
+        logger.debug("Creating a band mask on the device {} using {} segments".format(device, len(segment_labels)))
         # Check for overlapping segments
         Lime._check_overlapping_segments(dict_labels_to_indices)
 
@@ -1147,7 +1157,9 @@ class Lime(Explainer):
 
         if len(hsi) != len(segmentation_mask):
             raise ValueError(
-                f"Number of segmentation masks should be equal to the number of HSI images provided, provided {len(segmentation_mask)}"
+                "Number of segmentation masks should be equal to the number of HSI images provided, provided {}".format(
+                    len(segmentation_mask)
+                )
             )
 
         segmentation_mask = [
@@ -1303,7 +1315,9 @@ class Lime(Explainer):
                 logger.debug("Reusing the same band mask for all images")
             else:
                 raise ValueError(
-                    f"Number of band masks should be equal to the number of HSI images provided, provided {len(band_mask)}"
+                    "Number of band masks should be equal to the number of HSI images provided, provided {}".format(
+                        len(band_mask)
+                    )
                 )
 
         band_mask = [

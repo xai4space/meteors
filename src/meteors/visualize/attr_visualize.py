@@ -44,8 +44,9 @@ def visualize_attributes(
     """
     if image_attributes.hsi.orientation != ("H", "W", "C"):
         logger.info(
-            f"The orientation of the image is not (H, W, C): {image_attributes.hsi.orientation}. "
-            f"Changing it to (H, W, C) for visualization."
+            "The orientation of the image is not (H, W, C): {}. " "Changing it to (H, W, C) for visualization.".format(
+                image_attributes.hsi.orientation
+            )
         )
         rotated_attributes_dataclass = image_attributes.change_orientation("HWC", inplace=False)
     else:

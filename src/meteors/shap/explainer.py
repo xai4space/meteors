@@ -44,7 +44,9 @@ def ensure_data_type_and_reshape(data: np.ndarray | torch.Tensor | pd.DataFrame)
             converted_data = np.array(data)
         except Exception as e:
             raise TypeError(
-                f"Expected NumPy array | Torch Tensor | Pandas DataFrame as data, but got {type(data)} and failed to convert to NumPy array"
+                "Expected NumPy array | Torch Tensor | Pandas DataFrame as data, but got {} and failed to convert to NumPy array".format(
+                    type(data)
+                )
             ) from e
     if not np.issubdtype(converted_data.dtype, np.number):
         raise TypeError("Expected numeric data, but got {}".format(converted_data.dtype))
@@ -132,7 +134,7 @@ class SHAPExplanation(BaseModel):
             else:
                 raise ShapeMismatchError(
                     "Shape of the explanations does not match the shape of the input data. "
-                    f"Expected {data_shape}, but got {self.explanations.shape}"
+                    "Expected {}, but got {}".format(data_shape, explanation_shape)
                 )
         elif len(explanation_shape) == len(data_shape):
             if explanation_shape[-2] == data_shape[-1] and data_shape[0] == 1:
@@ -148,8 +150,9 @@ class SHAPExplanation(BaseModel):
                 return
 
         raise ShapeMismatchError(
-            "Shape of the explanations does not match the shape of the input data. "
-            f"Expected {data_shape}, but got {explanation_shape}"
+            "Shape of the explanations does not match the shape of the input data. " "Expected {}, but got {}".format(
+                data_shape, explanation_shape
+            )
         )
 
     @model_validator(mode="after")
