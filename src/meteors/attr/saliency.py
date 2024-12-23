@@ -99,6 +99,6 @@ class Saliency(Explainer):
                 for hsi_image, attribution in zip(hsi, saliency_attributions)
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error in generating Saliency attributions: {e}") from e
+            raise HSIAttributesError("Error in generating Saliency attributions: {}".format(e)) from e
 
         return attributes[0] if len(attributes) == 1 else attributes

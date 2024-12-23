@@ -59,6 +59,9 @@ def test_validate_and_transform_baseline():
 
 
 def test_explainer():
+    with pytest.raises(TypeError):
+        explainer_module.Explainer(callable=None)
+
     # Create mock objects for ExplainableModel and InterpretableModel
     explainable_model = ExplainableModel(forward_func=lambda x: x.mean(dim=(1, 2, 3)), problem_type="regression")
 

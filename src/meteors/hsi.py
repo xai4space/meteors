@@ -108,11 +108,11 @@ def resolve_inference_device_hsi(device: str | torch.device | None, info: Valida
         try:
             device = torch.device(device)
         except Exception as e:
-            raise ValueError(f"Device {device} is not valid") from e
+            raise ValueError("Device {} is not valid".format(device)) from e
     if not isinstance(device, torch.device):
         raise TypeError("Device should be a string or torch device")
 
-    logger.debug(f"Device for inference: {device.type}")
+    logger.debug("Device for inference: {}".format(device.type))
     return device
 
 
@@ -136,14 +136,11 @@ def ensure_wavelengths_tensor(
         TypeError: If the input is not a PyTorch tensor, NumPy array, list, or tuple.
         ValueError: If the wavelengths cannot be converted to a PyTorch tensor.
     """
-    if not isinstance(wavelengths, (torch.Tensor, np.ndarray, list, tuple)):
-        raise TypeError("Wavelengths must be a PyTorch tensor, NumPy array, list, or tuple of numeric values")
-
     try:
         if not isinstance(wavelengths, torch.Tensor):
             wavelengths = torch.as_tensor(wavelengths)
     except Exception as e:
-        raise TypeError(f"Failed to convert wavelengths to a PyTorch tensor: {str(e)}") from e
+        raise TypeError("Failed to convert wavelengths to a PyTorch tensor: {}".format(str(e))) from e
 
     return wavelengths
 
@@ -161,7 +158,9 @@ def validate_shapes(wavelengths: torch.Tensor, image: torch.Tensor, spectral_axi
     """
     if wavelengths.shape[0] != image.shape[spectral_axis]:
         raise ShapeMismatchError(
-            f"Length of wavelengths must match the number of channels in the image. Passed {wavelengths.shape[0]} wavelengths for {image.shape[spectral_axis]} channels",
+            "Length of wavelengths must match the number of channels in the image. Passed {} wavelengths for {} channels".format(
+                wavelengths.shape[0], image.shape[spectral_axis]
+            ),
         )
 
 
@@ -227,7 +226,9 @@ def process_and_validate_binary_mask(
             binary_mask = binary_mask.expand_as(image)
         except RuntimeError:
             raise ShapeMismatchError(
-                f"Mismatch in shapes of binary mask and HSI. Passed shapes are respectively: {binary_mask.shape}, {image.shape}"
+                "Mismatch in shapes of binary mask and HSI. Passed shapes are respectively: {}, {}".format(
+                    binary_mask.shape, image.shape
+                )
             )
 
     return binary_mask
@@ -612,7 +613,7 @@ class HSI(BaseModel):
         """
         band_info = spyndex.bands.get(band_name)
         if band_info is None:
-            raise BandSelectionError(f"Band name '{band_name}' not found in the spyndex library")
+            raise BandSelectionError("Band name '{}' not found in the spyndex library".format(band_name))
 
         min_wave, max_wave = band_info.min_wavelength, band_info.max_wavelength
         selected_wavelengths = self.wavelengths[(self.wavelengths >= min_wave) & (self.wavelengths <= max_wave)]

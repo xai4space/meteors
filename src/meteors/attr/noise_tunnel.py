@@ -36,7 +36,7 @@ def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | s
             Each row contains k True values.
     """
     if k > n:
-        raise ValueError(f"Cannot select {k} elements from the range [0, {n})")
+        raise ValueError("Cannot select {} elements from the range [0, {})".format(k, n))
     if k == n:
         return torch.ones((n_samples, n), device=device).bool()
     result = torch.zeros((n_samples, n), device=device).bool()
@@ -101,14 +101,14 @@ class BaseNoiseTunnel(Explainer, ABC):
         Raises:
             ValueError: If the aggregation method is not implemented.
         """
+        if method not in NoiseTunnelType.__members__:
+            raise ValueError("Aggregation method for NoiseTunnel {} is not implemented".format(method))
         if NoiseTunnelType[method] == NoiseTunnelType.smoothgrad:
             return attributions.mean(dim=0)
         elif NoiseTunnelType[method] == NoiseTunnelType.smoothgrad_sq:
             return (attributions**2).mean(dim=0)
         elif NoiseTunnelType[method] == NoiseTunnelType.vargrad:
             return (attributions**2 - attributions.mean(dim=0) ** 2).mean(dim=0)
-        else:
-            raise ValueError(f"Aggregation method for NoiseTunnel {method} is not implemented")
 
     def _forward_loop(
         self,
@@ -288,9 +288,10 @@ class NoiseTunnel(BaseNoiseTunnel):
         if isinstance(stdevs, tuple):
             if len(stdevs) != len(hsi):
                 raise ValueError(
-                    "The number of stdevs must match the number of input images, number of stdevs:"
-                    f"{len(stdevs)}, number of input images: {len(hsi)}"
+                    "The number of stdevs must match the number of input images, number of stdevs: {}, "
+                    "number of input images: {}".format(len(stdevs), len(hsi))
                 )
+
         else:
             stdevs = tuple([stdevs] * len(hsi))
 
@@ -320,7 +321,7 @@ class NoiseTunnel(BaseNoiseTunnel):
                 for hsi_image, attribution in zip(hsi, nt_attributes)
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error in generating NoiseTunnel attributions: {e}") from e
+            raise HSIAttributesError("Error in generating NoiseTunnel attributions: {}".format(e)) from e
 
         return attributes[0] if len(attributes) == 1 else attributes
 
@@ -370,7 +371,9 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
             raise ValueError("Baseline must be provided for the HyperNoiseTunnel method")
 
         if baseline.shape != input.shape:
-            raise ShapeMismatchError(f"Baseline shape {baseline.shape} does not match input shape {input.shape}")
+            raise ShapeMismatchError(
+                "Baseline shape {} does not match input shape {}".format(baseline.shape, input.shape)
+            )
 
         if n_samples < 1:
             raise ValueError("Number of perturbated samples to be generated must be greater than 0")
@@ -399,7 +402,8 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
         else:
             if num_perturbed_bands < 0 or num_perturbed_bands > input.shape[0]:
                 raise ValueError(
-                    f"Cannot perturb {num_perturbed_bands} bands in the input with {input.shape[0]} channels. The number of perturbed bands must be in the range [0, {input.shape[0]}]"
+                    "Cannot perturb {} bands in the input with {} channels. The number of perturbed bands must be "
+                    "in the range [0, {}]".format(num_perturbed_bands, input.shape[0], input.shape[0])
                 )
 
             channels_to_be_perturbed = torch_random_choice(
@@ -534,7 +538,7 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
                 for hsi_image, attribution in zip(hsi, hnt_attributes)
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error in generating HyperNoiseTunnel attributions: {e}") from e
+            raise HSIAttributesError("Error in generating HyperNoiseTunnel attributions: {}".format(e)) from e
 
         for i in range(len(change_orientation)):
             if change_orientation[i]:

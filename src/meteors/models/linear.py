@@ -80,7 +80,7 @@ class LinearModel(nn.Module, InterpretableModel):
                 Default: None
         """
         if norm_type not in LinearModel.SUPPORTED_NORMS:
-            raise ValueError(f"{norm_type} not supported. Please use {LinearModel.SUPPORTED_NORMS}")
+            raise ValueError("{} not supported. Please use {}".format(norm_type, LinearModel.SUPPORTED_NORMS))  # type: ignore
 
         if weight_values is not None:
             in_features = weight_values.shape[-1]

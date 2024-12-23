@@ -39,10 +39,10 @@ def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None,
     elif isinstance(baseline, torch.Tensor):
         if baseline.shape != hsi.image.shape:
             raise ShapeMismatchError(
-                f"Passed baseline and HSI have incorrect shapes: {baseline.shape} and {hsi.image.shape}"
+                "Passed baseline and HSI have incorrect shapes: {} and {}".format(baseline.shape, hsi.image.shape)
             )
     if not isinstance(baseline, torch.Tensor):
-        raise TypeError(f"Expected torch.Tensor | int | float as baseline, but got {type(baseline)}")
+        raise TypeError("Expected torch.Tensor | int | float as baseline, but got {}".format(type(baseline)))
 
     baseline = baseline.to(hsi.image.device)  # cast the baseline to the same device as the hsi tensor
     return baseline
@@ -69,7 +69,7 @@ class Explainer(ABC):
 
     def __init__(self, callable: ExplainableModel | Explainer) -> None:
         if not isinstance(callable, ExplainableModel) and not isinstance(callable, Explainer):
-            raise TypeError(f"Expected ExplainableModel or Explainer as callable, but got {type(callable)}")
+            raise TypeError("Expected ExplainableModel or Explainer as callable, but got {}".format(type(callable)))
         self.chained_explainer = None
         self._attribution_method: Attribution | None = (
             None  # the inner attribution method coming from the captum library
@@ -86,11 +86,13 @@ class Explainer(ABC):
             self.chained_explainer = callable
             self.explainable_model: ExplainableModel = callable.explainable_model
             logger.debug(
-                f"Initializing {self.__class__.__name__} explainer on model {callable.explainable_model} chained with {callable.__class__.__name__}"
+                "Initializing {} explainer on model {} chained with {}".format(
+                    self.__class__.__name__, callable.explainable_model, callable.__class__.__name__
+                )
             )
         else:
             self.explainable_model = callable
-            logger.debug(f"Initializing {self.__class__.__name__} explainer on model {callable}")
+            logger.debug("Initializing {} explainer on model {}".format(self.__class__.__name__, callable))
 
         self.forward_func = self.explainable_model.forward_func
 

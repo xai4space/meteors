@@ -30,7 +30,7 @@ def torch_dtype_to_python_dtype(dtype: torch.dtype) -> Type:
     elif dtype == torch.bool:
         return bool
     else:
-        raise TypeError(f"Can't convert PyTorch dtype {dtype} to Python data type")
+        raise TypeError("Can't convert PyTorch dtype {} to Python data type".format(dtype))
 
 
 def change_dtype_of_list(original_list: list[Any] | Any, dtype: Callable[[Any], T]) -> list[T]:

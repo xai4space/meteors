@@ -200,7 +200,7 @@ class Occlusion(Explainer):
                 for hsi_image, attribution in zip(hsi, occlusion_attributions)
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error in generating Occlusion attributions: {e}") from e
+            raise HSIAttributesError("Error in generating Occlusion attributions: {}".format(e)) from e
 
         return attributes[0] if len(attributes) == 1 else attributes
 
@@ -340,7 +340,7 @@ class Occlusion(Explainer):
                 for hsi_image, attribution, mask in zip(hsi, occlusion_attributions, segment_mask)
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error in generating Occlusion attributions: {e}") from e
+            raise HSIAttributesError("Error in generating Occlusion attributions: {}".format(e)) from e
 
         return spatial_attributes[0] if len(spatial_attributes) == 1 else spatial_attributes
 
@@ -494,6 +494,6 @@ class Occlusion(Explainer):
                 for hsi_image, attribution, mask in zip(hsi, occlusion_attributions, band_mask)
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error in generating Occlusion attributions: {e}") from e
+            raise HSIAttributesError("Error in generating Occlusion attributions: {}".format(e)) from e
 
         return spectral_attributes[0] if len(spectral_attributes) == 1 else spectral_attributes

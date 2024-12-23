@@ -181,6 +181,10 @@ def test_noise_attribute(explainable_toy_model):
 
     # test validation
 
+    # incorrect method
+    with pytest.raises(ValueError):
+        noise_tunnel.attribute(image, n_samples=1, method="incorrect")
+
     # incorrect explainer class
     with pytest.raises(RuntimeError):
         NoiseTunnel(explainable_toy_model)
@@ -294,6 +298,10 @@ def test_hyper_attribute(explainable_toy_model):
         hyper_noise_tunnel.attribute(image, n_samples=1, baseline=torch.ones((1, 5, 5, 5)))
 
     # test validation
+
+    # incorrect method
+    with pytest.raises(ValueError):
+        hyper_noise_tunnel.attribute(image, n_samples=1, baseline=baseline, method="incorrect")
 
     # incorrect explainer class
     with pytest.raises(RuntimeError):
