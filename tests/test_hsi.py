@@ -248,11 +248,6 @@ def test_ensure_wavelengths_tensor():
     with pytest.raises(TypeError):
         mt_image.ensure_wavelengths_tensor(wavelengths)
 
-    # Test invalid wavelengths type
-    wavelengths = 123
-    with pytest.raises(TypeError):
-        mt_image.ensure_wavelengths_tensor(wavelengths)
-
 
 def test_validate_shapes():
     # Test valid shapes

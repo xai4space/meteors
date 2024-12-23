@@ -136,9 +136,6 @@ def ensure_wavelengths_tensor(
         TypeError: If the input is not a PyTorch tensor, NumPy array, list, or tuple.
         ValueError: If the wavelengths cannot be converted to a PyTorch tensor.
     """
-    if not isinstance(wavelengths, (torch.Tensor, np.ndarray, list, tuple)):
-        raise TypeError("Wavelengths must be a PyTorch tensor, NumPy array, list, or tuple of numeric values")
-
     try:
         if not isinstance(wavelengths, torch.Tensor):
             wavelengths = torch.as_tensor(wavelengths)

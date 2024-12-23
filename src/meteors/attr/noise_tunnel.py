@@ -101,14 +101,14 @@ class BaseNoiseTunnel(Explainer, ABC):
         Raises:
             ValueError: If the aggregation method is not implemented.
         """
+        if method not in NoiseTunnelType.__members__:
+            raise ValueError("Aggregation method for NoiseTunnel {} is not implemented".format(method))
         if NoiseTunnelType[method] == NoiseTunnelType.smoothgrad:
             return attributions.mean(dim=0)
         elif NoiseTunnelType[method] == NoiseTunnelType.smoothgrad_sq:
             return (attributions**2).mean(dim=0)
         elif NoiseTunnelType[method] == NoiseTunnelType.vargrad:
             return (attributions**2 - attributions.mean(dim=0) ** 2).mean(dim=0)
-        else:
-            raise ValueError("Aggregation method for NoiseTunnel {} is not implemented".format(method))
 
     def _forward_loop(
         self,
