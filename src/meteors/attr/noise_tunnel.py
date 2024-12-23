@@ -370,8 +370,10 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
             raise ValueError("Baseline must be provided for the HyperNoiseTunnel method")
 
         if baseline.shape != input.shape:
-            raise ShapeMismatchError("Baseline shape {} does not match input shape {}".format(baseline.shape, input.shape))
-        
+            raise ShapeMismatchError(
+                "Baseline shape {} does not match input shape {}".format(baseline.shape, input.shape)
+            )
+
         if n_samples < 1:
             raise ValueError("Number of perturbated samples to be generated must be greater than 0")
 

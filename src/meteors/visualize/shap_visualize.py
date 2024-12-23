@@ -63,7 +63,9 @@ def validate_observation_index(
         if observation_index is None and not explanation.is_local_explanation:
             raise ValueError(
                 "The plot of type {} only supports local explanations. \n"
-                "Passed explanation contains multiple observations and no observation index specified.".format(plot_type)
+                "Passed explanation contains multiple observations and no observation index specified.".format(
+                    plot_type
+                )
             )
         if observation_index is None:
             observation_index = 0
@@ -195,7 +197,9 @@ def validate_mapping_dict(
             if feature_index < 0 or feature_index >= explanation_values.shape[1]:
                 raise ValueError("Feature index out of bounds: {}".format(feature_index))
             if feature_index in used_indices:
-                raise ValueError("Feature index {} already used in another entry of the aggregation.".format(feature_index))
+                raise ValueError(
+                    "Feature index {} already used in another entry of the aggregation.".format(feature_index)
+                )
             used_indices.add(feature_index)
 
         parsed_mapping[key] = value
@@ -419,7 +423,9 @@ def dependence_plot(
         and not isinstance(display_features, pd.DataFrame)
         and not isinstance(display_features, np.ndarray)
     ):
-        raise TypeError("Expected pd.DataFrame or np.ndarray as display_features, but got {}".format(type(display_features)))
+        raise TypeError(
+            "Expected pd.DataFrame or np.ndarray as display_features, but got {}".format(type(display_features))
+        )
 
     shap.dependence_plot(
         ind=feature,
