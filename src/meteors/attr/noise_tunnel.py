@@ -36,7 +36,7 @@ def torch_random_choice(n: int, k: int, n_samples: int, device: torch.device | s
             Each row contains k True values.
     """
     if k > n:
-        raise ValueError(f"Cannot select {k} elements from the range [0, {n})")
+        raise ValueError("Cannot select {} elements from the range [0, {})".format(k, n))
     if k == n:
         return torch.ones((n_samples, n), device=device).bool()
     result = torch.zeros((n_samples, n), device=device).bool()
@@ -108,7 +108,7 @@ class BaseNoiseTunnel(Explainer, ABC):
         elif NoiseTunnelType[method] == NoiseTunnelType.vargrad:
             return (attributions**2 - attributions.mean(dim=0) ** 2).mean(dim=0)
         else:
-            raise ValueError(f"Aggregation method for NoiseTunnel {method} is not implemented")
+            raise ValueError("Aggregation method for NoiseTunnel {} is not implemented".format(method))
 
     def _forward_loop(
         self,
@@ -320,7 +320,7 @@ class NoiseTunnel(BaseNoiseTunnel):
                 for hsi_image, attribution in zip(hsi, nt_attributes)
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error in generating NoiseTunnel attributions: {e}") from e
+            raise HSIAttributesError("Error in generating NoiseTunnel attributions: {}".format(e)) from e
 
         return attributes[0] if len(attributes) == 1 else attributes
 
@@ -370,8 +370,8 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
             raise ValueError("Baseline must be provided for the HyperNoiseTunnel method")
 
         if baseline.shape != input.shape:
-            raise ShapeMismatchError(f"Baseline shape {baseline.shape} does not match input shape {input.shape}")
-
+            raise ShapeMismatchError("Baseline shape {} does not match input shape {}".format(baseline.shape, input.shape))
+        
         if n_samples < 1:
             raise ValueError("Number of perturbated samples to be generated must be greater than 0")
 
@@ -534,7 +534,7 @@ class HyperNoiseTunnel(BaseNoiseTunnel):
                 for hsi_image, attribution in zip(hsi, hnt_attributes)
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error in generating HyperNoiseTunnel attributions: {e}") from e
+            raise HSIAttributesError("Error in generating HyperNoiseTunnel attributions: {}".format(e)) from e
 
         for i in range(len(change_orientation)):
             if change_orientation[i]:

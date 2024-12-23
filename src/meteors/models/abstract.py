@@ -86,7 +86,7 @@ class ExplainableModel:
         value = value.lower()
 
         if value not in ExplainableModel.VALID_PROBLEM_TYPES:
-            raise ValueError(f"Invalid problem type. Expected one of {ExplainableModel.VALID_PROBLEM_TYPES}")
+            raise ValueError("Invalid problem type. Expected one of {}".format(ExplainableModel.VALID_PROBLEM_TYPES))
 
         return value
 

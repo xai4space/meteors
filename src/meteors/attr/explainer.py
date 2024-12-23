@@ -42,7 +42,7 @@ def validate_and_transform_baseline(baseline: int | float | torch.Tensor | None,
                 f"Passed baseline and HSI have incorrect shapes: {baseline.shape} and {hsi.image.shape}"
             )
     if not isinstance(baseline, torch.Tensor):
-        raise TypeError(f"Expected torch.Tensor | int | float as baseline, but got {type(baseline)}")
+        raise TypeError("Expected torch.Tensor | int | float as baseline, but got {}".format(type(baseline)))
 
     baseline = baseline.to(hsi.image.device)  # cast the baseline to the same device as the hsi tensor
     return baseline
@@ -69,7 +69,7 @@ class Explainer(ABC):
 
     def __init__(self, callable: ExplainableModel | Explainer) -> None:
         if not isinstance(callable, ExplainableModel) and not isinstance(callable, Explainer):
-            raise TypeError(f"Expected ExplainableModel or Explainer as callable, but got {type(callable)}")
+            raise TypeError("Expected ExplainableModel or Explainer as callable, but got {}".format(type(callable)))
         self.chained_explainer = None
         self._attribution_method: Attribution | None = (
             None  # the inner attribution method coming from the captum library

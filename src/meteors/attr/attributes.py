@@ -47,7 +47,7 @@ def ensure_torch_tensor(value: np.ndarray | torch.Tensor, context: str) -> torch
         logger.debug(f"Converting {context} from NumPy array to PyTorch tensor")
         return torch.from_numpy(value)
 
-    raise TypeError(f"{context} must be a NumPy array or PyTorch tensor")
+    raise TypeError("{} must be a NumPy array or PyTorch tensor".format(context))
 
 
 def validate_and_convert_attributes(value: np.ndarray | torch.Tensor) -> torch.Tensor:
@@ -222,7 +222,7 @@ def resolve_inference_device_attributes(device: str | torch.device | None, info:
         try:
             device = torch.device(device)
         except Exception as e:
-            raise ValueError(f"Device {device} is not valid") from e  # Invalid inference device ERROR
+            raise ValueError("Device {} is not valid".format(device)) from e  # Invalid inference device ERROR
     if not isinstance(device, torch.device):
         raise TypeError("Device should be a string or torch device")
 

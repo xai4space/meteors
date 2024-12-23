@@ -21,7 +21,7 @@ def download(url: str, root: str, error_checksum: bool = True) -> str:
     download_target = os.path.join(root, filename)
 
     if os.path.exists(download_target) and not os.path.isfile(download_target):
-        raise RuntimeError(f"{download_target} exists and is not a regular file")
+        raise RuntimeError("{} exists and is not a regular file".format(download_target))
 
     if os.path.isfile(download_target):
         # real_sha256 = hashlib.sha256(open(download_target, "rb").read()).hexdigest()

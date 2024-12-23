@@ -44,7 +44,7 @@ def validate_observation_index(
         int | None: parsed observation index.
     """
     if not isinstance(observation_index, int) and observation_index is not None:
-        raise TypeError(f"Expected int or None as observation index, but got {type(observation_index)}")
+        raise TypeError("Expected int or None as observation index, but got {}".format(type(observation_index)))
     if isinstance(observation_index, int):
         if explanation.is_local_explanation and observation_index != 0:
             raise ValueError(
@@ -54,15 +54,16 @@ def validate_observation_index(
             observation_index < 0 or observation_index >= explanation.data.shape[0]
         ):
             raise ValueError(
-                f"Observation index out of bounds: {observation_index}. "
-                f"The explanation contains {explanation.explanations.values.shape[0]} observations"
+                "Observation index out of bounds: {}. The explanation contains {} observations".format(
+                    observation_index, explanation.data.shape[0]
+                )
             )
 
     if require_local_explanation:
         if observation_index is None and not explanation.is_local_explanation:
             raise ValueError(
-                f"The plot of type {plot_type} only supports local explanations. \n"
-                "Passed explanation contains multiple observations and no observation index specified."
+                "The plot of type {} only supports local explanations. \n"
+                "Passed explanation contains multiple observations and no observation index specified.".format(plot_type)
             )
         if observation_index is None:
             observation_index = 0
@@ -95,10 +96,10 @@ def validate_target(
         int | None: the preprocessed target index
     """
     if target is not None and not isinstance(target, int):
-        raise TypeError(f"Expected int or None as target, but got {type(target)}")
+        raise TypeError("Expected int or None as target, but got {}".format(type(target)))
 
     if target is not None and (target < 0 or target >= explanation.num_target_outputs):
-        raise ValueError(f"Target index out of bounds: {target}")
+        raise ValueError("Target index out of bounds: {}".format(target))
 
     if target == 0 and explanation.num_target_outputs == 1:
         if len(explanation.explanations.shape) == 2:
@@ -110,8 +111,8 @@ def validate_target(
     if require_single_target:
         if target is None and explanation.num_target_outputs > 1:
             raise ValueError(
-                f"The plot of type {plot_type} requires a single target value. \n"
-                "Passed explanation contains multiple targets and no target index specified."
+                "The plot of type {} requires a single target value. \n"
+                "Passed explanation contains multiple targets and no target index specified.".format(plot_type)
             )
 
     return target
@@ -129,9 +130,9 @@ def validate_explanations_and_explainer_type(explainer: HyperSHAP, explanation: 
         TypeError: If the explanation is not SHAPExplanation type.
     """
     if not isinstance(explainer, HyperSHAP):
-        raise TypeError(f"Expected HyperSHAP as explainer, but got {type(explainer)}")
+        raise TypeError("Expected HyperSHAP as explainer, but got {}".format(type(explainer)))
     if not isinstance(explanation, SHAPExplanation):
-        raise TypeError(f"Expected HyperSHAP as explanation, but got {type(explanation)}")
+        raise TypeError("Expected HyperSHAP as explanation, but got {}".format(type(explanation)))
 
 
 def validate_mapping_dict(
@@ -161,9 +162,9 @@ def validate_mapping_dict(
 
     # check if the mapping are in the correct format
     if not isinstance(mapping, dict):
-        raise TypeError(f"Expected dict as mapping, but got {type(mapping)}")
+        raise TypeError("Expected dict as mapping, but got {}".format(type(mapping)))
     if not isinstance(explanation_values, np.ndarray):
-        raise TypeError(f"Expected np.ndarray as explantion_values, but got {type(explanation_values)}")
+        raise TypeError("Expected np.ndarray as explantion_values, but got {}".format(type(explanation_values)))
 
     used_indices = set()
     ncols = explanation_values.shape[1]
@@ -176,33 +177,33 @@ def validate_mapping_dict(
                 try:
                     key = float(key)
                 except ValueError:
-                    raise ValueError(f"Expected numeric as key in wavelengths, but got {key}")
+                    raise ValueError("Expected numeric as key in wavelengths, but got {}".format(key))
             if not isinstance(key, float) and not isinstance(key, int):
-                raise TypeError(f"Expected numeric as key in wavelengths, but got {type(key)}")
+                raise TypeError("Expected numeric as key in wavelengths, but got {}".format(type(key)))
         else:
             if not isinstance(key, str):
-                raise TypeError(f"Expected str as key in mapping, but got {type(key)}")
+                raise TypeError("Expected str as key in mapping, but got {}".format(type(key)))
         if not isinstance(value, list) and not isinstance(value, int):
-            raise TypeError(f"Expected list or a single integer as value in mapping, but got {type(value)}")
+            raise TypeError("Expected list or a single integer as value in mapping, but got {}".format(type(value)))
 
         if not isinstance(value, list):
             value = [value]
 
         for feature_index in value:
             if not isinstance(feature_index, int):
-                raise TypeError(f"Expected int as feature index in mapping, but got {type(feature_index)}")
+                raise TypeError("Expected int as feature index in mapping, but got {}".format(type(feature_index)))
             if feature_index < 0 or feature_index >= explanation_values.shape[1]:
-                raise ValueError(f"Feature index out of bounds: {feature_index}")
+                raise ValueError("Feature index out of bounds: {}".format(feature_index))
             if feature_index in used_indices:
-                raise ValueError(f"Feature index {feature_index} already used in another entry of the aggregation.")
+                raise ValueError("Feature index {} already used in another entry of the aggregation.".format(feature_index))
             used_indices.add(feature_index)
 
         parsed_mapping[key] = value
 
     if len(used_indices) != ncols:
         raise ValueError(
-            f"Not all features are used in the mapping. There are {ncols} features, "
-            f"but only {len(used_indices)} are used in the mapping."
+            "Not all features are used in the mapping. There are {} features, "
+            "but only {} are used in the mapping.".format(ncols, len(used_indices))
         )
 
     return parsed_mapping
@@ -404,21 +405,21 @@ def dependence_plot(
         raise ValueError("The dependence plot requires a global explanation.")
 
     if not isinstance(feature, int) and not isinstance(feature, str):
-        raise TypeError(f"Expected int or str as feature, but got {type(feature)}")
+        raise TypeError("Expected int or str as feature, but got {}.format(type(feature))")
 
     if (
         interaction_index is not None
         and not isinstance(interaction_index, str)
         and not isinstance(interaction_index, int)
     ):
-        raise TypeError(f"Expected str or int as interaction_index, but got {type(interaction_index)}")
+        raise TypeError("Expected str or int as interaction_index, but got {}.format(type(interaction_index))")
 
     if (
         display_features is not None
         and not isinstance(display_features, pd.DataFrame)
         and not isinstance(display_features, np.ndarray)
     ):
-        raise TypeError(f"Expected pd.DataFrame or np.ndarray as display_features, but got {type(display_features)}")
+        raise TypeError("Expected pd.DataFrame or np.ndarray as display_features, but got {}".format(type(display_features)))
 
     shap.dependence_plot(
         ind=feature,

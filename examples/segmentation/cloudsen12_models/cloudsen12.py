@@ -74,9 +74,9 @@ def download_weights(weights_file: str):
             local_dir_use_symlinks=False,
         )
         if model_file_path != weights_file:
-            raise ValueError(f"Error downloading {weights_file} file is downloaded in {model_file_path}")
+            raise ValueError("Error downloading {} file is downloaded in {}".format(weights_file, model_file_path))
         if not os.path.exists(weights_file):
-            raise ValueError(f"Error downloading {weights_file}")
+            raise ValueError("Error downloading {}".format(weights_file))
 
     return weights_file
 
@@ -194,7 +194,7 @@ def load_model_by_name(
         CDModel: cloud detection model
     """
     if name not in MODELS_CLOUDSEN12:
-        raise ValueError(f"Model name {name} not in {MODELS_CLOUDSEN12.keys()}")
+        raise ValueError("Model name {} not in {}".format(name, MODELS_CLOUDSEN12.keys()))
 
     model_file = MODELS_CLOUDSEN12[name]["model_file"]
     if not isinstance(model_file, str) and isinstance(model_file, Sequence):

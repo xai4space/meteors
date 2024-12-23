@@ -32,7 +32,7 @@ class HyperSHAP:
         **kwargs,
     ) -> None:
         if not isinstance(callable, ExplainableModel):
-            raise TypeError(f"Expected ExplainableModel as callable, but got {type(callable)}")
+            raise TypeError("Expected ExplainableModel as callable, but got {}".format(type(callable)))
 
         self.explainable_model = callable
 
@@ -40,7 +40,7 @@ class HyperSHAP:
 
         if self.explainer_type not in AVAILABLE_SHAP_EXPLAINERS:
             raise ValueError(
-                f"Invalid explainer type: {explainer_type}. Available options: {AVAILABLE_SHAP_EXPLAINERS}"
+                "Invalid explainer type: {}. Available options: {}".format(explainer_type, AVAILABLE_SHAP_EXPLAINERS)
             )
 
         try:
@@ -53,7 +53,7 @@ class HyperSHAP:
             elif self.explainer_type == "linear":
                 self._explainer = shap.LinearExplainer(self.explainable_model.forward_func, masker, **kwargs)
         except ValueError as e:
-            raise ValueError(f"Could not initialize the explainer: {e}")
+            raise ValueError("Could not initialize the explainer: {}".format(e)) from e
 
     def explain(self, data: np.ndarray | pd.DataFrame | torch.tensor) -> SHAPExplanation:
         """
@@ -78,7 +78,7 @@ class HyperSHAP:
         try:
             shap_values = self._explainer(data)
         except ValueError as e:
-            raise ValueError(f"Could not generate SHAP explanations: {e}")
+            raise ValueError("Could not generate SHAP explanations: {}".format(e)) from e
 
         explanations = SHAPExplanation(data=data, explanations=shap_values, explanation_method=self.explainer_type)
 

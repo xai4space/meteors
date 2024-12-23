@@ -47,7 +47,7 @@ def ensure_data_type_and_reshape(data: np.ndarray | torch.Tensor | pd.DataFrame)
                 f"Expected NumPy array | Torch Tensor | Pandas DataFrame as data, but got {type(data)} and failed to convert to NumPy array"
             ) from e
     if not np.issubdtype(converted_data.dtype, np.number):
-        raise TypeError(f"Expected numeric data, but got {converted_data.dtype}")
+        raise TypeError("Expected numeric data, but got {}".format(converted_data.dtype))
 
     # reshaping the data if it is one-dimensional
     converted_data = np.reshape(converted_data, (1, -1)) if len(converted_data.shape) == 1 else converted_data

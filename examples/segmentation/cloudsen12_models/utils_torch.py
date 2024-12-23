@@ -55,7 +55,7 @@ def padded_predict(
         elif len(pred_padded.shape) == 2:
             pred = pred_padded[slice_rows, slice_cols]
         else:
-            raise NotImplementedError(f"Don't know how to slice the tensor of shape {pred_padded.shape}")
+            raise NotImplementedError("Don't know how to slice the tensor of shape {}".format(pred_padded.shape))
 
     pred_padded = model(tensor_padded)[0]
     if len(pred_padded.shape) == 3:
@@ -63,6 +63,6 @@ def padded_predict(
     elif len(pred_padded.shape) == 2:
         pred = pred_padded[slice_rows, slice_cols]
     else:
-        raise NotImplementedError(f"Don't know how to slice the tensor of shape {pred_padded.shape}")
+        raise NotImplementedError("Don't know how to slice the tensor of shape {}".format(pred_padded.shape))
 
     return pred

@@ -102,6 +102,6 @@ class InputXGradient(Explainer):
                 for hsi_image, attribution in zip(hsi, gradient_attribution)
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error in generating InputXGradient attributions: {e}") from e
+            raise HSIAttributesError("Error in generating InputXGradient attributions: {}".format(e)) from e
 
         return attributes[0] if len(attributes) == 1 else attributes

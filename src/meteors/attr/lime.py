@@ -115,7 +115,7 @@ def validate_band_format(bands: dict[str | tuple[str, ...], BandType], variable_
     """
     for keys, band_ranges in bands.items():
         if not (isinstance(keys, str) or (isinstance(keys, tuple) and all(isinstance(key, str) for key in keys))):
-            raise TypeError(f"{variable_name} keys should be string or tuple of strings")
+            raise TypeError("{} keys should be string or tuple of strings".format(variable_name))
         if isinstance(band_ranges, (int, float)):
             continue
         elif (
@@ -226,14 +226,14 @@ def adjust_and_validate_segment_ranges(
                 logger.debug(f"Adjusting segment start from {start} to 0")
                 start = 0
             else:
-                raise ValueError(f"Segment range {(start, end)} is out of bounds")
+                raise ValueError("Segment range {} is out of bounds".format((start, end)))
 
         if end > max_index:
             if start < max_index:
-                logger.debug(f"Adjusting segment end from {(start, end)} to {(start, max_index)}")
+                logger.debug("Adjusting segment end from {} to {}".format((start, end), (start, max_index)))
                 end = max_index
             else:
-                raise ValueError(f"Segment range {(start, end)} is out of bounds")
+                raise ValueError("Segment range {} is out of bounds".format((start, end)))
         adjusted_ranges.append((start, end))
     return adjusted_ranges  # type: ignore
 
@@ -253,7 +253,7 @@ def validate_mask_shape(mask_type: Literal["segmentation", "band"], hsi: HSI, ma
     """
 
     if mask_type not in ["segmentation", "band"]:
-        raise ValueError(f"Unsupported mask type passed to validation: {mask_type}")
+        raise ValueError("Unsupported mask type passed to validation: {}".format(mask_type))
 
     image_shape = hsi.image.shape
     mask_shape = mask.shape
@@ -262,17 +262,17 @@ def validate_mask_shape(mask_type: Literal["segmentation", "band"], hsi: HSI, ma
         mask = mask.unsqueeze(hsi.spectral_axis)
         mask_shape = mask.shape
     elif len(mask_shape) != 3:
-        raise ValueError(f"Mask should be a 3D tensor, but got shape: {mask_shape}")
+        raise ValueError("Mask should be a 3D tensor, but got shape: {}".format(mask_shape))
 
     try:
         broadcasted_shape = torch.broadcast_shapes(image_shape, mask_shape)
     except RuntimeError as e:
         raise ValueError(
-            f"Cannot broadcast image and mask of shapes {image_shape} and {mask_shape} respectively: {e}"
+            "Cannot broadcast image and mask of shapes {} and {} respectively: {}".format(image_shape, mask_shape, str(e))
         ) from e
 
     if broadcasted_shape != image_shape:
-        raise ShapeMismatchError(f"HSI and {mask_type} mask have mismatched shapes: {image_shape}, {mask_shape}")
+        raise ShapeMismatchError("HSI and {} mask have mismatched shapes: {}, {}".format(mask_type, image_shape, mask_shape))
 
     # check on which dims the shapes match - the segmentation mask can differ only in the band dimension, band mask can differ in the height and width dimensions
     shape_matches = [broadcasted_shape[i] == mask_shape[i] for i in range(3)]
@@ -400,9 +400,9 @@ class Lime(Explainer):
             elif segmentation_method == "patch":
                 return Lime._get_patch_segmentation_mask(hsi, **segmentation_method_params)
             else:
-                raise ValueError(f"Unsupported segmentation method: {segmentation_method}")
+                raise ValueError("Unsupported segmentation method: {}".format(segmentation_method))
         except Exception as e:
-            raise MaskCreationError(f"Error creating segmentation mask using method {segmentation_method}: {e}")
+            raise MaskCreationError("Error creating segmentation mask using method {}: {}".format(segmentation_method, str(e))) from e
 
     @staticmethod
     def get_band_mask(
@@ -482,7 +482,7 @@ class Lime(Explainer):
                         hsi.wavelengths, band_names
                     )
                 except Exception as e:
-                    raise BandSelectionError(f"Incorrect band names provided: {e}") from e
+                    raise BandSelectionError("Incorrect band names provided: {}".format(e)) from e
             elif band_wavelengths is not None:
                 logger.debug("Getting band mask from band groups given by ranges of wavelengths")
                 if band_indices is not None:
@@ -518,7 +518,7 @@ class Lime(Explainer):
                 return_dict_labels_to_segment_ids=True,
             )
         except Exception as e:
-            raise MaskCreationError(f"Error creating band mask: {e}") from e
+            raise MaskCreationError("Error creating band mask: {}".format(e)) from e
 
     @staticmethod
     def _make_band_names_indexable(segment_name: list[str] | tuple[str, ...] | str) -> tuple[str, ...] | str:
@@ -539,7 +539,7 @@ class Lime(Explainer):
             return segment_name
         elif isinstance(segment_name, list) and all(isinstance(subitem, str) for subitem in segment_name):
             return tuple(segment_name)
-        raise TypeError(f"Incorrect segment {segment_name} type. Should be either a list or string")
+        raise TypeError("Incorrect segment {} type. Should be either a list or string".format(segment_name))
 
     @staticmethod
     # @lru_cache(maxsize=32) Can't use with lists as they are not hashable
@@ -729,7 +729,7 @@ class Lime(Explainer):
                     valid_range_indices = adjust_and_validate_segment_ranges(wavelengths, valid_indices_format)
                     indices = Lime._get_indices_from_wavelength_indices_range(wavelengths, valid_range_indices)
             except Exception as e:
-                raise ValueError(f"Problem with segment {segment_label}: {e}") from e
+                raise ValueError("Problem with segment {}: {}".format(segment_label, e)) from e
 
             band_indices[segment_label] = indices
 
@@ -753,9 +753,9 @@ class Lime(Explainer):
             if number_of_elements == 1:
                 indices.append(index.item())
             elif number_of_elements == 0:
-                raise ValueError(f"Couldn't find wavelength of value {wavelength} in list of wavelength")
+                raise ValueError("Couldn't find wavelength of value {} in list of wavelength".format(wavelength))
             else:
-                raise ValueError(f"Wavelength of value {wavelength} was present more than once in list of wavelength")
+                raise ValueError("Wavelength of value {} was present more than once in list of wavelength".format(wavelength))
         return indices
 
     @staticmethod
@@ -793,7 +793,7 @@ class Lime(Explainer):
 
                 band_indices[segment_label] = indices  # type: ignore
             except Exception as e:
-                raise ValueError(f"Problem with segment {segment_label}") from e
+                raise ValueError("Problem with segment {}".format(segment_label)) from e
 
         return band_indices
 
@@ -1032,7 +1032,7 @@ class Lime(Explainer):
             return self.get_spectral_attributes(
                 hsi, target=target, additional_forward_args=additional_forward_args, **kwargs
             )
-        raise ValueError(f"Unsupported attribution type: {attribution_type}. Use 'spatial' or 'spectral'")
+        raise ValueError("Unsupported attribution type: {}. Use 'spatial' or 'spectral'".format(attribution_type))
 
     def get_spatial_attributes(
         self,
@@ -1185,7 +1185,7 @@ class Lime(Explainer):
                 for idx, (hsi_img, lime_attr) in enumerate(zip(hsi, lime_attributes))
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error during creating spatial attribution {e}") from e
+            raise HSIAttributesError("Error during creating spatial attribution {}".format(e)) from e
 
         return spatial_attribution[0] if len(spatial_attribution) == 1 else spatial_attribution
 
@@ -1349,7 +1349,7 @@ class Lime(Explainer):
                 for idx, (hsi_img, lime_attr) in enumerate(zip(hsi, lime_attributes))
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error during creating spectral attribution {e}") from e
+            raise HSIAttributesError("Error during creating spectral attribution {}".format(e)) from e
 
         return spectral_attribution[0] if len(spectral_attribution) == 1 else spectral_attribution
 

@@ -108,7 +108,7 @@ def resolve_inference_device_hsi(device: str | torch.device | None, info: Valida
         try:
             device = torch.device(device)
         except Exception as e:
-            raise ValueError(f"Device {device} is not valid") from e
+            raise ValueError("Device {} is not valid".format(device)) from e
     if not isinstance(device, torch.device):
         raise TypeError("Device should be a string or torch device")
 
@@ -143,7 +143,7 @@ def ensure_wavelengths_tensor(
         if not isinstance(wavelengths, torch.Tensor):
             wavelengths = torch.as_tensor(wavelengths)
     except Exception as e:
-        raise TypeError(f"Failed to convert wavelengths to a PyTorch tensor: {str(e)}") from e
+        raise TypeError("Failed to convert wavelengths to a PyTorch tensor: {}".format(str(e))) from e
 
     return wavelengths
 
@@ -612,7 +612,7 @@ class HSI(BaseModel):
         """
         band_info = spyndex.bands.get(band_name)
         if band_info is None:
-            raise BandSelectionError(f"Band name '{band_name}' not found in the spyndex library")
+            raise BandSelectionError("Band name '{}' not found in the spyndex library".format(band_name))
 
         min_wave, max_wave = band_info.min_wavelength, band_info.max_wavelength
         selected_wavelengths = self.wavelengths[(self.wavelengths >= min_wave) & (self.wavelengths <= max_wave)]

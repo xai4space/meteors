@@ -168,6 +168,6 @@ class IntegratedGradients(Explainer):
                 for hsi_image, attribution, error in zip(hsi, attributions, approximation_error)
             ]
         except Exception as e:
-            raise HSIAttributesError(f"Error while creating HSIAttributes: {e}") from e
+            raise HSIAttributesError("Error while creating HSIAttributes: {}".format(e)) from e
 
         return attributes[0] if len(attributes) == 1 else attributes
