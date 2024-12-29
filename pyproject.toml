@@ -20,8 +20,10 @@ classifiers = [
 dependencies = [
     "captum>=0.7.0",
     "spyndex>=0.6.0",
-    "numpy<2.0.0", # From Captum
-    "torch>=1.10", # From Captum
+    "numpy<2.0.0",
+    # From Captum
+    "torch>=1.10",
+    # From Captum
     "eval-type-backport",
     "loguru",
     "matplotlib",
@@ -33,6 +35,7 @@ dependencies = [
     "importlib-resources; python_version < '3.10'",
     "setuptools>=60.0.0",
     "shap>=0.46.0",
+    "pywavelets>=1.6.0",
 ]
 
 [metadata]
