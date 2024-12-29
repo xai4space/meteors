@@ -20,8 +20,10 @@ classifiers = [
 dependencies = [
     "captum>=0.7.0",
     "spyndex>=0.6.0",
-    "numpy<2.0.0", # From Captum
-    "torch>=1.10", # From Captum
+    "numpy<2.0.0",
+    # From Captum
+    "torch>=1.10",
+    # From Captum
     "eval-type-backport",
     "loguru",
     "matplotlib",
@@ -56,10 +58,8 @@ dev-dependencies = [
     "mkdocs>=1.0.0",
     "mkdocs-material>=9.0.0",
     "mkdocstrings[python]>=0.25.0",
-    "ipykernel>=6.29.5",
-    "torchvision>=0.17.2",
     "gitpython>=3.1.43",
-    "segmentation_models_pytorch>=0.0.3",
+    "ipykernel>=6.29.5",
 ]
 
 [tool.mypy]
