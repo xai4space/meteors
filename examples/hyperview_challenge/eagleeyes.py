@@ -7,6 +7,12 @@ import numpy as np
 import pywt
 import os
 
+
+import urllib
+import hashlib
+import warnings
+from tqdm import tqdm
+
 from sklearn.metrics import (
     balanced_accuracy_score,
     matthews_corrcoef,
@@ -22,90 +28,6 @@ TEST_DIR = "test_data_simulated/"
 
 
 CLASSES = ["P", "K", "Mg", "pH"]
-
-class_metrics = {
-    "avg_acc": (balanced_accuracy_score, {}),
-    "acc": (accuracy_score, {}),
-    "mcc": (matthews_corrcoef, {}),
-    "f1": (f1_score, {"average": "macro"}),
-}
-
-ph_classes_names = [
-    "acidic",
-    "strongly acidic",
-    "slightly acidic",
-    "neutral",
-    "alkaline",
-]
-classes_names = ["very low", "low", "medium", "high", "very high"]
-ph_thresholds = [4.6, 5.6, 6.6, 7.3]
-
-# According to the pH class:
-phosphorus_thresholds = [
-    [50, 110, 186, 262],  # 0 Acidic
-    [49, 103, 158, 215],  # 1 Strongly acidic
-    [47, 99, 152, 207],  # ...
-    [27, 54, 75, 99],
-    [27, 54, 75, 99],
-]
-# According to the soil class:
-potassium_thresholds = [
-    [32, 75, 119, 162],  # 0 Very light
-    [52, 99, 145, 191],  # 1 Light
-    [98, 139, 200, 241],  # 2 Medium
-    [126, 174, 270, 318],  # 3 Heavy
-]
-# According to the soil class:
-magnesium_thresholds = [
-    [7, 21, 51, 80],
-    [31, 43, 67, 93],
-    [48, 77, 106, 135],
-    [69, 93, 142, 191],
-]
-
-
-def element_classification(result: float, thresholds: Sequence[float | int]) -> int:
-    id_ = 0
-    for i, t in enumerate(thresholds):
-        if result > t:
-            id_ = i + 1
-        else:
-            break
-    return id_
-
-
-def ph_classification(result: float) -> int:
-    return element_classification(result, ph_thresholds)
-
-
-def phosphorus_classification(result: float, ph_class: int) -> int:
-    return element_classification(result, phosphorus_thresholds[int(ph_class)])
-
-
-def potassium_classification(result: float, soil_class: int) -> int:
-    return element_classification(result, potassium_thresholds[int(soil_class)])
-
-
-def magnesium_classification(result: float, soil_class: int) -> int:
-    return element_classification(result, magnesium_thresholds[int(soil_class)])
-
-
-def get_classes(y: pd.DataFrame, soil_class: int = 3) -> pd.DataFrame:
-    y_classes: dict[str, list] = {k: [] for k in CLASSES}
-    for _, row in y.iterrows():
-        y_classes["pH"].append(ph_classification(row["pH"]))
-        y_classes["P"].append(phosphorus_classification(row["P"], y_classes["pH"][-1]))
-        y_classes["K"].append(potassium_classification(row["K"], soil_class))
-        y_classes["Mg"].append(magnesium_classification(row["Mg"], soil_class))
-    return pd.DataFrame.from_dict(y_classes)
-
-
-def load_data() -> Tuple[List, pd.DataFrame, List, pd.DataFrame]:
-    X_train = [os.path.join(TRAIN_DIR, f"{i}.npz") for i in range(TRAIN_SIZE)]
-    X_test = [os.path.join(TEST_DIR, f"{i}.npz") for i in range(TEST_SIZE)]
-    y_train = pd.read_csv("train_gt.csv")
-    y_test = pd.read_csv("test_gt.csv")
-    return X_train, y_train, X_test, y_test
 
 
 class SpectralCurveFiltering:
@@ -127,6 +49,7 @@ class BaselineRegressor:
 
     def predict(self, X_test: np.ndarray) -> np.ndarray:
         return np.full((len(X_test), self.classes_count), self.mean)
+
 
 
 def preprocess(samples_lst: List[str], features: List[str]) -> Tuple:
@@ -211,3 +134,49 @@ def preprocess(samples_lst: List[str], features: List[str]) -> Tuple:
             all_feature_names.append(sample_feature_names)
 
     return np.vstack(samples_lst), all_feature_names
+
+
+
+
+def download(url: str, root: str, error_checksum: bool = True) -> str:
+    os.makedirs(root, exist_ok=True)
+    filename = os.path.basename(url)
+
+    expected_sha256 = url.split("/")[-1]
+    if expected_sha256 == "RF_model_150_bands.joblib":
+        expected_sha256 = "f9167332bd4d87b6f8b863e53f9fc38e19d70c175ea8d4fb14df8ec676484684"  # RF_model_150_bands.joblib sha256
+    if expected_sha256 == "RF_model_spatial-fft-dwt-gradient-mean_150_bands.joblib":
+        expected_sha256 = "e078a7ef342fd313981c4b6a281e3497e32d6207f5c69cdbdd90814d6be5384b" # RF_model_spatial-fft-dwt-gradient-mean_150_bands.joblib
+    download_target = os.path.join(root, filename)
+
+    if os.path.exists(download_target) and not os.path.isfile(download_target):
+        raise RuntimeError("{} exists and is not a regular file".format(download_target))
+
+    if os.path.isfile(download_target):
+        real_sha256 = hashlib.sha256(open(download_target, "rb").read()).hexdigest()
+        print("INFO: Real SHA256: {}".format(real_sha256))
+        # print("INFO: Expected SHA256: {}".format(expected_sha256))
+        if hashlib.sha256(open(download_target, "rb").read()).hexdigest() == expected_sha256:
+            return download_target
+        else:
+            warnings.warn(f"{download_target} exists, but the SHA256 checksum does not match; re-downloading the file")
+
+    with urllib.request.urlopen(url) as source, open(download_target, "wb") as output:  # type: ignore
+        with tqdm(
+            total=int(source.info().get("Content-Length")), ncols=80, unit="iB", unit_scale=True, unit_divisor=1024
+        ) as loop:
+            while True:
+                buffer = source.read(8192)
+                if not buffer:
+                    break
+
+                output.write(buffer)
+                loop.update(len(buffer))
+
+    if hashlib.sha256(open(download_target, "rb").read()).hexdigest() != expected_sha256:
+        if error_checksum:
+            raise RuntimeError("Model has been downloaded but the SHA256 checksum does not not match")
+        else:
+            warnings.warn("Model has been downloaded but the SHA256 checksum does not not match")
+
+    return download_target
