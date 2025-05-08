@@ -53,6 +53,44 @@ def model_data_explainer():
     return explainable_model, (X_train, X_test, Y_train, Y_test), explainer, explanation
 
 
+@pytest.fixture
+def synthetic_data_explainer():
+    n_samples = 300
+    # Generate feature 1: strong predictor
+
+    feature1_class0 = np.random.normal(loc=-2.0, scale=1.0, size=n_samples//2)
+    feature1_class1 = np.random.normal(loc=2.0, scale=1.0, size=n_samples//2)
+    
+    # Generate feature 2: moderate predictor
+    feature2_class0 = np.random.normal(loc=-1.0, scale=1.5, size=n_samples//2)
+    feature2_class1 = np.random.normal(loc=1.0, scale=1.5, size=n_samples//2)
+    
+    # Generate feature 3: weak predictor (mostly noise)
+    feature3_class0 = np.random.normal(loc=-0.5, scale=2.0, size=n_samples//2)
+    feature3_class1 = np.random.normal(loc=0.5, scale=2.0, size=n_samples//2)
+    
+    # Combine features
+    X = np.vstack([
+        np.column_stack([feature1_class0, feature2_class0, feature3_class0]),
+        np.column_stack([feature1_class1, feature2_class1, feature3_class1])
+    ])
+    
+    # Create target variable (0 for first half, 1 for second half)
+    y = np.hstack([np.zeros(n_samples//2), np.ones(n_samples//2)])
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    rf_model = sklearn.ensemble.RandomForestRegressor(random_state=0)
+    rf_model.fit(X_train, y_train)
+    
+    explainable_model = mt.models.ExplainableModel(rf_model, "classification")
+    explainer = HyperSHAP(explainable_model, X_train, explainer_type="tree")
+    
+    explanation = explainer.explain(X_test)
+    return explainable_model, (X_train, X_test, y_train, y_test), explainer, explanation
+    
+    
+    
 def test_validate_explanations_and_explainer_type(model_data_explainer):
     _, _, explainer, explanation = model_data_explainer
 
@@ -239,7 +277,7 @@ def test_waterfall(model_data_explainer):
         shap_visualize.waterfall(explainer, explanation, target=1, observation_index=None)
 
 
-def test_heatmap(model_data_explainer):
+def test_heatmap(model_data_explainer, synthetic_data_explainer):
     _, (X_train, X_test, _, _), explainer, explanation = model_data_explainer
 
     shap_visualize.heatmap(
@@ -247,11 +285,26 @@ def test_heatmap(model_data_explainer):
         explanation,
         target=0,
     )
+    
+    plt.close(plt.gcf())
 
     # test local explanation
     explanation = explainer.explain(X_test[0:1])
     with pytest.raises(ValueError):
         shap_visualize.heatmap(explainer, explanation, target=0)
+        
+    # test explanation with no feature names
+    
+    _, (X_train, X_test, _, _), explainer, explanation = synthetic_data_explainer
+    
+    shap_visualize.heatmap(
+        explainer,
+        explanation,
+        target=0,
+    )
+    
+    plt.close(plt.gcf())
+
 
 
 def test_bar(model_data_explainer):
