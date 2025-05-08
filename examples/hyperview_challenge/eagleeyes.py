@@ -21,6 +21,11 @@ from sklearn.metrics import (
 )
 
 
+# filter out scikit learn warnings
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
 TRAIN_SIZE = 1732
 TEST_SIZE = 1154
 TRAIN_DIR = "train_data_simulated/"
@@ -28,6 +33,24 @@ TEST_DIR = "test_data_simulated/"
 
 
 CLASSES = ["P", "K", "Mg", "pH"]
+
+FEATURES = [
+    "Real part of FFT over avg. reflectance",
+    "Imag part of FFT over avg. reflectance",
+    "Approximation coefficients of wavelet transform sym3",
+    "Approximation coefficients of wavelet transform dmey",
+    "1st derivative of avg. reflectance",
+    "2nd derivative of avg. reflectance",
+    "3rd derivative of avg. reflectance",
+    "Average reflectance over channels",
+]
+
+with open("data/wavelenghts.txt", "r") as f:
+    BANDS_HYPERVIEW = f.readline()
+BANDS_HYPERVIEW = [float(wave.strip()) for wave in BANDS_HYPERVIEW.split(",")]
+
+FEATURE_NAMES_HYPERVIEW = [f"{trans_name} | {bands_name}" for trans_name in FEATURES for bands_name in BANDS_HYPERVIEW]
+
 
 
 class SpectralCurveFiltering:
@@ -133,9 +156,8 @@ def preprocess(samples_lst: List[str], features: List[str]) -> Tuple:
             samples_lst[sample_index] = sample_features
             all_feature_names.append(sample_feature_names)
 
-    return np.vstack(samples_lst), all_feature_names
-
-
+    data = np.vstack(samples_lst)
+    return pd.DataFrame(data, columns=FEATURE_NAMES_HYPERVIEW)
 
 
 def download(url: str, root: str, error_checksum: bool = True) -> str:
@@ -154,7 +176,7 @@ def download(url: str, root: str, error_checksum: bool = True) -> str:
 
     if os.path.isfile(download_target):
         real_sha256 = hashlib.sha256(open(download_target, "rb").read()).hexdigest()
-        print("INFO: Real SHA256: {}".format(real_sha256))
+        # print("INFO: Real SHA256: {}".format(real_sha256))
         # print("INFO: Expected SHA256: {}".format(expected_sha256))
         if hashlib.sha256(open(download_target, "rb").read()).hexdigest() == expected_sha256:
             return download_target
