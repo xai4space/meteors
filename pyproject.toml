@@ -36,6 +36,7 @@ dependencies = [
     "setuptools>=60.0.0",
     "shap>=0.46.0",
     "pywavelets>=1.6.0",
+    "pyarrow>=20.0.0",
 ]
 
 [metadata]
