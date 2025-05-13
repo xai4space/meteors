@@ -211,10 +211,10 @@ def download(url: str, root: str, error_checksum: bool = True) -> str:
 
     return download_target
 
+
 def get_raw_data() -> Tuple[List, pd.DataFrame]:
     base_path = Path("data")
     X_train = list(base_path.glob("*.npz"))
     y_train = pd.read_csv(base_path / "train_gt.csv", index_col="sample_index")
 
     return X_train, y_train
-
