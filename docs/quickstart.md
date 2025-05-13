@@ -30,19 +30,22 @@ from meteors import HSI
 ```
 
 **Remember**, when providing data to the model, make sure it is in the final format that the model expects, without the batch dimension. The `HSI` object will handle the rest.
-We also recommend providing the image data channel orientation, height, width, and the number of channels in the format `(CHW)`. For example:
+We also recommend providing the image orientation, e.g., `'HWC'` for height, width, and channels, or `'CHW'` for channels, height, and width.
 
-- Number of channels: C
-- Height: H
-- Width: W
 
 ## 🔍 Explanation Methods
 
 Meteors provides several explanation methods for hyperspectral and multispectral images, including:
 
 - **LIME**: [Local Interpretable Model-agnostic Explanations](https://christophm.github.io/interpretable-ml-book/lime.html)
-- More methods coming soon!
+- **SHAP** [SHapley Additive exPlanations](https://papers.nips.cc/paper_files/paper/2017/hash/8a20a8621978632d76c43dfd28b67767-Abstract.html)
+- **Saliency Maps**: [Visualizing and Understanding Convolutional Networks](https://arxiv.org/abs/1311.2901)
+- **Integrated Gradients**: [Axiomatic Attribution for Deep Networks](https://arxiv.org/abs/1703.01365)
+- **SmoothGrad**: [SmoothGrad: removing noise by adding noise](https://arxiv.org/abs/1706.03825)
+- **HyperNoiseTunnel**: our own modification of SmoothGrad for hyperspectral and multispectral images, more details can be found in the [docs](https://xai4space.github.io/meteors/latest/tutorials/attr_showcase/#hypernoisetunnel)
+- **Occlusion**: [Visualizing and Understanding Convolutional Networks](https://arxiv.org/abs/1311.2901)
 
+and more methods are on the way!
 To use a specific explanation method in [tutorials](tutorials/introduction.md) we provide for each method, example code.
 
 ## 🎨 Visualization Options

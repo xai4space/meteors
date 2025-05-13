@@ -1,6 +1,6 @@
 # API Reference
 
-The architecture of the package can be seen on the UML diagram:
+The architecture of the package can be seen in the UML diagram:
 ![UML diagram of package structure](assets/UML-classes.png)
 
 ## HyperSpectral Image
