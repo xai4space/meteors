@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Sequence, Tuple
+from typing import List, Tuple
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
@@ -11,18 +11,9 @@ import os
 import urllib
 import hashlib
 import warnings
-from tqdm import tqdm
-
-from sklearn.metrics import (
-    balanced_accuracy_score,
-    matthews_corrcoef,
-    accuracy_score,
-    f1_score,
-)
 
 
 # filter out scikit learn warnings
-import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
@@ -46,11 +37,10 @@ FEATURES = [
 ]
 
 with open("data/wavelenghts.txt", "r") as f:
-    BANDS_HYPERVIEW = f.readline()
-BANDS_HYPERVIEW = [float(wave.strip()) for wave in BANDS_HYPERVIEW.split(",")]
+    text_bands_hyperview = f.readline()
+BANDS_HYPERVIEW = [float(wave.strip()) for wave in text_bands_hyperview.split(",")]
 
 FEATURE_NAMES_HYPERVIEW = [f"{trans_name} | {bands_name}" for trans_name in FEATURES for bands_name in BANDS_HYPERVIEW]
-
 
 
 class SpectralCurveFiltering:
@@ -72,7 +62,6 @@ class BaselineRegressor:
 
     def predict(self, X_test: np.ndarray) -> np.ndarray:
         return np.full((len(X_test), self.classes_count), self.mean)
-
 
 
 def preprocess(samples_lst: List[str], features: List[str]) -> Tuple:
@@ -166,16 +155,18 @@ def download(url: str, root: str, error_checksum: bool = True) -> str:
 
     expected_sha256 = url.split("/")[-1]
     if expected_sha256 == "RF_model_150_bands.joblib":
-        expected_sha256 = "f9167332bd4d87b6f8b863e53f9fc38e19d70c175ea8d4fb14df8ec676484684"  # RF_model_150_bands.joblib sha256
+        expected_sha256 = (
+            "f9167332bd4d87b6f8b863e53f9fc38e19d70c175ea8d4fb14df8ec676484684"  # RF_model_150_bands.joblib sha256
+        )
     if expected_sha256 == "RF_model_spatial-fft-dwt-gradient-mean_150_bands.joblib":
-        expected_sha256 = "e078a7ef342fd313981c4b6a281e3497e32d6207f5c69cdbdd90814d6be5384b" # RF_model_spatial-fft-dwt-gradient-mean_150_bands.joblib
+        expected_sha256 = "e078a7ef342fd313981c4b6a281e3497e32d6207f5c69cdbdd90814d6be5384b"  # RF_model_spatial-fft-dwt-gradient-mean_150_bands.joblib
     download_target = os.path.join(root, filename)
 
     if os.path.exists(download_target) and not os.path.isfile(download_target):
         raise RuntimeError("{} exists and is not a regular file".format(download_target))
 
     if os.path.isfile(download_target):
-        real_sha256 = hashlib.sha256(open(download_target, "rb").read()).hexdigest()
+        # real_sha256 = hashlib.sha256(open(download_target, "rb").read()).hexdigest()
         # print("INFO: Real SHA256: {}".format(real_sha256))
         # print("INFO: Expected SHA256: {}".format(expected_sha256))
         if hashlib.sha256(open(download_target, "rb").read()).hexdigest() == expected_sha256:
