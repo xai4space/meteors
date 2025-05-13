@@ -32,7 +32,6 @@ from meteors import HSI
 **Remember**, when providing data to the model, make sure it is in the final format that the model expects, without the batch dimension. The `HSI` object will handle the rest.
 We also recommend providing the image orientation, e.g., `'HWC'` for height, width, and channels, or `'CHW'` for channels, height, and width.
 
-
 ## 🔍 Explanation Methods
 
 Meteors provides several explanation methods for hyperspectral and multispectral images, including:
