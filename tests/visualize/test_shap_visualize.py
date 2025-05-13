@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
 from meteors.shap import HyperSHAP
+from meteors.shap.explainer import SHAPExplanation
 import meteors.visualize.shap_visualize as shap_visualize
 from meteors.models import ExplainableModel
 
@@ -21,6 +22,7 @@ from meteors.visualize.shap_visualize import (
     validate_observation_index,
     validate_target,
     validate_mapping_dict,
+    handle_missing_feature_names,
 )
 
 import meteors as mt
@@ -611,3 +613,49 @@ def test_wavelengths_bar(model_data_explainer):
         explainer, explanation, target=0, wavelengths_mapping=wavelengths_mapping, use_pyplot=False
     )
     plt.close(plt.gca().figure)
+
+def test_handle_missing_feature_names():
+    n_samples = 30
+    # Generate feature 1: strong predictor
+
+    class0 = np.random.normal(loc=-2.0, scale=1.0, size=n_samples // 2)
+    class1 = np.random.normal(loc=2.0, scale=1.0, size=n_samples // 2)
+
+    # Combine features
+    X = np.concatenate((class0, class1), axis=0).reshape(-1, 1)
+
+    # Create target variable (0 for first half, 1 for second half)
+    y = np.hstack([np.zeros(n_samples // 2), np.ones(n_samples // 2)])
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    rf_model = sklearn.ensemble.RandomForestRegressor(random_state=0)
+    rf_model.fit(X_train, y_train)
+
+    explainable_model = mt.models.ExplainableModel(rf_model, "classification")
+    explainer = HyperSHAP(explainable_model, X_train, explainer_type="tree")
+
+    explanation = explainer.explain(X_test)
+    
+    # Case 1: Missing feature names
+    handle_missing_feature_names(explanation)
+    
+    assert explanation.feature_names is not None, "Feature names should be handled correctly."
+    
+    X_train = pd.DataFrame(X_train, columns=["feature1"])
+    X_test = pd.DataFrame(X_test, columns=["feature1"])
+    
+    # Case 2: Feature names are set
+    rf_model = sklearn.ensemble.RandomForestRegressor(random_state=0)
+    rf_model.fit(X_train, y_train)
+
+    explainable_model = mt.models.ExplainableModel(rf_model, "classification")
+    explainer = HyperSHAP(explainable_model, X_train, explainer_type="tree")
+
+    explanation = explainer.explain(X_test)
+    handle_missing_feature_names(explanation)
+    assert explanation.feature_names is not None, "Feature names should be handled correctly."
+    assert explanation.feature_names == ["feature1"], "Feature names should be set correctly."
+    assert explanation.explanations.shape[1] == 1, "Explanations shape should match the number of features."
+    
+    
