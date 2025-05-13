@@ -11,10 +11,27 @@ import os
 import urllib
 import hashlib
 import warnings
+from sklearn.exceptions import InconsistentVersionWarning
+
+from pathlib import Path
 
 
 # filter out scikit learn warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+
+
+# monkey patching for sklearn - this is a workaround for a non-compatible version of the model
+
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+# Patch the class itself before unpickling
+if not hasattr(DecisionTreeRegressor, "monotonic_cst"):
+    DecisionTreeRegressor.monotonic_cst = None
+
+if not hasattr(RandomForestRegressor, "monotonic_cst"):
+    RandomForestRegressor.monotonic_cst = None
 
 
 TRAIN_SIZE = 1732
@@ -64,7 +81,7 @@ class BaselineRegressor:
         return np.full((len(X_test), self.classes_count), self.mean)
 
 
-def preprocess(samples_lst: List[str], features: List[str]) -> Tuple:
+def load_and_preprocess(samples_lst: List[str], features: List[str]) -> Tuple:
     def _shape_pad(data: np.ndarray) -> np.ndarray:
         """
         This sub-function makes padding to have square fields sizes.
@@ -193,3 +210,11 @@ def download(url: str, root: str, error_checksum: bool = True) -> str:
             warnings.warn("Model has been downloaded but the SHA256 checksum does not not match")
 
     return download_target
+
+def get_raw_data() -> Tuple[List, pd.DataFrame]:
+    base_path = Path("data")
+    X_train = list(base_path.glob("*.npz"))
+    y_train = pd.read_csv(base_path / "train_gt.csv", index_col="sample_index")
+
+    return X_train, y_train
+
