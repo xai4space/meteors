@@ -229,12 +229,6 @@ def handle_missing_feature_names(explanation: SHAPExplanation) -> None:
     feature_names = shap_values.feature_names
     values = shap_values.values
 
-    # unwrap pandas series
-    if isinstance(features, pd.Series):
-        if feature_names is None:
-            feature_names = list(features.index)
-        features = features.values
-
     # fallback feature names
     if feature_names is None:
         feature_names = np.array([LABELS["FEATURE"] % str(i) for i in range(values.shape[1])])
