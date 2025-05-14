@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
 from meteors.shap import HyperSHAP
-from meteors.shap.explainer import SHAPExplanation
 import meteors.visualize.shap_visualize as shap_visualize
 from meteors.models import ExplainableModel
 
@@ -22,7 +21,6 @@ from meteors.visualize.shap_visualize import (
     validate_observation_index,
     validate_target,
     validate_mapping_dict,
-    handle_missing_feature_names,
 )
 
 import meteors as mt
@@ -306,6 +304,8 @@ def test_heatmap(model_data_explainer, synthetic_data_explainer):
     # test explanation with no feature names
 
     _, (X_train, X_test, _, _), explainer, explanation = synthetic_data_explainer
+
+    assert explanation.feature_names is None, "Feature names should be None"
 
     shap_visualize.heatmap(
         explainer,

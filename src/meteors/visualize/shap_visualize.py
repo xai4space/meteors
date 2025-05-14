@@ -225,7 +225,6 @@ def handle_missing_feature_names(explanation: SHAPExplanation) -> None:
     """
     shap_values = explanation.explanations
 
-    features = shap_values.display_data if shap_values.display_data is not None else shap_values.data
     feature_names = shap_values.feature_names
     values = shap_values.values
 
