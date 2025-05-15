@@ -208,6 +208,10 @@ def test_force(model_data_explainer):
     _, _, explainer, explanation = model_data_explainer
 
     fig = shap_visualize.force(explainer, explanation, observation_index=0, target=1)
+    plt.close(plt.gcf())
+
+    fig = shap_visualize.force(explainer, explanation, observation_index=10, target=0)
+    plt.close(plt.gcf())
 
     with pytest.raises(ValueError):
         fig = shap_visualize.force(explainer, explanation, observation_index=0, target=10)
@@ -225,6 +229,9 @@ def test_beeswarm(model_data_explainer):
 
     with pytest.raises(ValueError):
         shap_visualize.beeswarm(explainer, explanation, target=1, observation_index=0, use_pyplot=False)
+
+    with pytest.raises(ValueError):
+        shap_visualize.beeswarm(explainer, explanation, target=5, use_pyplot=True)
 
 
 def test_waterfall(model_data_explainer):

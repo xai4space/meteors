@@ -258,7 +258,7 @@ def force(
         explanations_values = explanations_values[..., target]
 
     fig = shap.plots.force(
-        base_value=explainer._explainer.expected_value[observation_index],
+        base_value=explainer._explainer.expected_value[target],
         shap_values=explanations_values,
         features=feature_values,
         feature_names=explanation.feature_names,
