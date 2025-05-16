@@ -58,7 +58,9 @@ with open("data/wavelenghts.txt", "r") as f:
     text_bands_hyperview = f.readline()
 BANDS_HYPERVIEW = [float(wave.strip()) for wave in text_bands_hyperview.split(",")]
 
-FEATURE_NAMES_HYPERVIEW = [f"{trans_name} | {bands_name}nm" for trans_name in FEATURES for bands_name in BANDS_HYPERVIEW]
+FEATURE_NAMES_HYPERVIEW = [
+    f"{trans_name} | {bands_name}nm" for trans_name in FEATURES for bands_name in BANDS_HYPERVIEW
+]
 
 
 class SpectralCurveFiltering:
