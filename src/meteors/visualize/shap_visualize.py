@@ -67,7 +67,7 @@ def validate_observation_index(
     if require_local_explanation:
         if observation_index is None and not explanation.is_local_explanation:
             raise ValueError(
-                "The plot of type {} only supports local explanations. \n"
+                "The plot of type '{}' only supports local explanations. \n"
                 "Passed explanation contains multiple observations and no observation index specified.".format(
                     plot_type
                 )
@@ -118,7 +118,7 @@ def validate_target(
     if require_single_target:
         if target is None and explanation.num_target_outputs > 1:
             raise ValueError(
-                "The plot of type {} requires a single target value. \n"
+                "The plot of type '{}' requires a single target value. \n"
                 "Passed explanation contains multiple targets and no target index specified.".format(plot_type)
             )
 
@@ -267,7 +267,9 @@ def force(
     """
     validate_explanations_and_explainer_type(explainer, explanation)
     target = validate_target(target, explanation, require_single_target=True, plot_type="force")
-    observation_index = validate_observation_index(observation_index, explanation, require_local_explanation=True)
+    observation_index = validate_observation_index(
+        observation_index, explanation, require_local_explanation=True, plot_type="force"
+    )
 
     explanations_values = explanation.explanations.values
     feature_values = explanation.data
@@ -322,7 +324,9 @@ def beeswarm(
     """
     validate_explanations_and_explainer_type(explainer, explanation)
     target = validate_target(target, explanation, require_single_target=True, plot_type="beeswarm")
-    observation_index = validate_observation_index(observation_index, explanation, require_local_explanation=False)
+    observation_index = validate_observation_index(
+        observation_index, explanation, require_local_explanation=False, plot_type="beeswarm"
+    )
 
     explanations = explanation.explanations
     if target is not None:
@@ -504,7 +508,9 @@ def waterfall(
             If use_pyplot is True, returns None.
     """
     validate_explanations_and_explainer_type(explainer, explanation)
-    observation_index = validate_observation_index(observation_index, explanation, require_local_explanation=True)
+    observation_index = validate_observation_index(
+        observation_index, explanation, require_local_explanation=True, plot_type="waterfall"
+    )
     target = validate_target(target, explanation, require_single_target=True, plot_type="waterfall")
 
     explanations_values = explanation.explanations[observation_index]
