@@ -14,6 +14,11 @@ import matplotlib.pyplot as plt
 
 from loguru import logger
 
+# labels for the plots
+LABELS = {
+    "FEATURE": "Feature %s",
+}
+
 
 def validate_observation_index(
     observation_index: int | None, explanation: SHAPExplanation, require_local_explanation: bool = False, plot_type=None
@@ -211,6 +216,23 @@ def validate_mapping_dict(
         )
 
     return parsed_mapping
+
+
+def handle_missing_feature_names(explanation: SHAPExplanation) -> None:
+    """
+    Function handles the missing feature names in the explanation object.
+    Modifies the explanation object in place, by adding the feature names to the explanation object.
+    """
+    shap_values = explanation.explanations
+
+    feature_names = shap_values.feature_names
+    values = shap_values.values
+
+    # fallback feature names
+    if feature_names is None:
+        feature_names = np.array([LABELS["FEATURE"] % str(i) for i in range(values.shape[1])])
+
+    explanation.explanations.feature_names = feature_names
 
 
 def force(
@@ -783,6 +805,8 @@ def heatmap(
         explanation_values = explanation_values[..., target]
     if explanation.is_local_explanation:
         raise ValueError("The heatmap plot does not support local explanations.")
+
+    handle_missing_feature_names(explanation)
 
     ax = shap.plots.heatmap(explanation_values, show=use_pyplot, ax=ax, **kwargs)
     return ax
